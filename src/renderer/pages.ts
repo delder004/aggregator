@@ -17,6 +17,7 @@ import {
   escapeHtml,
   type LayoutOptions,
 } from './html';
+import { diversifyFeatured } from './diversity';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -111,7 +112,7 @@ function generateHomepage(
   // Featured section — 2-column grid on desktop
   if (sortedFeatured.length > 0) {
     body += `<div class="section-label">Featured</div>\n`;
-    const topFeatured = sortedFeatured.slice(0, 6);
+    const topFeatured = diversifyFeatured(sortedFeatured, 1, 6);
     body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
     body += `\n</div>\n`;
