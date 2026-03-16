@@ -90,3 +90,20 @@ export interface Env {
   YOUTUBE_API_KEY?: string;
   PRODUCTHUNT_API_TOKEN?: string;
 }
+
+// -- Insights Summary types --
+
+export type InsightPeriodType = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
+
+export interface InsightSummary {
+  id: string;
+  periodType: InsightPeriodType;
+  periodStart: string;
+  periodEnd: string;
+  title: string;
+  content: string;
+  contentHtml: string;
+  articleCount: number;
+  topArticleIds: string[];
+  generatedAt: string;
+}

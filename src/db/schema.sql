@@ -60,3 +60,20 @@ CREATE TABLE IF NOT EXISTS article_companies (
     FOREIGN KEY (article_id) REFERENCES articles(id),
     FOREIGN KEY (company_id) REFERENCES companies(id)
 );
+
+CREATE TABLE IF NOT EXISTS summaries (
+    id TEXT PRIMARY KEY,
+    period_type TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    period_end TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_html TEXT NOT NULL,
+    article_count INTEGER NOT NULL DEFAULT 0,
+    top_article_ids TEXT,
+    generated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_summaries_period ON summaries(period_type, period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_summaries_generated ON summaries(generated_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_summaries_period_unique ON summaries(period_type, period_start);
