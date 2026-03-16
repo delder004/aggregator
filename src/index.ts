@@ -1,4 +1,4 @@
-import type { Env, CollectedArticle, Collector, SourceConfig, Company } from './types';
+import type { Env, CollectedArticle, Collector, SourceConfig, Company, InsightSummary } from './types';
 import { rssCollector } from './collectors/rss';
 import { createRedditCollector } from './collectors/reddit';
 import { hackerNewsCollector } from './collectors/hackernews';
@@ -6,7 +6,7 @@ import { createYouTubeCollector } from './collectors/youtube';
 import { arxivCollector } from './collectors/arxiv';
 import { substackCollector } from './collectors/substack';
 import { productHuntCollector } from './collectors/producthunt';
-import { ycCollector } from './collectors/ycombinator';
+import { ycombinatorCollector } from './collectors/ycombinator';
 import { companyBlogCollector } from './collectors/companyblog';
 import { pressReleaseCollector } from './collectors/pressrelease';
 import { scoreArticles } from './scoring/classifier';
@@ -20,9 +20,12 @@ import {
   getUnscoredArticles,
   updateArticleScore,
   updateSource,
+  insertSummary,
+  getAllRecentSummaries,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
+import { generateInsights } from './insights/generator';
 
 function getCollector(
   sourceType: string,
@@ -44,7 +47,7 @@ function getCollector(
     case 'producthunt':
       return productHuntCollector;
     case 'ycombinator':
-      return ycCollector;
+      return ycombinatorCollector;
     case 'companyblog':
       return companyBlogCollector;
     case 'pressrelease':
@@ -320,17 +323,43 @@ async function runPipeline(env: Env): Promise<void> {
     try {
       companies = await getTrackedCompanies(env.DB);
       if (companies.length > 0 && scored.length > 0) {
+        const matchedCompanyIds = new Set<string>();
         for (const article of scored) {
           const matched = matchArticleToCompanies(article, companies);
           if (matched.length > 0) {
-            await linkArticleToCompanies(env.DB, article.url, matched);
+            // Look up the article ID by URL to link in junction table
+            const dbArticle = await env.DB
+              .prepare('SELECT id FROM articles WHERE url = ?')
+              .bind(article.url)
+              .first<{ id: string }>();
+            if (dbArticle) {
+              await linkArticleToCompanies(env.DB, dbArticle.id, matched);
+              matched.forEach((id) => matchedCompanyIds.add(id));
+            }
           }
         }
-        await updateCompanyStats(env.DB, companies);
+        // Update stats for all matched companies
+        for (const companyId of matchedCompanyIds) {
+          await updateCompanyStats(env.DB, companyId);
+        }
         console.log(`Company tracking complete for ${scored.length} articles against ${companies.length} companies`);
       }
     } catch (err) {
       console.error('Company tracking failed:', err);
+    }
+
+    // 5d. Generate insight summaries
+    let summaries: InsightSummary[] = [];
+    try {
+      const generated = await generateInsights(env);
+      if (generated.length > 0) {
+        for (const summary of generated) {
+          await insertSummary(env.DB, summary);
+        }
+        console.log(`Generated ${generated.length} insight summaries`);
+      }
+    } catch (err) {
+      console.error('Insight generation failed:', err);
     }
 
     // 6. Regenerate all HTML pages
@@ -360,11 +389,18 @@ async function runPipeline(env: Env): Promise<void> {
         // Use whatever we already have
       }
 
+      // Fetch all recent summaries for insights pages
+      try {
+        summaries = await getAllRecentSummaries(env.DB);
+      } catch (err) {
+        console.error('Failed to fetch summaries:', err);
+      }
+
       const pages = generateAllPages(recentArticles, featuredArticles, tags, {
         sources: sources.length,
         articles: totalArticles,
         lastUpdated,
-      }, companiesForPages);
+      }, summaries, companiesForPages);
 
       const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
       pages['/feed.xml'] = rssFeed;

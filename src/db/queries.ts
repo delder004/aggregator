@@ -1,4 +1,4 @@
-import type { Article, SourceConfig, ScoredArticle, SourceType, Company } from '../types';
+import type { Article, SourceConfig, ScoredArticle, SourceType, InsightSummary, InsightPeriodType } from '../types';
 
 /** Escape SQL LIKE wildcards in user-provided values. */
 function escapeLike(value: string): string {
@@ -307,4 +307,143 @@ function mapRowToSource(row: Record<string, unknown>): SourceConfig {
     lastFetchedAt: (row.last_fetched_at as string) || null,
     errorCount: (row.error_count as number) || 0,
   };
+}
+
+// -- Summaries (InsightSummary) queries --
+
+function mapRowToSummary(row: Record<string, unknown>): InsightSummary {
+  let topArticleIds: string[] = [];
+  try {
+    topArticleIds = JSON.parse((row.top_article_ids as string) || '[]');
+  } catch {
+    topArticleIds = [];
+  }
+  return {
+    id: row.id as string,
+    periodType: row.period_type as InsightPeriodType,
+    periodStart: row.period_start as string,
+    periodEnd: row.period_end as string,
+    title: row.title as string,
+    content: row.content as string,
+    contentHtml: row.content_html as string,
+    articleCount: row.article_count as number,
+    topArticleIds,
+    generatedAt: row.generated_at as string,
+  };
+}
+
+export async function insertSummary(
+  db: D1Database,
+  summary: InsightSummary
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO summaries
+       (id, period_type, period_start, period_end, title, content, content_html,
+        article_count, top_article_ids, generated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      summary.id,
+      summary.periodType,
+      summary.periodStart,
+      summary.periodEnd,
+      summary.title,
+      summary.content,
+      summary.contentHtml,
+      summary.articleCount,
+      JSON.stringify(summary.topArticleIds),
+      summary.generatedAt
+    )
+    .run();
+}
+
+export async function summaryExistsForPeriod(
+  db: D1Database,
+  periodType: InsightPeriodType,
+  periodStart: string
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      'SELECT 1 as exists_flag FROM summaries WHERE period_type = ? AND period_start = ? LIMIT 1'
+    )
+    .bind(periodType, periodStart)
+    .first<{ exists_flag: number }>();
+  return row !== null;
+}
+
+export async function getLatestSummaries(
+  db: D1Database
+): Promise<InsightSummary[]> {
+  const results = await db
+    .prepare(
+      `SELECT s.* FROM summaries s
+       INNER JOIN (
+         SELECT period_type, MAX(period_start) as max_start
+         FROM summaries
+         GROUP BY period_type
+       ) latest ON s.period_type = latest.period_type AND s.period_start = latest.max_start
+       ORDER BY CASE s.period_type
+         WHEN 'hourly' THEN 1
+         WHEN 'daily' THEN 2
+         WHEN 'weekly' THEN 3
+         WHEN 'monthly' THEN 4
+         WHEN 'quarterly' THEN 5
+         ELSE 6
+       END`
+    )
+    .all();
+  return results.results.map(mapRowToSummary);
+}
+
+export async function getSummariesByType(
+  db: D1Database,
+  periodType: InsightPeriodType,
+  options: { limit?: number; offset?: number } = {}
+): Promise<InsightSummary[]> {
+  const { limit = 20, offset = 0 } = options;
+  const results = await db
+    .prepare(
+      `SELECT * FROM summaries
+       WHERE period_type = ?
+       ORDER BY period_start DESC
+       LIMIT ? OFFSET ?`
+    )
+    .bind(periodType, limit, offset)
+    .all();
+  return results.results.map(mapRowToSummary);
+}
+
+export async function getArticlesInRange(
+  db: D1Database,
+  start: string,
+  end: string,
+  limit: number = 100
+): Promise<Article[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE is_published = 1 AND relevance_score >= 40
+         AND published_at >= ? AND published_at < ?
+       ORDER BY relevance_score DESC, published_at DESC
+       LIMIT ?`
+    )
+    .bind(start, end, limit)
+    .all();
+  return results.results.map(mapRowToArticle);
+}
+
+export async function getAllRecentSummaries(
+  db: D1Database,
+  limit: number = 200
+): Promise<InsightSummary[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM summaries
+       ORDER BY period_start DESC
+       LIMIT ?`
+    )
+    .bind(limit)
+    .all();
+  return results.results.map(mapRowToSummary);
 }

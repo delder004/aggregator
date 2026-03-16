@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article, Company } from '../types';
+import type { Article, InsightSummary, InsightPeriodType, Company } from '../types';
 import {
   layout,
   articleCard,
@@ -15,10 +15,11 @@ import {
   trendingTags,
   timeGroup,
   escapeHtml,
-  renderSourceClusters,
+  insightCard,
+  insightNav,
+  periodToSlug,
   type LayoutOptions,
 } from './html';
-import { diversifyFeatured } from './diversity';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -74,23 +75,16 @@ function countTags(articles: Article[]): { tag: string; count: number }[] {
 function renderTimeGrouped(articles: Article[]): string {
   if (articles.length === 0) return '';
 
-  // Collect articles into time-group buckets while preserving order
-  const groups: { label: string; articles: Article[] }[] = [];
-  let currentLabel = '';
+  let html = '';
+  let currentGroup = '';
 
   for (const article of articles) {
-    const label = timeGroup(article.publishedAt);
-    if (label !== currentLabel) {
-      currentLabel = label;
-      groups.push({ label, articles: [] });
+    const group = timeGroup(article.publishedAt);
+    if (group !== currentGroup) {
+      currentGroup = group;
+      html += `<div class="time-group">${escapeHtml(group)}</div>\n`;
     }
-    groups[groups.length - 1].articles.push(article);
-  }
-
-  let html = '';
-  for (const g of groups) {
-    html += `<div class="time-group">${escapeHtml(g.label)}</div>\n`;
-    html += renderSourceClusters(g.articles);
+    html += articleCard(article);
   }
 
   return html;
@@ -120,7 +114,7 @@ function generateHomepage(
   // Featured section — 2-column grid on desktop
   if (sortedFeatured.length > 0) {
     body += `<div class="section-label">Featured</div>\n`;
-    const topFeatured = diversifyFeatured(sortedFeatured, 1, 6);
+    const topFeatured = sortedFeatured.slice(0, 6);
     body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
     body += `\n</div>\n`;
@@ -257,20 +251,15 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
   <h2>How It Works</h2>
   <p>
     Every hour, our system collects new content from RSS feeds, Reddit,
-    Hacker News, YouTube, arXiv, Substack newsletters, and company blogs.
-    Each article is scored for both relevance and quality by an AI classifier
-    (Claude by Anthropic). Articles scoring above our relevance threshold
-    are published to the feed. High-scoring articles receive featured placement.
-  </p>
-  <p>
-    We also track key companies in the AI-accounting space, linking articles
-    to the companies they mention. This makes it easy to follow developments
-    around specific vendors and startups.
+    Hacker News, YouTube, and arXiv. Each article is scored for relevance
+    by an AI classifier (Claude by Anthropic). Articles scoring above our
+    relevance threshold are published to the feed. High-scoring articles
+    receive featured placement.
   </p>
   <p>
     There is no editorial staff. The entire pipeline — collection, scoring,
-    company tracking, and publishing — is automated. This means the feed is
-    comprehensive and timely, though occasional off-topic results may slip through.
+    and publishing — is automated. This means the feed is comprehensive and
+    timely, though occasional off-topic results may slip through.
   </p>
 
   <h2>Sources</h2>
@@ -279,14 +268,11 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
     <li><strong>RSS feeds:</strong> Accounting Today, Journal of Accountancy,
       Going Concern, CPA Practice Advisor, AccountingWeb, TechCrunch AI,
       VentureBeat AI, and select newsletters and podcasts</li>
-    <li><strong>Substack:</strong> AI and accounting-focused newsletters</li>
     <li><strong>Reddit:</strong> r/accounting, r/artificial, r/MachineLearning,
       r/fintech, r/Bookkeeping, r/taxpros</li>
     <li><strong>Hacker News:</strong> AI + accounting keyword searches</li>
     <li><strong>YouTube:</strong> Key channels and topic searches</li>
     <li><strong>arXiv:</strong> CS/AI papers related to accounting and finance</li>
-    <li><strong>Company blogs:</strong> Direct tracking of AI-accounting vendors</li>
-    <li><strong>Press releases:</strong> Product launches and industry news</li>
   </ul>
 
   <h2>Technical Details</h2>
@@ -316,52 +302,125 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
 }
 
 // ---------------------------------------------------------------------------
-// Companies page
+// Insights pages
 // ---------------------------------------------------------------------------
 
-function generateCompaniesPage(
-  companies: Company[],
+/** Per-type archive limits. */
+const INSIGHT_ARCHIVE_LIMITS: Record<InsightPeriodType, number> = {
+  hourly: 48,
+  daily: 30,
+  weekly: 12,
+  monthly: 12,
+  quarterly: 8,
+};
+
+/** All period types in display order. */
+const PERIOD_TYPES: InsightPeriodType[] = [
+  'hourly',
+  'daily',
+  'weekly',
+  'monthly',
+  'quarterly',
+];
+
+/** Sort summaries by periodStart descending (newest first). */
+function sortSummaries(summaries: InsightSummary[]): InsightSummary[] {
+  return [...summaries].sort(
+    (a, b) =>
+      new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime()
+  );
+}
+
+function generateInsightsPages(
+  summaries: InsightSummary[],
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
+  const sorted = sortSummaries(summaries);
 
-  // Sort companies by article count descending
-  const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
-
-  let body = `<div class="section-label">Tracked Companies</div>\n`;
-  body += `<p style="color:var(--text-secondary);margin:0.5rem 0 1rem;font-size:0.85rem;">Companies active in AI-powered accounting, ranked by coverage.</p>\n`;
-
-  if (sorted.length === 0) {
-    body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet.</p>`;
-  } else {
-    body += `<div style="display:flex;flex-direction:column;gap:0;">\n`;
-    for (const company of sorted) {
-      const slug = escapeHtml(company.slug);
-      const name = escapeHtml(company.name);
-      const desc = company.description ? escapeHtml(company.description) : '';
-      const lastMention = company.lastMentionedAt
-        ? `Last mentioned ${escapeHtml(company.lastMentionedAt.split('T')[0])}`
-        : '';
-
-      body += `<a href="/company/${slug}" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
-  <div>
-    <span style="font-weight:600;font-size:0.93rem;color:var(--text);">${name}</span>
-    ${desc ? `<span style="font-size:0.8rem;color:var(--text-secondary);margin-left:0.5rem;">${desc}</span>` : ''}
-    ${lastMention ? `<div style="font-size:0.72rem;color:var(--text-tertiary);margin-top:0.15rem;">${lastMention}</div>` : ''}
-  </div>
-  <span style="font-size:0.8rem;font-weight:600;color:var(--accent);white-space:nowrap;margin-left:1rem;">${company.articleCount} article${company.articleCount !== 1 ? 's' : ''}</span>
-</a>\n`;
+  // --- Index page: latest summary of each type ---
+  {
+    const seen = new Set<string>();
+    const latestByType: InsightSummary[] = [];
+    for (const s of sorted) {
+      if (!seen.has(s.periodType)) {
+        seen.add(s.periodType);
+        latestByType.push(s);
+      }
     }
-    body += `</div>\n`;
+
+    let body = `<div class="section-label">Insights</div>\n`;
+    body += insightNav('');
+    body += `<div class="insights-grid">\n`;
+    body += latestByType.map((s) => insightCard(s)).join('\n');
+    body += `\n</div>\n`;
+
+    pages['/insights'] = layout(body, {
+      title: 'Insights',
+      description: 'AI-generated summaries and analysis of agentic AI in accounting trends.',
+      path: '/insights',
+      ...layoutOpts,
+    });
   }
 
-  pages['/companies'] = layout(body, {
-    title: 'Companies',
-    description: 'Companies tracked in AI-powered accounting news.',
-    path: '/companies',
-    activeTag: 'companies',
-    ...layoutOpts,
-  });
+  // --- Archive pages per type ---
+  for (const periodType of PERIOD_TYPES) {
+    const ofType = sorted.filter((s) => s.periodType === periodType);
+    const limited = ofType.slice(0, INSIGHT_ARCHIVE_LIMITS[periodType]);
+
+    const typeLabel = periodType.charAt(0).toUpperCase() + periodType.slice(1);
+    let body = `<div class="section-label">${escapeHtml(typeLabel)} Insights</div>\n`;
+    body += insightNav(periodType);
+
+    if (limited.length > 0) {
+      body += `<div class="insights-grid">\n`;
+      body += limited.map((s) => insightCard(s)).join('\n');
+      body += `\n</div>\n`;
+    } else {
+      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No ${periodType} insights yet. Check back soon.</p>`;
+    }
+
+    const path = `/insights/${periodType}`;
+    pages[path] = layout(body, {
+      title: `${typeLabel} Insights`,
+      description: `${typeLabel} summaries and analysis of agentic AI in accounting.`,
+      path,
+      ...layoutOpts,
+    });
+  }
+
+  // --- Detail pages for each summary ---
+  for (const summary of sorted) {
+    const slug = periodToSlug(summary.periodType, summary.periodStart);
+    const path = `/insights/${summary.periodType}/${slug}`;
+    const typeLabel =
+      summary.periodType.charAt(0).toUpperCase() + summary.periodType.slice(1);
+    const dateStr = new Date(summary.periodStart).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+
+    let body = insightNav(summary.periodType);
+    body += `<div class="insight-header">
+  <span class="insight-badge ${escapeHtml(summary.periodType)}">${escapeHtml(typeLabel)}</span>
+  <h1>${escapeHtml(summary.title)}</h1>
+  <div class="insight-meta">
+    <time datetime="${escapeHtml(summary.periodStart)}">${dateStr}</time>
+    <span class="meta-dot">&middot;</span>
+    <span>${summary.articleCount} article${summary.articleCount === 1 ? '' : 's'} analyzed</span>
+  </div>
+</div>\n`;
+    body += `<div class="insight-content">\n${summary.contentHtml}\n</div>\n`;
+
+    pages[path] = layout(body, {
+      title: summary.title,
+      description: `${typeLabel} insight: ${escapeHtml(summary.title)}`,
+      path,
+      ...layoutOpts,
+    });
+  }
 
   return pages;
 }
@@ -389,6 +448,7 @@ function generateSitemap(
     urls += `  <url><loc>${SITE_URL}/tag/${escapeHtml(tag)}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   }
 
+  urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -407,7 +467,6 @@ ${urls}</urlset>`;
  * @param featuredArticles  Articles with score >= 70, for featured placement.
  * @param tags       All known tags (used for tag page generation).
  * @param stats      Optional stats for the footer (sources count, articles count, last updated).
- * @param companies  Optional list of tracked companies for the companies page.
  * @returns A Record mapping URL paths to HTML strings.
  */
 export function generateAllPages(
@@ -415,6 +474,7 @@ export function generateAllPages(
   featuredArticles: Article[],
   tags: string[],
   stats?: { sources: number; articles: number; lastUpdated: string },
+  summaries?: InsightSummary[],
   companies?: Company[]
 ): Record<string, string> {
   const latest = sortByDate(articles);
@@ -436,6 +496,10 @@ export function generateAllPages(
     ...generateAboutPage(layoutOpts),
   };
 
+  if (summaries && summaries.length > 0) {
+    Object.assign(pages, generateInsightsPages(summaries, layoutOpts));
+  }
+
   if (companies && companies.length > 0) {
     Object.assign(pages, generateCompaniesPage(companies, layoutOpts));
   }
@@ -447,4 +511,54 @@ export function generateAllPages(
   );
 
   return pages;
+}
+
+// ---------------------------------------------------------------------------
+// Companies page
+// ---------------------------------------------------------------------------
+
+function generateCompaniesPage(
+  companies: Company[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
+
+  const companyRows = sorted
+    .map((c) => {
+      const name = escapeHtml(c.name);
+      const desc = c.description ? escapeHtml(c.description) : '';
+      const website = c.website ? escapeHtml(c.website) : '';
+      const count = c.articleCount;
+      const lastMention = c.lastMentionedAt
+        ? `Last mentioned ${new Date(c.lastMentionedAt).toLocaleDateString()}`
+        : '';
+
+      return `<div class="article-card" style="align-items:center;">
+  <div class="article-body">
+    <h3 class="article-title">${website ? `<a href="${website}" rel="noopener" target="_blank">${name}</a>` : name}</h3>
+    ${desc ? `<p class="article-summary">${desc}</p>` : ''}
+    <div class="article-meta">
+      <span class="source-name">${count} article${count !== 1 ? 's' : ''}</span>
+      ${lastMention ? `<span class="meta-dot">&middot;</span> <span>${lastMention}</span>` : ''}
+    </div>
+  </div>
+</div>`;
+    })
+    .join('\n');
+
+  const body = `
+<div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
+<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+  Tracking ${companies.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
+</p>
+${companyRows}`;
+
+  return {
+    '/companies': layout(body, {
+      title: 'Companies',
+      description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+      path: '/companies',
+      ...layoutOpts,
+    }),
+  };
 }

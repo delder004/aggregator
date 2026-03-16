@@ -7,7 +7,7 @@
  * No client-side JavaScript. Inline CSS. < 50KB per page.
  */
 
-import type { Article } from '../types';
+import type { Article, InsightSummary, InsightPeriodType } from '../types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -28,19 +28,15 @@ const NAV_TAGS: { label: string; slug: string }[] = [
   { label: 'Startups', slug: 'startup' },
   { label: 'Big 4', slug: 'big-4' },
   { label: 'Research', slug: 'research' },
-  { label: 'Companies', slug: 'companies' },
 ];
 
 // Source type badge colors
 const SOURCE_COLORS: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
-  hn:          { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
-  reddit:      { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
-  youtube:     { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
-  arxiv:       { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
-  rss:         { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
-  substack:    { bg: '#ff681515', text: '#ff6815', darkBg: '#ff681525', darkText: '#ff8c42' },
-  producthunt: { bg: '#da552f15', text: '#da552f', darkBg: '#da552f25', darkText: '#e8774f' },
-  ycombinator: { bg: '#f2652215', text: '#f26522', darkBg: '#f2652225', darkText: '#f5844e' },
+  hn:      { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
+  reddit:  { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
+  youtube: { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
+  arxiv:   { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
+  rss:     { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
 };
 
 // ---------------------------------------------------------------------------
@@ -254,35 +250,6 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .source-badge.youtube{background:var(--yt-bg,#ff000012);color:var(--yt-text,#cc0000);}
 .source-badge.arxiv{background:var(--arxiv-bg,#b3131315);color:var(--arxiv-text,#b31313);}
 .source-badge.rss{background:var(--rss-bg,#ee802015);color:var(--rss-text,#c06010);}
-.source-badge.substack{background:var(--substack-bg,#ff681515);color:var(--substack-text,#ff6815);}
-.source-badge.producthunt{background:var(--ph-bg,#da552f15);color:var(--ph-text,#da552f);}
-.source-badge.ycombinator{background:var(--yc-bg,#f2652215);color:var(--yc-text,#f26522);}
-.quality-badge{
-  display:inline-block;
-  font-size:0.6rem;
-  font-weight:700;
-  color:var(--accent);
-  margin-left:0.15rem;
-  vertical-align:middle;
-  letter-spacing:0.02em;
-}
-.social-score{
-  display:inline-flex;
-  align-items:center;
-  gap:0.15rem;
-  font-size:0.72rem;
-  font-weight:600;
-  color:var(--score-high);
-}
-.company-tag{
-  font-size:0.68rem;
-  padding:0.1rem 0.4rem;
-  border-radius:100px;
-  background:var(--accent-subtle);
-  color:var(--accent);
-  font-weight:500;
-}
-.company-tag:hover{background:var(--accent);color:#fff;text-decoration:none;}
 .meta-dot{color:var(--text-tertiary);}
 .article-summary{
   font-size:0.82rem;
@@ -436,33 +403,6 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .about-content ul{margin:0.5rem 0 0.75rem 1.5rem;color:var(--text-secondary);}
 .about-content li{margin-bottom:0.3rem;}
 
-/* Source clustering */
-.cluster-more{
-  margin:-0.25rem 0 0.5rem;
-  border:none;
-}
-.cluster-more summary{
-  font-size:0.78rem;
-  font-weight:500;
-  color:var(--accent);
-  cursor:pointer;
-  padding:0.35rem 0;
-  list-style:none;
-}
-.cluster-more summary::-webkit-details-marker{display:none;}
-.cluster-more summary::before{
-  content:'+ ';
-  font-weight:600;
-}
-.cluster-more[open] summary::before{
-  content:'− ';
-}
-.cluster-more .article-card{
-  border-left:2px solid var(--border);
-  padding-left:0.75rem;
-  margin-left:0.25rem;
-}
-
 /* Dark mode badge overrides */
 @media (prefers-color-scheme: dark) {
   .source-badge.hn{background:#ff660025;color:#ff8533;}
@@ -470,9 +410,6 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   .source-badge.youtube{background:#ff000020;color:#ff4444;}
   .source-badge.arxiv{background:#b3131325;color:#e05555;}
   .source-badge.rss{background:#ee802025;color:#eea050;}
-  .source-badge.substack{background:#ff681525;color:#ff8c42;}
-  .source-badge.producthunt{background:#da552f25;color:#e8774f;}
-  .source-badge.ycombinator{background:#f2652225;color:#f5844e;}
 }
 
 /* Responsive */
@@ -486,6 +423,34 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   .header-row{gap:0.5rem;}
   .logo{width:30px;height:30px;border-radius:6px;}
 }
+
+/* Insights */
+.insights-grid{display:grid;grid-template-columns:1fr;gap:1rem;margin:1rem 0;}
+.insight-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;}
+.insight-card h3{font-size:1rem;font-weight:600;margin-bottom:0.3rem;}
+.insight-card h3 a{color:var(--text);}
+.insight-card h3 a:hover{color:var(--accent);}
+.insight-meta{font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem;}
+.insight-badge{display:inline-block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;padding:0.15rem 0.5rem;border-radius:100px;}
+.insight-badge.hourly{background:#0f766e15;color:var(--accent);}
+.insight-badge.daily{background:#3b82f615;color:#3b82f6;}
+.insight-badge.weekly{background:#8b5cf615;color:#8b5cf6;}
+.insight-badge.monthly{background:#f59e0b15;color:#f59e0b;}
+.insight-badge.quarterly{background:#ef444415;color:#ef4444;}
+.insight-preview{font-size:0.85rem;color:var(--text-secondary);-webkit-line-clamp:3;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;}
+.insight-content{padding:1.5rem 0;}
+.insight-content h2{font-size:1.15rem;font-weight:600;margin:1.25rem 0 0.5rem;color:var(--text);}
+.insight-content h3{font-size:1rem;font-weight:600;margin:1rem 0 0.4rem;color:var(--text);}
+.insight-content p{margin-bottom:0.75rem;color:var(--text-secondary);line-height:1.65;}
+.insight-content ul,.insight-content ol{margin:0.5rem 0 0.75rem 1.5rem;color:var(--text-secondary);}
+.insight-content li{margin-bottom:0.3rem;line-height:1.55;}
+.insight-content a{color:var(--accent);}
+.insight-header{border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem;}
+.insight-header h1{font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;}
+.insight-nav{display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;}
+.insight-nav a{font-size:0.82rem;padding:0.3rem 0.8rem;border-radius:100px;border:1px solid var(--border);color:var(--text-secondary);font-weight:500;}
+.insight-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+.insight-nav a.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 `;
 }
 
@@ -580,15 +545,12 @@ function scoreClass(score: number | null): string {
 /** Map source type to badge label and CSS class. */
 function sourceBadge(type: string): { label: string; cls: string } {
   switch (type) {
-    case 'reddit':      return { label: 'Reddit', cls: 'reddit' };
-    case 'hn':          return { label: 'HN', cls: 'hn' };
-    case 'youtube':     return { label: 'YouTube', cls: 'youtube' };
-    case 'arxiv':       return { label: 'arXiv', cls: 'arxiv' };
-    case 'rss':         return { label: 'RSS', cls: 'rss' };
-    case 'substack':    return { label: 'Substack', cls: 'substack' };
-    case 'producthunt': return { label: 'PH', cls: 'producthunt' };
-    case 'ycombinator': return { label: 'YC', cls: 'ycombinator' };
-    default:            return { label: type, cls: 'rss' };
+    case 'reddit':  return { label: 'Reddit', cls: 'reddit' };
+    case 'hn':      return { label: 'HN', cls: 'hn' };
+    case 'youtube': return { label: 'YouTube', cls: 'youtube' };
+    case 'arxiv':   return { label: 'arXiv', cls: 'arxiv' };
+    case 'rss':     return { label: 'RSS', cls: 'rss' };
+    default:        return { label: type, cls: 'rss' };
   }
 }
 
@@ -617,23 +579,9 @@ export function articleCard(article: Article): string {
     ? `<img class="article-thumb" src="${escapeHtml(article.imageUrl)}" alt="" loading="lazy" />`
     : '';
 
-  const qualityBadge = article.qualityScore && article.qualityScore >= 70
-    ? `<span class="quality-badge">HQ</span>`
-    : '';
-
-  const socialDisplay = article.socialScore && article.socialScore > 0
-    ? `<span class="meta-dot">&middot;</span> <span class="social-score">&blacktriangle; ${article.socialScore}</span>`
-    : '';
-
   const tags = article.tags.length
     ? `<div class="article-tags">${article.tags
         .map((t) => `<a href="/tag/${escapeHtml(t)}">${escapeHtml(t)}</a>`)
-        .join('')}</div>`
-    : '';
-
-  const companyTags = article.companyMentions && article.companyMentions.length > 0
-    ? `<div class="article-tags">${article.companyMentions
-        .map((c) => `<a class="company-tag" href="/company/${escapeHtml(c.toLowerCase().replace(/\s+/g, '-'))}">${escapeHtml(c)}</a>`)
         .join('')}</div>`
     : '';
 
@@ -642,14 +590,13 @@ export function articleCard(article: Article): string {
   <div class="article-body">
     <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
     <div class="article-meta">
-      <span class="${sClass} score-dot"></span>${qualityBadge}
+      <span class="${sClass} score-dot"></span>
       <span class="source-name">${escapeHtml(article.sourceName)}</span>
       <span class="source-badge ${badge.cls}">${badge.label}</span>
-      ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
+      ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
     ${tags}
-    ${companyTags}
   </div>
 </article>`;
 }
@@ -683,14 +630,7 @@ export function featuredCard(article: Article): string {
 /** Render the tag navigation bar. */
 export function tagNav(activeTag: string): string {
   const links = NAV_TAGS.map((t) => {
-    let href: string;
-    if (!t.slug) {
-      href = '/';
-    } else if (t.slug === 'companies') {
-      href = '/companies';
-    } else {
-      href = `/tag/${t.slug}`;
-    }
+    const href = t.slug ? `/tag/${t.slug}` : '/';
     const cls = t.slug === activeTag ? ' class="active"' : '';
     return `<a href="${href}"${cls}>${escapeHtml(t.label)}</a>`;
   }).join('\n    ');
@@ -717,101 +657,6 @@ export function trendingTags(tagCounts: { tag: string; count: number }[]): strin
   <div class="trending-bar">
     ${items}
   </div>`;
-}
-
-/**
- * Render articles with source clustering.
- *
- * Groups articles by `sourceName`. If a source has 2+ articles whose
- * `publishedAt` dates are all within 2 weeks of each other, the first
- * (newest) article is shown as a full card and the rest are wrapped in
- * a `<details class="cluster-more">` disclosure element.
- *
- * Articles from the same source that span more than 2 weeks are split
- * into separate sub-clusters.
- *
- * Source groups are ordered by the newest article in each group so the
- * most recent content appears first.
- */
-export function renderSourceClusters(articles: Article[]): string {
-  if (articles.length === 0) return '';
-
-  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
-
-  // Group by sourceName
-  const bySource = new Map<string, Article[]>();
-  for (const a of articles) {
-    const key = a.sourceName;
-    if (!bySource.has(key)) bySource.set(key, []);
-    bySource.get(key)!.push(a);
-  }
-
-  // Build renderable clusters: each cluster is an array of articles
-  // that belong to the same source and are within 2 weeks of each other.
-  interface Cluster {
-    newestDate: number;
-    articles: Article[];
-  }
-
-  const clusters: Cluster[] = [];
-
-  for (const [, sourceArticles] of bySource) {
-    // Sort newest-first within each source
-    const sorted = [...sourceArticles].sort(
-      (a, b) =>
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
-
-    // Split into sub-clusters where every article is within 2 weeks of the
-    // first article in that sub-cluster.
-    let subCluster: Article[] = [sorted[0]];
-    let subClusterStart = new Date(sorted[0].publishedAt).getTime();
-
-    for (let i = 1; i < sorted.length; i++) {
-      const t = new Date(sorted[i].publishedAt).getTime();
-      if (subClusterStart - t <= TWO_WEEKS_MS) {
-        subCluster.push(sorted[i]);
-      } else {
-        // Finalize previous sub-cluster and start a new one
-        clusters.push({
-          newestDate: subClusterStart,
-          articles: subCluster,
-        });
-        subCluster = [sorted[i]];
-        subClusterStart = t;
-      }
-    }
-    // Push the last sub-cluster
-    clusters.push({
-      newestDate: subClusterStart,
-      articles: subCluster,
-    });
-  }
-
-  // Sort clusters by newest article date descending
-  clusters.sort((a, b) => b.newestDate - a.newestDate);
-
-  // Render
-  let html = '';
-  for (const cluster of clusters) {
-    if (cluster.articles.length === 1) {
-      html += articleCard(cluster.articles[0]);
-    } else {
-      // First article rendered as full card
-      html += articleCard(cluster.articles[0]);
-      // Remaining articles inside a <details> disclosure
-      const remaining = cluster.articles.slice(1);
-      const sourceName = escapeHtml(cluster.articles[0].sourceName);
-      html += `<details class="cluster-more">\n`;
-      html += `  <summary>${remaining.length} more from ${sourceName}</summary>\n`;
-      for (const a of remaining) {
-        html += articleCard(a);
-      }
-      html += `</details>\n`;
-    }
-  }
-
-  return html;
 }
 
 /** Render pagination controls. */
@@ -865,6 +710,104 @@ export function pagination(
   }
 
   return `<nav class="pagination">${links.join('\n')}</nav>`;
+}
+
+// ---------------------------------------------------------------------------
+// Insight components
+// ---------------------------------------------------------------------------
+
+/** Convert a periodStart ISO date to a URL-friendly slug. */
+export function periodToSlug(periodType: InsightPeriodType, periodStart: string): string {
+  const d = new Date(periodStart);
+  if (isNaN(d.getTime())) return 'unknown';
+
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+
+  switch (periodType) {
+    case 'hourly':
+      return `${yyyy}-${mm}-${dd}-${hh}`;
+    case 'daily':
+      return `${yyyy}-${mm}-${dd}`;
+    case 'weekly':
+      return `${yyyy}-${mm}-${dd}`;
+    case 'monthly':
+      return `${yyyy}-${mm}`;
+    case 'quarterly': {
+      const month = d.getUTCMonth(); // 0-11
+      const quarter = Math.floor(month / 3) + 1;
+      return `${yyyy}-Q${quarter}`;
+    }
+    default:
+      return `${yyyy}-${mm}-${dd}`;
+  }
+}
+
+/** Strip basic markdown formatting from text. */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, '')      // headers
+    .replace(/\*\*(.+?)\*\*/g, '$1') // bold
+    .replace(/\*(.+?)\*/g, '$1')     // italic
+    .replace(/__(.+?)__/g, '$1')     // bold alt
+    .replace(/_(.+?)_/g, '$1')       // italic alt
+    .replace(/`(.+?)`/g, '$1')       // inline code
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1') // links
+    .replace(/^\s*[-*+]\s+/gm, '')   // list items
+    .replace(/^\s*\d+\.\s+/gm, '')   // numbered lists
+    .replace(/\n{2,}/g, ' ')         // collapse blank lines
+    .replace(/\n/g, ' ')             // remaining newlines
+    .trim();
+}
+
+/** Render a single insight card. */
+export function insightCard(summary: InsightSummary): string {
+  const title = escapeHtml(summary.title);
+  const slug = periodToSlug(summary.periodType, summary.periodStart);
+  const href = `/insights/${summary.periodType}/${slug}`;
+  const preview = escapeHtml(stripMarkdown(summary.content).slice(0, 200));
+  const dateStr = new Date(summary.periodStart).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  return `<div class="insight-card">
+  <span class="insight-badge ${escapeHtml(summary.periodType)}">${escapeHtml(summary.periodType)}</span>
+  <h3><a href="${href}">${title}</a></h3>
+  <div class="insight-meta">
+    <time datetime="${escapeHtml(summary.periodStart)}">${dateStr}</time>
+    <span class="meta-dot">&middot;</span>
+    <span>${summary.articleCount} article${summary.articleCount === 1 ? '' : 's'}</span>
+  </div>
+  <p class="insight-preview">${preview}</p>
+</div>`;
+}
+
+/** Render the insights navigation pills. */
+export function insightNav(activePeriod: string): string {
+  const periods: { label: string; href: string; key: string }[] = [
+    { label: 'All', href: '/insights', key: '' },
+    { label: 'Hourly', href: '/insights/hourly', key: 'hourly' },
+    { label: 'Daily', href: '/insights/daily', key: 'daily' },
+    { label: 'Weekly', href: '/insights/weekly', key: 'weekly' },
+    { label: 'Monthly', href: '/insights/monthly', key: 'monthly' },
+    { label: 'Quarterly', href: '/insights/quarterly', key: 'quarterly' },
+  ];
+
+  const links = periods
+    .map((p) => {
+      const cls = p.key === activePeriod ? ' class="active"' : '';
+      return `<a href="${p.href}"${cls}>${p.label}</a>`;
+    })
+    .join('\n    ');
+
+  return `<nav class="insight-nav">
+    ${links}
+  </nav>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -946,6 +889,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="container footer-inner">
       <div class="footer-links">
         <a href="/feed.xml">RSS Feed</a>
+        <a href="/insights">Insights</a>
         <a href="/about">About</a>
       </div>
       ${statsLine}
