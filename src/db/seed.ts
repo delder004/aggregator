@@ -81,44 +81,6 @@ export const SEED_SOURCES: SeedSource[] = [
     config: JSON.stringify({ url: 'https://www.blakeoliver.com/blog?format=rss' }),
   },
 
-  // --- Reddit ---
-  {
-    id: 'reddit-accounting',
-    source_type: 'reddit',
-    name: 'r/accounting',
-    config: JSON.stringify({ subreddit: 'accounting', query: '"AI" OR "automation" OR "agentic"' }),
-  },
-  {
-    id: 'reddit-artificial',
-    source_type: 'reddit',
-    name: 'r/artificial',
-    config: JSON.stringify({ subreddit: 'artificial', query: '"accounting" OR "audit" OR "bookkeeping" OR "finance"' }),
-  },
-  {
-    id: 'reddit-machinelearning',
-    source_type: 'reddit',
-    name: 'r/MachineLearning',
-    config: JSON.stringify({ subreddit: 'MachineLearning', query: '"accounting" OR "audit" OR "financial"' }),
-  },
-  {
-    id: 'reddit-fintech',
-    source_type: 'reddit',
-    name: 'r/fintech',
-    config: JSON.stringify({ subreddit: 'fintech', query: '"accounting" OR "audit" OR "bookkeeping" OR "tax" OR "CPA"' }),
-  },
-  {
-    id: 'reddit-bookkeeping',
-    source_type: 'reddit',
-    name: 'r/Bookkeeping',
-    config: JSON.stringify({ subreddit: 'Bookkeeping', query: '"AI" OR "automation" OR "agent"' }),
-  },
-  {
-    id: 'reddit-taxpros',
-    source_type: 'reddit',
-    name: 'r/taxpros',
-    config: JSON.stringify({ subreddit: 'taxpros', query: '"AI" OR "automation" OR "agentic"' }),
-  },
-
   // --- Hacker News ---
   {
     id: 'hn-ai-accounting',
@@ -256,20 +218,6 @@ export const SEED_SOURCES: SeedSource[] = [
     source_type: 'youtube',
     name: 'YouTube: The Accounting Podcast',
     config: JSON.stringify({ channelId: 'UCbK1yTMuV3Zy7V-Tt9XBTBA' }),
-  },
-
-  // --- Additional Reddit ---
-  {
-    id: 'reddit-chatgpt',
-    source_type: 'reddit',
-    name: 'r/ChatGPT',
-    config: JSON.stringify({ subreddit: 'ChatGPT', query: '"accounting" OR "bookkeeping" OR "audit" OR "CPA" OR "tax"' }),
-  },
-  {
-    id: 'reddit-accounting-tech',
-    source_type: 'reddit',
-    name: 'r/accounting (tech)',
-    config: JSON.stringify({ subreddit: 'accounting', query: '"ChatGPT" OR "Claude" OR "GPT" OR "LLM" OR "copilot"' }),
   },
 
   // --- arXiv ---
