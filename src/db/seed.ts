@@ -22,13 +22,13 @@ export const SEED_SOURCES: SeedSource[] = [
     id: 'rss-accounting-today',
     source_type: 'rss',
     name: 'Accounting Today',
-    config: JSON.stringify({ url: 'https://www.accountingtoday.com/feed' }),
+    config: JSON.stringify({ url: 'https://www.accountingtoday.com/feed?rss=true' }),
   },
   {
     id: 'rss-journal-of-accountancy',
     source_type: 'rss',
     name: 'Journal of Accountancy',
-    config: JSON.stringify({ url: 'https://www.journalofaccountancy.com/news.xml' }),
+    config: JSON.stringify({ url: 'https://www.journalofaccountancy.com/feed' }),
   },
   {
     id: 'rss-going-concern',
@@ -46,7 +46,7 @@ export const SEED_SOURCES: SeedSource[] = [
     id: 'rss-accountingweb',
     source_type: 'rss',
     name: 'AccountingWeb',
-    config: JSON.stringify({ url: 'https://www.accountingweb.co.uk/rss' }),
+    config: JSON.stringify({ url: 'https://www.accountingweb.co.uk/rss.xml' }),
   },
   // Removed: TechCrunch AI, VentureBeat AI, Import AI (too broad, not accounting-specific)
   {
@@ -79,38 +79,6 @@ export const SEED_SOURCES: SeedSource[] = [
     source_type: 'rss',
     name: 'Blake Oliver, CPA',
     config: JSON.stringify({ url: 'https://www.blakeoliver.com/blog?format=rss' }),
-  },
-
-  // --- Google News RSS ---
-  {
-    id: 'gnews-ai-accounting',
-    source_type: 'rss',
-    name: 'Google News: AI Accounting',
-    config: JSON.stringify({ url: `https://news.google.com/rss/search?q=${encodeURIComponent('AI accounting')}&hl=en-US&gl=US&ceid=US:en` }),
-  },
-  {
-    id: 'gnews-agentic-ai-audit',
-    source_type: 'rss',
-    name: 'Google News: Agentic AI Audit',
-    config: JSON.stringify({ url: `https://news.google.com/rss/search?q=${encodeURIComponent('agentic AI audit')}&hl=en-US&gl=US&ceid=US:en` }),
-  },
-  {
-    id: 'gnews-ai-bookkeeping-tax',
-    source_type: 'rss',
-    name: 'Google News: AI Bookkeeping & Tax',
-    config: JSON.stringify({ url: `https://news.google.com/rss/search?q=${encodeURIComponent('"AI bookkeeping" OR "AI tax automation"')}&hl=en-US&gl=US&ceid=US:en` }),
-  },
-  {
-    id: 'gnews-accounting-automation',
-    source_type: 'rss',
-    name: 'Google News: Accounting Automation AI',
-    config: JSON.stringify({ url: `https://news.google.com/rss/search?q=${encodeURIComponent('"accounting automation" AI')}&hl=en-US&gl=US&ceid=US:en` }),
-  },
-  {
-    id: 'gnews-ai-accounting-firm',
-    source_type: 'rss',
-    name: 'Google News: AI Accounting Firms',
-    config: JSON.stringify({ url: `https://news.google.com/rss/search?q=${encodeURIComponent('"artificial intelligence" accounting firm')}&hl=en-US&gl=US&ceid=US:en` }),
   },
 
   // --- Hacker News ---
@@ -220,105 +188,17 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'Xero Blog',
     config: JSON.stringify({ url: 'https://blog.xero.com/feed/', company: 'Xero' }),
   },
-
-  // --- Big 4 + Consulting Firm Blogs ---
-  {
-    id: 'blog-deloitte',
-    source_type: 'companyblog',
-    name: 'Deloitte Insights',
-    config: JSON.stringify({ url: 'https://www2.deloitte.com/us/en/insights/feed.rss.xml', company: 'Deloitte' }),
-  },
-  {
-    id: 'blog-pwc',
-    source_type: 'companyblog',
-    name: 'PwC Consulting',
-    config: JSON.stringify({ url: 'https://www.pwc.com/us/en/services/consulting/feeds/consulting-rss.xml', company: 'PwC' }),
-  },
-  {
-    id: 'blog-ey',
-    source_type: 'companyblog',
-    name: 'EY Insights',
-    config: JSON.stringify({ url: 'https://www.ey.com/en_us/rss-feeds/ey-insights-rss', company: 'EY' }),
-  },
-  {
-    id: 'blog-kpmg',
-    source_type: 'companyblog',
-    name: 'KPMG Advisory',
-    config: JSON.stringify({ url: 'https://kpmg.com/us/en/rss/advisory.xml', company: 'KPMG' }),
-  },
   {
     id: 'blog-mckinsey',
     source_type: 'companyblog',
     name: 'McKinsey Technology',
-    config: JSON.stringify({ url: 'https://www.mckinsey.com/rss/practice/technology.rss', company: 'McKinsey' }),
-  },
-  {
-    id: 'blog-accenture',
-    source_type: 'companyblog',
-    name: 'Accenture Tech Innovation',
-    config: JSON.stringify({ url: 'https://www.accenture.com/us-en/blogs/rss/technology-innovation', company: 'Accenture' }),
-  },
-
-  // --- AI + Accounting Startup Blogs ---
-  {
-    id: 'blog-floqast',
-    source_type: 'companyblog',
-    name: 'FloQast Blog',
-    config: JSON.stringify({ url: 'https://floqast.com/blog/feed/', company: 'FloQast' }),
-  },
-  {
-    id: 'blog-blackline',
-    source_type: 'companyblog',
-    name: 'BlackLine Blog',
-    config: JSON.stringify({ url: 'https://www.blackline.com/blog/feed/', company: 'BlackLine' }),
-  },
-  {
-    id: 'blog-auditboard',
-    source_type: 'companyblog',
-    name: 'AuditBoard Blog',
-    config: JSON.stringify({ url: 'https://www.auditboard.com/blog/feed/', company: 'AuditBoard' }),
-  },
-  {
-    id: 'blog-workiva',
-    source_type: 'companyblog',
-    name: 'Workiva Blog',
-    config: JSON.stringify({ url: 'https://www.workiva.com/blog/rss.xml', company: 'Workiva' }),
-  },
-  {
-    id: 'blog-numeric',
-    source_type: 'companyblog',
-    name: 'Numeric Blog',
-    config: JSON.stringify({ url: 'https://www.numeric.io/blog/rss.xml', company: 'Numeric' }),
-  },
-  {
-    id: 'blog-truewind',
-    source_type: 'companyblog',
-    name: 'Truewind Blog',
-    config: JSON.stringify({ url: 'https://www.truewind.ai/blog/rss.xml', company: 'Truewind' }),
-  },
-  {
-    id: 'blog-zeni',
-    source_type: 'companyblog',
-    name: 'Zeni Blog',
-    config: JSON.stringify({ url: 'https://www.zeni.ai/blog/rss.xml', company: 'Zeni' }),
+    config: JSON.stringify({ url: 'https://www.mckinsey.com/insights/rss', company: 'McKinsey' }),
   },
   {
     id: 'blog-keepertax',
     source_type: 'companyblog',
     name: 'Keeper Tax Blog',
-    config: JSON.stringify({ url: 'https://www.keepertax.com/blog/rss.xml', company: 'Keeper Tax' }),
-  },
-  {
-    id: 'blog-vicai',
-    source_type: 'companyblog',
-    name: 'Vic.ai Blog',
-    config: JSON.stringify({ url: 'https://www.vic.ai/blog/rss.xml', company: 'Vic.ai' }),
-  },
-  {
-    id: 'blog-planful',
-    source_type: 'companyblog',
-    name: 'Planful Blog',
-    config: JSON.stringify({ url: 'https://planful.com/blog/feed/', company: 'Planful' }),
+    config: JSON.stringify({ url: 'https://www.keepertax.com/posts/rss.xml', company: 'Keeper Tax' }),
   },
 
   // --- Blog Scrapers (companies without RSS feeds) ---
@@ -347,16 +227,10 @@ export const SEED_SOURCES: SeedSource[] = [
     config: JSON.stringify({ url: 'https://www.campfire.ai/blog', articlePathPrefix: '/blog/', company: 'Campfire' }),
   },
   {
-    id: 'scrape-gridlex',
-    source_type: 'blogscraper',
-    name: 'Gridlex Blog',
-    config: JSON.stringify({ url: 'https://www.gridlex.com/blog', articlePathPrefix: '/blog/', company: 'Gridlex' }),
-  },
-  {
     id: 'scrape-trovata',
     source_type: 'blogscraper',
     name: 'Trovata Blog',
-    config: JSON.stringify({ url: 'https://trovata.io/resources/blog/', articlePathPrefix: '/resources/blog/', company: 'Trovata' }),
+    config: JSON.stringify({ url: 'https://trovata.io/blog/', articlePathPrefix: '/blog/', company: 'Trovata' }),
   },
 
   // --- Y Combinator ---
