@@ -281,14 +281,7 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     contentSnippet: (row.content_snippet as string) || null,
     imageUrl: (row.image_url as string) || null,
     relevanceScore: row.relevance_score as number | null,
-<<<<<<< HEAD
     qualityScore: row.quality_score as number | null,
-=======
-    qualityScore: (row.quality_score as number | null) ?? null,
-    socialScore: (row.social_score as number | null) ?? null,
-    commentCount: (row.comment_count as number | null) ?? null,
-    companyMentions,
->>>>>>> worktree-agent-a0580f41
     aiSummary: (row.ai_summary as string) || null,
     tags,
     isPublished: row.is_published === 1,

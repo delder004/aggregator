@@ -67,6 +67,7 @@ export interface ScoredArticle extends CollectedArticle {
 export interface Company {
   id: string;
   name: string;
+  aliases: string[];
   website: string | null;
   description: string | null;
   category: string | null;

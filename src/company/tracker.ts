@@ -1,4 +1,4 @@
-import type { Article, ScoredArticle, SourceType } from '../types';
+import type { Article, Company, ScoredArticle, SourceType } from '../types';
 
 /**
  * Company entity manager for tracking accounting AI companies.
@@ -10,18 +10,6 @@ import type { Article, ScoredArticle, SourceType } from '../types';
  * - Update company stats (article count, last mentioned date)
  * - Seed default accounting AI companies
  */
-
-/** A tracked company entity. */
-export interface Company {
-  id: string;
-  name: string;
-  aliases: string[];
-  website: string | null;
-  description: string | null;
-  isActive: boolean;
-  articleCount: number;
-  lastMentionedAt: string | null;
-}
 
 /**
  * Get all active tracked companies from the database.

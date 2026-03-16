@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS sources (
 CREATE TABLE IF NOT EXISTS companies (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
+    aliases TEXT DEFAULT '[]',
     website TEXT,
     description TEXT,
     category TEXT,
