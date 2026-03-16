@@ -139,22 +139,36 @@ export default {
     console.log(`New articles after dedup: ${newArticles.length}`);
 
     // 4. Score new articles with Claude Haiku
-    let scored = newArticles.map((a) => ({
+    // Cap per-run to avoid hitting Workers CPU time limits
+    const MAX_SCORE_PER_RUN = 50;
+    const toScore = newArticles.slice(0, MAX_SCORE_PER_RUN);
+    const unscored = newArticles.slice(MAX_SCORE_PER_RUN);
+
+    let scored = toScore.map((a) => ({
       ...a,
       relevanceScore: 0,
       aiSummary: '',
       tags: [] as string[],
     }));
 
-    if (newArticles.length > 0) {
+    if (toScore.length > 0) {
       try {
-        scored = await scoreArticles(newArticles, env);
-        console.log(`Scored ${scored.length} articles`);
+        scored = await scoreArticles(toScore, env);
+        console.log(`Scored ${scored.length} articles (${unscored.length} deferred to next run)`);
       } catch (err) {
         console.error('Scoring pipeline failed:', err);
-        // Articles keep score 0 — they won't be published (below threshold)
       }
     }
+
+    // Store unscored articles with score 0 so they're deduped on next run
+    // but won't appear on the site (below 40 threshold)
+    const unscoredEntries = unscored.map((a) => ({
+      ...a,
+      relevanceScore: 0,
+      aiSummary: '',
+      tags: [] as string[],
+    }));
+    scored = [...scored, ...unscoredEntries];
 
     // 5. Store scored articles in D1
     let insertedCount = 0;

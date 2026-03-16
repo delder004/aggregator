@@ -1,7 +1,7 @@
 import type { CollectedArticle, ScoredArticle, Env } from '../types';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20241022';
+const MODEL = 'claude-haiku-4-5-20251001';
 
 const ALLOWED_TAGS = new Set([
   'audit',
