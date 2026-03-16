@@ -36,13 +36,16 @@ export async function upsertCompany(
   try {
     await db
       .prepare(
-        `INSERT INTO companies (id, name, aliases, website, description, is_active, last_mentioned_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO companies (id, name, aliases, website, description, category, funding_stage, logo_url, is_active, added_at, last_mentioned_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            name = excluded.name,
            aliases = excluded.aliases,
            website = excluded.website,
            description = excluded.description,
+           category = COALESCE(excluded.category, companies.category),
+           funding_stage = COALESCE(excluded.funding_stage, companies.funding_stage),
+           logo_url = COALESCE(excluded.logo_url, companies.logo_url),
            is_active = excluded.is_active,
            last_mentioned_at = COALESCE(excluded.last_mentioned_at, companies.last_mentioned_at)`
       )
@@ -52,7 +55,11 @@ export async function upsertCompany(
         JSON.stringify(company.aliases),
         company.website,
         company.description,
+        company.category,
+        company.fundingStage,
+        company.logoUrl,
         company.isActive ? 1 : 0,
+        company.addedAt,
         company.lastMentionedAt
       )
       .run();
@@ -221,7 +228,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['QuickBooks', 'QuickBooks AI', 'TurboTax', 'Mailchimp'],
       website: 'https://www.intuit.com',
       description: 'Financial software platform including QuickBooks, TurboTax, and Mailchimp',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -230,7 +241,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Xero AI'],
       website: 'https://www.xero.com',
       description: 'Cloud-based accounting software for small businesses',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -239,7 +254,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Sage Intacct', 'Sage AI'],
       website: 'https://www.sage.com',
       description: 'Business management software including accounting and ERP',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -248,7 +267,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.blackline.com',
       description: 'Cloud-based financial close management and accounting automation',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -257,7 +280,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Vic AI', 'VicAI'],
       website: 'https://www.vic.ai',
       description: 'AI-powered autonomous accounting platform',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -266,7 +293,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Truewind AI'],
       website: 'https://www.truewind.ai',
       description: 'AI-powered bookkeeping and finance for startups',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -275,7 +306,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Docyt AI'],
       website: 'https://www.docyt.com',
       description: 'AI-powered accounting automation platform',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -284,7 +319,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.botkeeper.com',
       description: 'Automated bookkeeping powered by AI and machine learning',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -293,7 +332,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Bench Accounting', 'Bench AI'],
       website: 'https://www.bench.co',
       description: 'Online bookkeeping service with AI-powered features',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -302,7 +345,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.stampli.com',
       description: 'AI-powered accounts payable automation',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -311,7 +358,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.tipalti.com',
       description: 'Global payables automation platform',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -320,7 +371,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.floqast.com',
       description: 'Accounting workflow automation for the close process',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -329,7 +384,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.prophix.com',
       description: 'Financial performance management and budgeting platform',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -338,7 +397,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Host Analytics'],
       website: 'https://www.planful.com',
       description: 'Financial planning and analysis platform',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -347,7 +410,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Digits AI', 'Digits Financial'],
       website: 'https://www.digits.com',
       description: 'AI-powered finance and accounting tools for businesses',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -356,7 +423,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Puzzle Accounting', 'Puzzle AI'],
       website: 'https://www.puzzle.io',
       description: 'AI-native accounting software for startups',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -365,7 +436,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Layer App'],
       website: 'https://www.golayer.io',
       description: 'Collaborative accounting platform for firms and clients',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -374,7 +449,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Ramp Financial'],
       website: 'https://www.ramp.com',
       description: 'Corporate card and spend management platform with AI',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -383,7 +462,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: [],
       website: 'https://www.brex.com',
       description: 'AI-powered spend platform for businesses',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
     {
@@ -392,7 +475,11 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       aliases: ['Pilot.com'],
       website: 'https://www.pilot.com',
       description: 'Bookkeeping, CFO, and tax services for startups',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: new Date().toISOString(),
       lastMentionedAt: null,
     },
   ];
@@ -439,7 +526,11 @@ function mapRowToCompany(row: Record<string, unknown>): Company {
     aliases,
     website: (row.website as string) || null,
     description: (row.description as string) || null,
+    category: (row.category as string) || null,
+    fundingStage: (row.funding_stage as string) || null,
+    logoUrl: (row.logo_url as string) || null,
     isActive: row.is_active === 1,
+    addedAt: (row.added_at as string) || new Date().toISOString(),
     articleCount: (row.article_count as number) || 0,
     lastMentionedAt: (row.last_mentioned_at as string) || null,
   };
@@ -455,6 +546,12 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
   } catch {
     tags = [];
   }
+  let companyMentions: string[] = [];
+  try {
+    companyMentions = JSON.parse((row.company_mentions as string) || '[]');
+  } catch {
+    companyMentions = [];
+  }
 
   return {
     id: row.id as string,
@@ -468,8 +565,12 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     contentSnippet: (row.content_snippet as string) || null,
     imageUrl: (row.image_url as string) || null,
     relevanceScore: row.relevance_score as number | null,
+    qualityScore: row.quality_score as number | null,
     aiSummary: (row.ai_summary as string) || null,
     tags,
     isPublished: row.is_published === 1,
+    socialScore: row.social_score as number | null,
+    commentCount: row.comment_count as number | null,
+    companyMentions,
   };
 }

@@ -8,8 +8,7 @@ import {
   getArticlesForCompany,
   seedDefaultCompanies,
 } from './tracker';
-import type { Company } from './tracker';
-import type { ScoredArticle } from '../types';
+import type { Company, ScoredArticle } from '../types';
 
 describe('tracker module exports', () => {
   it('should export getTrackedCompanies function', () => {
@@ -49,7 +48,11 @@ describe('matchArticleToCompanies', () => {
       aliases: ['QuickBooks', 'QuickBooks AI'],
       website: 'https://www.intuit.com',
       description: 'Financial software',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
     },
@@ -59,7 +62,11 @@ describe('matchArticleToCompanies', () => {
       aliases: [],
       website: 'https://www.xero.com',
       description: 'Cloud accounting',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
     },
@@ -69,7 +76,11 @@ describe('matchArticleToCompanies', () => {
       aliases: ['Vic AI', 'VicAI'],
       website: 'https://www.vic.ai',
       description: 'AI accounting',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
     },
@@ -79,7 +90,11 @@ describe('matchArticleToCompanies', () => {
       aliases: ['Sage Intacct'],
       website: 'https://www.sage.com',
       description: 'Business software',
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
       isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
     },
@@ -96,8 +111,10 @@ describe('matchArticleToCompanies', () => {
       contentSnippet: null,
       imageUrl: null,
       relevanceScore: 80,
+      qualityScore: 60,
       aiSummary: '',
       tags: [],
+      companyMentions: [],
       ...overrides,
     };
   }
