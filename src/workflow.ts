@@ -28,7 +28,7 @@ import { generateInsights } from './insights/generator';
 
 const MAX_SCORE_PER_RUN = 50;
 const ENRICH_LIMIT = 20;
-const SOURCES_PER_BATCH = 20;
+const SOURCES_PER_BATCH = 10;
 
 interface CollectBatchResult {
   articles: CollectedArticle[];
@@ -115,10 +115,15 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
-    // Step 1b: Collect articles in batches (each batch gets its own subrequest budget)
+    // Step 1b: Collect articles in batches
+    // Each batch is separated by step.sleep() to force the workflow to checkpoint
+    // and resume in a new invocation with a fresh subrequest budget.
     const batchResults: CollectBatchResult[] = [];
     const batchCount = Math.ceil(sources.length / SOURCES_PER_BATCH);
     for (let b = 0; b < batchCount; b++) {
+      if (b > 0) {
+        await step.sleep(`collect-pause-${b}`, '1 second');
+      }
       const start = b * SOURCES_PER_BATCH;
       const batchSources = sources.slice(start, start + SOURCES_PER_BATCH);
       const result = await step.do(
@@ -173,6 +178,9 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
     const allCollected = batchResults.flatMap(r => r.articles);
     const allSourceUpdates = batchResults.flatMap(r => r.sourceUpdates);
     console.log(`Total collected: ${allCollected.length} articles from ${sources.length} sources`);
+
+    // Sleep before store-and-score to get fresh subrequest budget
+    await step.sleep('pre-store-pause', '1 second');
 
     // Step 1c: Store and score articles
     const collection = await step.do(
@@ -326,6 +334,8 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
+    await step.sleep('pre-backfill-pause', '1 second');
+
     // Step 2: Backfill scoring for previously unscored articles
     const backfill = await step.do(
       'backfill-scoring',
@@ -387,6 +397,8 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
         }
       }
     );
+
+    await step.sleep('pre-company-pause', '1 second');
 
     // Step 3: Company tracking
     const companyTracking = await step.do(
@@ -461,6 +473,8 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
+    await step.sleep('pre-insights-pause', '1 second');
+
     // Step 4: Generate insights
     const insights = await step.do(
       'generate-insights',
@@ -483,6 +497,8 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
         }
       }
     );
+
+    await step.sleep('pre-render-pause', '1 second');
 
     // Step 5: Render pages
     const rendering = await step.do(
