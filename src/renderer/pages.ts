@@ -15,11 +15,13 @@ import {
   trendingTags,
   timeGroup,
   escapeHtml,
+  renderSourceClusters,
   insightCard,
   insightNav,
   periodToSlug,
   type LayoutOptions,
 } from './html';
+import { diversifyFeatured } from './diversity';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -75,16 +77,23 @@ function countTags(articles: Article[]): { tag: string; count: number }[] {
 function renderTimeGrouped(articles: Article[]): string {
   if (articles.length === 0) return '';
 
-  let html = '';
-  let currentGroup = '';
+  // Collect articles into time-group buckets while preserving order
+  const groups: { label: string; articles: Article[] }[] = [];
+  let currentLabel = '';
 
   for (const article of articles) {
-    const group = timeGroup(article.publishedAt);
-    if (group !== currentGroup) {
-      currentGroup = group;
-      html += `<div class="time-group">${escapeHtml(group)}</div>\n`;
+    const label = timeGroup(article.publishedAt);
+    if (label !== currentLabel) {
+      currentLabel = label;
+      groups.push({ label, articles: [] });
     }
-    html += articleCard(article);
+    groups[groups.length - 1].articles.push(article);
+  }
+
+  let html = '';
+  for (const g of groups) {
+    html += `<div class="time-group">${escapeHtml(g.label)}</div>\n`;
+    html += renderSourceClusters(g.articles);
   }
 
   return html;
@@ -114,7 +123,7 @@ function generateHomepage(
   // Featured section — 2-column grid on desktop
   if (sortedFeatured.length > 0) {
     body += `<div class="section-label">Featured</div>\n`;
-    const topFeatured = sortedFeatured.slice(0, 6);
+    const topFeatured = diversifyFeatured(sortedFeatured, 1, 6);
     body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
     body += `\n</div>\n`;
@@ -251,15 +260,20 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
   <h2>How It Works</h2>
   <p>
     Every hour, our system collects new content from RSS feeds, Reddit,
-    Hacker News, YouTube, and arXiv. Each article is scored for relevance
-    by an AI classifier (Claude by Anthropic). Articles scoring above our
-    relevance threshold are published to the feed. High-scoring articles
-    receive featured placement.
+    Hacker News, YouTube, arXiv, Substack newsletters, and company blogs.
+    Each article is scored for both relevance and quality by an AI classifier
+    (Claude by Anthropic). Articles scoring above our relevance threshold
+    are published to the feed. High-scoring articles receive featured placement.
+  </p>
+  <p>
+    We also track key companies in the AI-accounting space, linking articles
+    to the companies they mention. This makes it easy to follow developments
+    around specific vendors and startups.
   </p>
   <p>
     There is no editorial staff. The entire pipeline — collection, scoring,
-    and publishing — is automated. This means the feed is comprehensive and
-    timely, though occasional off-topic results may slip through.
+    company tracking, and publishing — is automated. This means the feed is
+    comprehensive and timely, though occasional off-topic results may slip through.
   </p>
 
   <h2>Sources</h2>
@@ -268,11 +282,14 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
     <li><strong>RSS feeds:</strong> Accounting Today, Journal of Accountancy,
       Going Concern, CPA Practice Advisor, AccountingWeb, TechCrunch AI,
       VentureBeat AI, and select newsletters and podcasts</li>
+    <li><strong>Substack:</strong> AI and accounting-focused newsletters</li>
     <li><strong>Reddit:</strong> r/accounting, r/artificial, r/MachineLearning,
       r/fintech, r/Bookkeeping, r/taxpros</li>
     <li><strong>Hacker News:</strong> AI + accounting keyword searches</li>
     <li><strong>YouTube:</strong> Key channels and topic searches</li>
     <li><strong>arXiv:</strong> CS/AI papers related to accounting and finance</li>
+    <li><strong>Company blogs:</strong> Direct tracking of AI-accounting vendors</li>
+    <li><strong>Press releases:</strong> Product launches and industry news</li>
   </ul>
 
   <h2>Technical Details</h2>

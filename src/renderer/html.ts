@@ -28,15 +28,19 @@ const NAV_TAGS: { label: string; slug: string }[] = [
   { label: 'Startups', slug: 'startup' },
   { label: 'Big 4', slug: 'big-4' },
   { label: 'Research', slug: 'research' },
+  { label: 'Companies', slug: 'companies' },
 ];
 
 // Source type badge colors
 const SOURCE_COLORS: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
-  hn:      { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
-  reddit:  { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
-  youtube: { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
-  arxiv:   { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
-  rss:     { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
+  hn:          { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
+  reddit:      { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
+  youtube:     { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
+  arxiv:       { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
+  rss:         { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
+  substack:    { bg: '#ff681515', text: '#ff6815', darkBg: '#ff681525', darkText: '#ff8c42' },
+  producthunt: { bg: '#da552f15', text: '#da552f', darkBg: '#da552f25', darkText: '#e8774f' },
+  ycombinator: { bg: '#f2652215', text: '#f26522', darkBg: '#f2652225', darkText: '#f5844e' },
 };
 
 // ---------------------------------------------------------------------------
@@ -250,6 +254,35 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .source-badge.youtube{background:var(--yt-bg,#ff000012);color:var(--yt-text,#cc0000);}
 .source-badge.arxiv{background:var(--arxiv-bg,#b3131315);color:var(--arxiv-text,#b31313);}
 .source-badge.rss{background:var(--rss-bg,#ee802015);color:var(--rss-text,#c06010);}
+.source-badge.substack{background:var(--substack-bg,#ff681515);color:var(--substack-text,#ff6815);}
+.source-badge.producthunt{background:var(--ph-bg,#da552f15);color:var(--ph-text,#da552f);}
+.source-badge.ycombinator{background:var(--yc-bg,#f2652215);color:var(--yc-text,#f26522);}
+.quality-badge{
+  display:inline-block;
+  font-size:0.6rem;
+  font-weight:700;
+  color:var(--accent);
+  margin-left:0.15rem;
+  vertical-align:middle;
+  letter-spacing:0.02em;
+}
+.social-score{
+  display:inline-flex;
+  align-items:center;
+  gap:0.15rem;
+  font-size:0.72rem;
+  font-weight:600;
+  color:var(--score-high);
+}
+.company-tag{
+  font-size:0.68rem;
+  padding:0.1rem 0.4rem;
+  border-radius:100px;
+  background:var(--accent-subtle);
+  color:var(--accent);
+  font-weight:500;
+}
+.company-tag:hover{background:var(--accent);color:#fff;text-decoration:none;}
 .meta-dot{color:var(--text-tertiary);}
 .article-summary{
   font-size:0.82rem;
@@ -403,6 +436,33 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .about-content ul{margin:0.5rem 0 0.75rem 1.5rem;color:var(--text-secondary);}
 .about-content li{margin-bottom:0.3rem;}
 
+/* Source clustering */
+.cluster-more{
+  margin:-0.25rem 0 0.5rem;
+  border:none;
+}
+.cluster-more summary{
+  font-size:0.78rem;
+  font-weight:500;
+  color:var(--accent);
+  cursor:pointer;
+  padding:0.35rem 0;
+  list-style:none;
+}
+.cluster-more summary::-webkit-details-marker{display:none;}
+.cluster-more summary::before{
+  content:'+ ';
+  font-weight:600;
+}
+.cluster-more[open] summary::before{
+  content:'− ';
+}
+.cluster-more .article-card{
+  border-left:2px solid var(--border);
+  padding-left:0.75rem;
+  margin-left:0.25rem;
+}
+
 /* Dark mode badge overrides */
 @media (prefers-color-scheme: dark) {
   .source-badge.hn{background:#ff660025;color:#ff8533;}
@@ -410,6 +470,9 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   .source-badge.youtube{background:#ff000020;color:#ff4444;}
   .source-badge.arxiv{background:#b3131325;color:#e05555;}
   .source-badge.rss{background:#ee802025;color:#eea050;}
+  .source-badge.substack{background:#ff681525;color:#ff8c42;}
+  .source-badge.producthunt{background:#da552f25;color:#e8774f;}
+  .source-badge.ycombinator{background:#f2652225;color:#f5844e;}
 }
 
 /* Responsive */
@@ -545,12 +608,15 @@ function scoreClass(score: number | null): string {
 /** Map source type to badge label and CSS class. */
 function sourceBadge(type: string): { label: string; cls: string } {
   switch (type) {
-    case 'reddit':  return { label: 'Reddit', cls: 'reddit' };
-    case 'hn':      return { label: 'HN', cls: 'hn' };
-    case 'youtube': return { label: 'YouTube', cls: 'youtube' };
-    case 'arxiv':   return { label: 'arXiv', cls: 'arxiv' };
-    case 'rss':     return { label: 'RSS', cls: 'rss' };
-    default:        return { label: type, cls: 'rss' };
+    case 'reddit':      return { label: 'Reddit', cls: 'reddit' };
+    case 'hn':          return { label: 'HN', cls: 'hn' };
+    case 'youtube':     return { label: 'YouTube', cls: 'youtube' };
+    case 'arxiv':       return { label: 'arXiv', cls: 'arxiv' };
+    case 'rss':         return { label: 'RSS', cls: 'rss' };
+    case 'substack':    return { label: 'Substack', cls: 'substack' };
+    case 'producthunt': return { label: 'PH', cls: 'producthunt' };
+    case 'ycombinator': return { label: 'YC', cls: 'ycombinator' };
+    default:            return { label: type, cls: 'rss' };
   }
 }
 
@@ -579,9 +645,23 @@ export function articleCard(article: Article): string {
     ? `<img class="article-thumb" src="${escapeHtml(article.imageUrl)}" alt="" loading="lazy" />`
     : '';
 
+  const qualityBadge = article.qualityScore && article.qualityScore >= 70
+    ? `<span class="quality-badge">HQ</span>`
+    : '';
+
+  const socialDisplay = article.socialScore && article.socialScore > 0
+    ? `<span class="meta-dot">&middot;</span> <span class="social-score">&blacktriangle; ${article.socialScore}</span>`
+    : '';
+
   const tags = article.tags.length
     ? `<div class="article-tags">${article.tags
         .map((t) => `<a href="/tag/${escapeHtml(t)}">${escapeHtml(t)}</a>`)
+        .join('')}</div>`
+    : '';
+
+  const companyTags = article.companyMentions && article.companyMentions.length > 0
+    ? `<div class="article-tags">${article.companyMentions
+        .map((c) => `<a class="company-tag" href="/companies">${escapeHtml(c)}</a>`)
         .join('')}</div>`
     : '';
 
@@ -590,13 +670,14 @@ export function articleCard(article: Article): string {
   <div class="article-body">
     <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
     <div class="article-meta">
-      <span class="${sClass} score-dot"></span>
+      <span class="${sClass} score-dot"></span>${qualityBadge}
       <span class="source-name">${escapeHtml(article.sourceName)}</span>
       <span class="source-badge ${badge.cls}">${badge.label}</span>
-      ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
+      ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
     ${tags}
+    ${companyTags}
   </div>
 </article>`;
 }
@@ -630,7 +711,14 @@ export function featuredCard(article: Article): string {
 /** Render the tag navigation bar. */
 export function tagNav(activeTag: string): string {
   const links = NAV_TAGS.map((t) => {
-    const href = t.slug ? `/tag/${t.slug}` : '/';
+    let href: string;
+    if (!t.slug) {
+      href = '/';
+    } else if (t.slug === 'companies') {
+      href = '/companies';
+    } else {
+      href = `/tag/${t.slug}`;
+    }
     const cls = t.slug === activeTag ? ' class="active"' : '';
     return `<a href="${href}"${cls}>${escapeHtml(t.label)}</a>`;
   }).join('\n    ');
@@ -657,6 +745,78 @@ export function trendingTags(tagCounts: { tag: string; count: number }[]): strin
   <div class="trending-bar">
     ${items}
   </div>`;
+}
+
+/**
+ * Render articles with source clustering.
+ *
+ * Groups articles by `sourceName`. If a source has 2+ articles whose
+ * `publishedAt` dates are all within 2 weeks of each other, the first
+ * (newest) article is shown as a full card and the rest are wrapped in
+ * a `<details class="cluster-more">` disclosure element.
+ */
+export function renderSourceClusters(articles: Article[]): string {
+  if (articles.length === 0) return '';
+
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+  // Group by sourceName
+  const bySource = new Map<string, Article[]>();
+  for (const a of articles) {
+    const key = a.sourceName;
+    if (!bySource.has(key)) bySource.set(key, []);
+    bySource.get(key)!.push(a);
+  }
+
+  interface Cluster {
+    newestDate: number;
+    articles: Article[];
+  }
+
+  const clusters: Cluster[] = [];
+
+  for (const [, sourceArticles] of bySource) {
+    const sorted = [...sourceArticles].sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+
+    let subCluster: Article[] = [sorted[0]];
+    let subClusterStart = new Date(sorted[0].publishedAt).getTime();
+
+    for (let i = 1; i < sorted.length; i++) {
+      const t = new Date(sorted[i].publishedAt).getTime();
+      if (subClusterStart - t <= TWO_WEEKS_MS) {
+        subCluster.push(sorted[i]);
+      } else {
+        clusters.push({ newestDate: subClusterStart, articles: subCluster });
+        subCluster = [sorted[i]];
+        subClusterStart = t;
+      }
+    }
+    clusters.push({ newestDate: subClusterStart, articles: subCluster });
+  }
+
+  clusters.sort((a, b) => b.newestDate - a.newestDate);
+
+  let html = '';
+  for (const cluster of clusters) {
+    if (cluster.articles.length === 1) {
+      html += articleCard(cluster.articles[0]);
+    } else {
+      html += articleCard(cluster.articles[0]);
+      const remaining = cluster.articles.slice(1);
+      const sourceName = escapeHtml(cluster.articles[0].sourceName);
+      html += `<details class="cluster-more">\n`;
+      html += `  <summary>${remaining.length} more from ${sourceName}</summary>\n`;
+      for (const a of remaining) {
+        html += articleCard(a);
+      }
+      html += `</details>\n`;
+    }
+  }
+
+  return html;
 }
 
 /** Render pagination controls. */

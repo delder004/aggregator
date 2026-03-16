@@ -68,7 +68,7 @@ export function getPeriodsToGenerate(now: Date): PeriodWindow[] {
     const start = new Date(end);
     start.setUTCDate(start.getUTCDate() - 1);
 
-    const dateFormatted = formatLongDate(start);
+    const dateFormatted = formatShortDateWithYear(start);
     periods.push({
       periodType: 'daily',
       periodStart: start.toISOString(),
@@ -335,7 +335,3 @@ function formatShortDateWithYear(date: Date): string {
   return `${SHORT_MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
 }
 
-/** Format as "Mar 15, 2026" (same as short with year for daily digest) */
-function formatLongDate(date: Date): string {
-  return `${SHORT_MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
-}

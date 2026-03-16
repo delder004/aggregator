@@ -19,9 +19,16 @@ function processInline(text: string): string {
   let result = escapeHtml(text);
 
   // Links: [text](url) — process before bold/italic to avoid conflicts
+  // Only allow http/https URLs to prevent javascript: XSS
   result = result.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2">$1</a>'
+    (_match, linkText, url) => {
+      const decoded = url.replace(/&amp;/g, '&');
+      if (/^https?:\/\//i.test(decoded)) {
+        return `<a href="${url}">${linkText}</a>`;
+      }
+      return linkText;
+    }
   );
 
   // Bold: **text**
