@@ -403,6 +403,33 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .about-content ul{margin:0.5rem 0 0.75rem 1.5rem;color:var(--text-secondary);}
 .about-content li{margin-bottom:0.3rem;}
 
+/* Source clustering */
+.cluster-more{
+  margin:-0.25rem 0 0.5rem;
+  border:none;
+}
+.cluster-more summary{
+  font-size:0.78rem;
+  font-weight:500;
+  color:var(--accent);
+  cursor:pointer;
+  padding:0.35rem 0;
+  list-style:none;
+}
+.cluster-more summary::-webkit-details-marker{display:none;}
+.cluster-more summary::before{
+  content:'+ ';
+  font-weight:600;
+}
+.cluster-more[open] summary::before{
+  content:'− ';
+}
+.cluster-more .article-card{
+  border-left:2px solid var(--border);
+  padding-left:0.75rem;
+  margin-left:0.25rem;
+}
+
 /* Dark mode badge overrides */
 @media (prefers-color-scheme: dark) {
   .source-badge.hn{background:#ff660025;color:#ff8533;}
@@ -629,6 +656,101 @@ export function trendingTags(tagCounts: { tag: string; count: number }[]): strin
   <div class="trending-bar">
     ${items}
   </div>`;
+}
+
+/**
+ * Render articles with source clustering.
+ *
+ * Groups articles by `sourceName`. If a source has 2+ articles whose
+ * `publishedAt` dates are all within 2 weeks of each other, the first
+ * (newest) article is shown as a full card and the rest are wrapped in
+ * a `<details class="cluster-more">` disclosure element.
+ *
+ * Articles from the same source that span more than 2 weeks are split
+ * into separate sub-clusters.
+ *
+ * Source groups are ordered by the newest article in each group so the
+ * most recent content appears first.
+ */
+export function renderSourceClusters(articles: Article[]): string {
+  if (articles.length === 0) return '';
+
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+  // Group by sourceName
+  const bySource = new Map<string, Article[]>();
+  for (const a of articles) {
+    const key = a.sourceName;
+    if (!bySource.has(key)) bySource.set(key, []);
+    bySource.get(key)!.push(a);
+  }
+
+  // Build renderable clusters: each cluster is an array of articles
+  // that belong to the same source and are within 2 weeks of each other.
+  interface Cluster {
+    newestDate: number;
+    articles: Article[];
+  }
+
+  const clusters: Cluster[] = [];
+
+  for (const [, sourceArticles] of bySource) {
+    // Sort newest-first within each source
+    const sorted = [...sourceArticles].sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
+
+    // Split into sub-clusters where every article is within 2 weeks of the
+    // first article in that sub-cluster.
+    let subCluster: Article[] = [sorted[0]];
+    let subClusterStart = new Date(sorted[0].publishedAt).getTime();
+
+    for (let i = 1; i < sorted.length; i++) {
+      const t = new Date(sorted[i].publishedAt).getTime();
+      if (subClusterStart - t <= TWO_WEEKS_MS) {
+        subCluster.push(sorted[i]);
+      } else {
+        // Finalize previous sub-cluster and start a new one
+        clusters.push({
+          newestDate: subClusterStart,
+          articles: subCluster,
+        });
+        subCluster = [sorted[i]];
+        subClusterStart = t;
+      }
+    }
+    // Push the last sub-cluster
+    clusters.push({
+      newestDate: subClusterStart,
+      articles: subCluster,
+    });
+  }
+
+  // Sort clusters by newest article date descending
+  clusters.sort((a, b) => b.newestDate - a.newestDate);
+
+  // Render
+  let html = '';
+  for (const cluster of clusters) {
+    if (cluster.articles.length === 1) {
+      html += articleCard(cluster.articles[0]);
+    } else {
+      // First article rendered as full card
+      html += articleCard(cluster.articles[0]);
+      // Remaining articles inside a <details> disclosure
+      const remaining = cluster.articles.slice(1);
+      const sourceName = escapeHtml(cluster.articles[0].sourceName);
+      html += `<details class="cluster-more">\n`;
+      html += `  <summary>${remaining.length} more from ${sourceName}</summary>\n`;
+      for (const a of remaining) {
+        html += articleCard(a);
+      }
+      html += `</details>\n`;
+    }
+  }
+
+  return html;
 }
 
 /** Render pagination controls. */

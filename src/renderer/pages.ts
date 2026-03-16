@@ -15,6 +15,7 @@ import {
   trendingTags,
   timeGroup,
   escapeHtml,
+  renderSourceClusters,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured } from './diversity';
@@ -73,16 +74,23 @@ function countTags(articles: Article[]): { tag: string; count: number }[] {
 function renderTimeGrouped(articles: Article[]): string {
   if (articles.length === 0) return '';
 
-  let html = '';
-  let currentGroup = '';
+  // Collect articles into time-group buckets while preserving order
+  const groups: { label: string; articles: Article[] }[] = [];
+  let currentLabel = '';
 
   for (const article of articles) {
-    const group = timeGroup(article.publishedAt);
-    if (group !== currentGroup) {
-      currentGroup = group;
-      html += `<div class="time-group">${escapeHtml(group)}</div>\n`;
+    const label = timeGroup(article.publishedAt);
+    if (label !== currentLabel) {
+      currentLabel = label;
+      groups.push({ label, articles: [] });
     }
-    html += articleCard(article);
+    groups[groups.length - 1].articles.push(article);
+  }
+
+  let html = '';
+  for (const g of groups) {
+    html += `<div class="time-group">${escapeHtml(g.label)}</div>\n`;
+    html += renderSourceClusters(g.articles);
   }
 
   return html;
