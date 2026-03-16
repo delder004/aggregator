@@ -65,6 +65,11 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 - **No `this` in module exports.** Pipeline logic lives in a standalone `runPipeline()` function, not a method — both `scheduled()` and the `/cron` fetch route call it directly.
 - **Web APIs only.** No Node.js built-ins. Use `fetch`, `DOMParser`, `Response`, etc.
 
+## Workflow
+
+- **Always use worktrees.** All implementation work must be done in git worktrees (`isolation: "worktree"` for agents, or `EnterWorktree` for direct work) — never commit directly on main.
+- **Commit at logical milestones.** Break work into meaningful chunks and commit after each one, not just at the end.
+
 ## Parallel Agent Work
 
 When spawning agents for parallel work in this repo:
