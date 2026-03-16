@@ -15,9 +15,13 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     contentSnippet: 'This is a test snippet.',
     imageUrl: 'https://example.com/image.jpg',
     relevanceScore: 85,
+    qualityScore: 70,
     aiSummary: 'AI is transforming accounting workflows.',
     tags: ['agentic-ai', 'automation'],
     isPublished: true,
+    socialScore: null,
+    commentCount: null,
+    companyMentions: [],
     ...overrides,
   };
 }

@@ -172,8 +172,10 @@ async function runPipeline(env: Env): Promise<void> {
     let scored = toScore.map((a) => ({
       ...a,
       relevanceScore: 0,
+      qualityScore: 0,
       aiSummary: '',
       tags: [] as string[],
+      companyMentions: [] as string[],
     }));
 
     if (toScore.length > 0) {
@@ -191,8 +193,10 @@ async function runPipeline(env: Env): Promise<void> {
     const unscoredEntries = unscored.map((a) => ({
       ...a,
       relevanceScore: 0,
+      qualityScore: 0,
       aiSummary: '',
       tags: [] as string[],
+      companyMentions: [] as string[],
     }));
     const allToInsert = [...scored, ...unscoredEntries];
 

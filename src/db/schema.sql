@@ -10,16 +10,21 @@ CREATE TABLE IF NOT EXISTS articles (
     content_snippet TEXT,
     image_url TEXT,
     relevance_score INTEGER,
+    quality_score INTEGER,
     ai_summary TEXT,
     tags TEXT,
     is_published INTEGER DEFAULT 1,
-    scored_at TEXT
+    scored_at TEXT,
+    social_score INTEGER,
+    comment_count INTEGER,
+    company_mentions TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_published_at ON articles(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_relevance ON articles(relevance_score DESC);
 CREATE INDEX IF NOT EXISTS idx_source_type ON articles(source_type);
 CREATE INDEX IF NOT EXISTS idx_scored_at ON articles(scored_at);
+CREATE INDEX IF NOT EXISTS idx_quality ON articles(quality_score DESC);
 
 CREATE TABLE IF NOT EXISTS sources (
     id TEXT PRIMARY KEY,
@@ -29,4 +34,29 @@ CREATE TABLE IF NOT EXISTS sources (
     is_active INTEGER DEFAULT 1,
     last_fetched_at TEXT,
     error_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS companies (
+    id TEXT PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    website TEXT,
+    description TEXT,
+    category TEXT,
+    funding_stage TEXT,
+    logo_url TEXT,
+    is_active INTEGER DEFAULT 1,
+    added_at TEXT NOT NULL,
+    last_mentioned_at TEXT,
+    article_count INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
+CREATE INDEX IF NOT EXISTS idx_companies_category ON companies(category);
+
+CREATE TABLE IF NOT EXISTS article_companies (
+    article_id TEXT NOT NULL,
+    company_id TEXT NOT NULL,
+    PRIMARY KEY (article_id, company_id),
+    FOREIGN KEY (article_id) REFERENCES articles(id),
+    FOREIGN KEY (company_id) REFERENCES companies(id)
 );

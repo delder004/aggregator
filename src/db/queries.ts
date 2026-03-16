@@ -220,6 +220,12 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
   } catch {
     tags = [];
   }
+  let companyMentions: string[] = [];
+  try {
+    companyMentions = JSON.parse((row.company_mentions as string) || '[]');
+  } catch {
+    companyMentions = [];
+  }
   return {
     id: row.id as string,
     url: row.url as string,
@@ -232,9 +238,13 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     contentSnippet: (row.content_snippet as string) || null,
     imageUrl: (row.image_url as string) || null,
     relevanceScore: row.relevance_score as number | null,
+    qualityScore: row.quality_score as number | null,
     aiSummary: (row.ai_summary as string) || null,
     tags,
     isPublished: row.is_published === 1,
+    socialScore: row.social_score as number | null,
+    commentCount: row.comment_count as number | null,
+    companyMentions,
   };
 }
 

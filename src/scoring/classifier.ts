@@ -76,9 +76,11 @@ export async function scoreArticles(
         return {
           ...article,
           relevanceScore: 0,
+          qualityScore: 0,
           aiSummary: '',
           tags: [],
-        } as ScoredArticle;
+          companyMentions: [],
+        };
       }
     });
     const scored = await Promise.all(promises);
@@ -107,8 +109,10 @@ async function scoreOneArticle(
     return {
       ...article,
       relevanceScore: parsed.relevanceScore,
+      qualityScore: 0,
       aiSummary: parsed.summary,
       tags: parsed.tags,
+      companyMentions: [],
     };
   } catch (firstError) {
     console.warn(
@@ -123,8 +127,10 @@ async function scoreOneArticle(
   return {
     ...article,
     relevanceScore: parsed.relevanceScore,
+    qualityScore: 0,
     aiSummary: parsed.summary,
     tags: parsed.tags,
+    companyMentions: [],
   };
 }
 

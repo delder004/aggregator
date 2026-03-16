@@ -12,12 +12,24 @@ export interface Article {
   contentSnippet: string | null;
   imageUrl: string | null;
   relevanceScore: number | null;
+  qualityScore: number | null;
   aiSummary: string | null;
   tags: string[];
   isPublished: boolean;
+  socialScore: number | null;
+  commentCount: number | null;
+  companyMentions: string[];
 }
 
-export type SourceType = 'rss' | 'reddit' | 'hn' | 'youtube' | 'arxiv';
+export type SourceType =
+  | 'rss'
+  | 'reddit'
+  | 'hn'
+  | 'youtube'
+  | 'arxiv'
+  | 'substack'
+  | 'producthunt'
+  | 'ycombinator';
 
 export interface SourceConfig {
   id: string;
@@ -38,12 +50,30 @@ export interface CollectedArticle {
   publishedAt: string;
   contentSnippet: string | null;
   imageUrl: string | null;
+  socialScore?: number;
+  commentCount?: number;
 }
 
 export interface ScoredArticle extends CollectedArticle {
   relevanceScore: number;
+  qualityScore: number;
   aiSummary: string;
   tags: string[];
+  companyMentions: string[];
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  website: string | null;
+  description: string | null;
+  category: string | null;
+  fundingStage: string | null;
+  logoUrl: string | null;
+  isActive: boolean;
+  addedAt: string;
+  lastMentionedAt: string | null;
+  articleCount: number;
 }
 
 export interface Collector {
@@ -58,4 +88,5 @@ export interface Env {
   REDDIT_CLIENT_ID?: string;
   REDDIT_CLIENT_SECRET?: string;
   YOUTUBE_API_KEY?: string;
+  PRODUCTHUNT_API_TOKEN?: string;
 }
