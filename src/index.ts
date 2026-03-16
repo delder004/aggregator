@@ -1,4 +1,4 @@
-import type { Env, CollectedArticle, Collector, SourceConfig } from './types';
+import type { Env, CollectedArticle, Collector, SourceConfig, InsightSummary } from './types';
 import { rssCollector } from './collectors/rss';
 import { createRedditCollector } from './collectors/reddit';
 import { hackerNewsCollector } from './collectors/hackernews';
@@ -13,9 +13,12 @@ import {
   getUnscoredArticles,
   updateArticleScore,
   updateSource,
+  insertSummary,
+  getAllRecentSummaries,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
+import { generateInsights } from './insights/generator';
 
 function getCollector(
   sourceType: string,
@@ -272,6 +275,20 @@ async function runPipeline(env: Env): Promise<void> {
       }
     }
 
+    // 5c. Generate insight summaries
+    let summaries: InsightSummary[] = [];
+    try {
+      const generated = await generateInsights(env);
+      if (generated.length > 0) {
+        for (const summary of generated) {
+          await insertSummary(env.DB, summary);
+        }
+        console.log(`Generated ${generated.length} insight summaries`);
+      }
+    } catch (err) {
+      console.error('Insight generation failed:', err);
+    }
+
     // 6. Regenerate all HTML pages
     try {
       const thirtyDaysAgo = new Date(
@@ -287,13 +304,20 @@ async function runPipeline(env: Env): Promise<void> {
       const featuredArticles = await getFeaturedArticles(env.DB, 10);
       const tags = await getAllUniqueTags(env.DB);
 
+      // Fetch all recent summaries for insights pages
+      try {
+        summaries = await getAllRecentSummaries(env.DB);
+      } catch (err) {
+        console.error('Failed to fetch summaries:', err);
+      }
+
       const totalArticles = recentArticles.length;
       const lastUpdated = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
       const pages = generateAllPages(recentArticles, featuredArticles, tags, {
         sources: sources.length,
         articles: totalArticles,
         lastUpdated,
-      });
+      }, summaries);
 
       const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
       pages['/feed.xml'] = rssFeed;
