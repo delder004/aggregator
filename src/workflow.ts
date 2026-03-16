@@ -456,15 +456,15 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
       },
       async () => {
         try {
-          const thirtyDaysAgo = new Date(
-            Date.now() - 30 * 24 * 60 * 60 * 1000
+          const ninetyDaysAgo = new Date(
+            Date.now() - 90 * 24 * 60 * 60 * 1000
           ).toISOString();
           const publishedArticles = await getPublishedArticles(this.env.DB, {
             limit: 1000,
             minScore: MIN_PUBLISH_SCORE,
           });
           const recentArticles = publishedArticles.filter(
-            (a) => a.publishedAt >= thirtyDaysAgo
+            (a) => a.publishedAt >= ninetyDaysAgo
           );
           const featuredArticles = await getFeaturedArticles(this.env.DB, 10);
           const tags = await getAllUniqueTags(this.env.DB);
