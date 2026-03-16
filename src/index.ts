@@ -111,7 +111,7 @@ export default {
   },
 };
 
-const MAX_SCORE_PER_RUN = 100;
+const MAX_SCORE_PER_RUN = 40;
 
 async function runPipeline(env: Env): Promise<void> {
     const startTime = Date.now();
@@ -184,8 +184,8 @@ async function runPipeline(env: Env): Promise<void> {
     console.log(`New articles after dedup: ${newArticles.length}`);
 
     // 3b. Enrich articles with fuller content before scoring
-    // Cap at 50 to stay within subrequest limits
-    const enrichLimit = Math.min(newArticles.length, 50);
+    // Cap at 20 to stay within subrequest limits
+    const enrichLimit = Math.min(newArticles.length, 20);
     for (let i = 0; i < enrichLimit; i++) {
       if (!newArticles[i].contentSnippet || newArticles[i].contentSnippet!.length < 200) {
         try {
