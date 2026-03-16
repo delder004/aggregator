@@ -12,7 +12,10 @@ import {
   articleCard,
   featuredCard,
   pagination,
+  trendingTags,
+  timeGroup,
   escapeHtml,
+  type LayoutOptions,
 } from './html';
 
 // ---------------------------------------------------------------------------
@@ -54,56 +57,91 @@ function collectTags(articles: Article[]): string[] {
   return [...set].sort();
 }
 
+/** Count articles per tag (for trending). */
+function countTags(articles: Article[]): { tag: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const a of articles) {
+    for (const t of a.tags) {
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+  }
+  return Array.from(counts.entries()).map(([tag, count]) => ({ tag, count }));
+}
+
+/** Render articles grouped by time period ("Today", "Yesterday", etc.). */
+function renderTimeGrouped(articles: Article[]): string {
+  if (articles.length === 0) return '';
+
+  let html = '';
+  let currentGroup = '';
+
+  for (const article of articles) {
+    const group = timeGroup(article.publishedAt);
+    if (group !== currentGroup) {
+      currentGroup = group;
+      html += `<div class="time-group">${escapeHtml(group)}</div>\n`;
+    }
+    html += articleCard(article);
+  }
+
+  return html;
+}
+
 // ---------------------------------------------------------------------------
 // Homepage
 // ---------------------------------------------------------------------------
 
 function generateHomepage(
   featured: Article[],
-  latest: Article[]
+  latest: Article[],
+  allArticles: Article[],
+  layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
-  // Sort each group
   const sortedFeatured = sortByDate(featured);
   const sortedLatest = sortByDate(latest);
 
-  // Paginate the "latest" list — page 1 is the homepage
   const latestPages = paginate(sortedLatest, ARTICLES_PER_PAGE);
   const totalPages = Math.max(latestPages.length, 1);
 
   // Build homepage (page 1)
   let body = '';
 
-  // Featured section (only on page 1)
+  // Featured section — 2-column grid on desktop
   if (sortedFeatured.length > 0) {
     body += `<div class="section-label">Featured</div>\n`;
-    // Show up to 5 featured articles
-    const topFeatured = sortedFeatured.slice(0, 5);
+    const topFeatured = sortedFeatured.slice(0, 6);
+    body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
+    body += `\n</div>\n`;
   }
 
-  // Latest section
+  // Trending tags
+  const tagCounts = countTags(allArticles);
+  body += trendingTags(tagCounts);
+
+  // Latest section — time-grouped
   body += `<div class="section-label">Latest</div>\n`;
   if (latestPages.length > 0) {
-    body += latestPages[0].map((a) => articleCard(a)).join('\n');
+    body += renderTimeGrouped(latestPages[0]);
   } else {
     body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet. Check back soon.</p>`;
   }
 
-  // Pagination
   body += pagination(1, totalPages);
 
   pages['/'] = layout(body, {
     path: '/',
     activeTag: '',
+    ...layoutOpts,
   });
 
   // Subsequent pages: /page/2, /page/3 ...
   for (let i = 1; i < latestPages.length; i++) {
     const pageNum = i + 1;
     let pageBody = `<div class="section-label">Latest &mdash; Page ${pageNum}</div>\n`;
-    pageBody += latestPages[i].map((a) => articleCard(a)).join('\n');
+    pageBody += renderTimeGrouped(latestPages[i]);
     pageBody += pagination(pageNum, totalPages);
 
     const path = `/page/${pageNum}`;
@@ -111,6 +149,7 @@ function generateHomepage(
       title: `Page ${pageNum}`,
       path,
       activeTag: '',
+      ...layoutOpts,
     });
   }
 
@@ -121,7 +160,10 @@ function generateHomepage(
 // Tag pages
 // ---------------------------------------------------------------------------
 
-function generateTagPages(articles: Article[]): Record<string, string> {
+function generateTagPages(
+  articles: Article[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
   const pages: Record<string, string> = {};
   const tags = collectTags(articles);
 
@@ -137,7 +179,7 @@ function generateTagPages(articles: Article[]): Record<string, string> {
     // Page 1
     let body = `<div class="section-label">${escapeHtml(tagLabel)}</div>\n`;
     if (tagPages.length > 0) {
-      body += tagPages[0].map((a) => articleCard(a)).join('\n');
+      body += renderTimeGrouped(tagPages[0]);
     } else {
       body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles for this tag yet.</p>`;
     }
@@ -148,6 +190,7 @@ function generateTagPages(articles: Article[]): Record<string, string> {
       description: `Articles about ${tagLabel} in AI-powered accounting.`,
       path: basePath,
       activeTag: tag,
+      ...layoutOpts,
     });
 
     // Subsequent tag pages
@@ -155,7 +198,7 @@ function generateTagPages(articles: Article[]): Record<string, string> {
       const pageNum = i + 1;
       const path = `${basePath}/page/${pageNum}`;
       let pageBody = `<div class="section-label">${escapeHtml(tagLabel)} &mdash; Page ${pageNum}</div>\n`;
-      pageBody += tagPages[i].map((a) => articleCard(a)).join('\n');
+      pageBody += renderTimeGrouped(tagPages[i]);
       pageBody += pagination(pageNum, totalPages, basePath);
 
       pages[path] = layout(pageBody, {
@@ -163,6 +206,7 @@ function generateTagPages(articles: Article[]): Record<string, string> {
         description: `Articles about ${tagLabel} in AI-powered accounting — page ${pageNum}.`,
         path,
         activeTag: tag,
+        ...layoutOpts,
       });
     }
   }
@@ -174,7 +218,7 @@ function generateTagPages(articles: Article[]): Record<string, string> {
 // About page
 // ---------------------------------------------------------------------------
 
-function generateAboutPage(): Record<string, string> {
+function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, string> {
   const body = `
 <div class="about-content">
   <h1>About Agentic AI Accounting</h1>
@@ -249,6 +293,7 @@ function generateAboutPage(): Record<string, string> {
       description:
         'About Agentic AI Accounting — an automated news aggregator for AI in accounting, audit, tax, and bookkeeping.',
       path: '/about',
+      ...layoutOpts,
     }),
   };
 }
@@ -266,24 +311,17 @@ function generateSitemap(
 
   let urls = '';
 
-  // Homepage
   urls += `  <url><loc>${SITE_URL}/</loc><changefreq>hourly</changefreq><priority>1.0</priority><lastmod>${now}</lastmod></url>\n`;
 
-  // Paginated pages
   for (let i = 2; i <= totalLatestPages; i++) {
     urls += `  <url><loc>${SITE_URL}/page/${i}</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
   }
 
-  // Tag pages
   for (const tag of tags) {
     urls += `  <url><loc>${SITE_URL}/tag/${escapeHtml(tag)}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   }
 
-  // About
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
-
-  // Individual article URLs (external links — these don't map to our pages,
-  // but we don't host article detail pages, so we skip them in the sitemap).
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -300,20 +338,18 @@ ${urls}</urlset>`;
  * @param articles   All published articles (score >= 40, is_published = true), sorted by date.
  * @param featuredArticles  Articles with score >= 70, for featured placement.
  * @param tags       All known tags (used for tag page generation).
- * @returns A Record mapping URL paths (e.g. "/", "/page/2", "/tag/audit") to HTML strings.
- *          Also includes "/sitemap.xml" mapped to XML content.
+ * @param stats      Optional stats for the footer (sources count, articles count, last updated).
+ * @returns A Record mapping URL paths to HTML strings.
  */
 export function generateAllPages(
   articles: Article[],
   featuredArticles: Article[],
-  tags: string[]
+  tags: string[],
+  stats?: { sources: number; articles: number; lastUpdated: string }
 ): Record<string, string> {
-  // Derive featured and latest from input
-  // "latest" includes all published articles (including featured ones)
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
 
-  // Compute derived tags from actual articles if the supplied tags list is empty
   const effectiveTags =
     tags.length > 0 ? tags : collectTags(articles);
 
@@ -322,14 +358,14 @@ export function generateAllPages(
     1
   );
 
-  // Combine all page records
+  const layoutOpts: Partial<LayoutOptions> = stats ? { stats } : {};
+
   const pages: Record<string, string> = {
-    ...generateHomepage(featured, latest),
-    ...generateTagPages(articles),
-    ...generateAboutPage(),
+    ...generateHomepage(featured, latest, articles, layoutOpts),
+    ...generateTagPages(articles, layoutOpts),
+    ...generateAboutPage(layoutOpts),
   };
 
-  // Sitemap
   pages['/sitemap.xml'] = generateSitemap(
     articles,
     effectiveTags,

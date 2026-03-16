@@ -248,8 +248,18 @@ export default {
       const featuredArticles = await getFeaturedArticles(env.DB, 10);
       const tags = await getAllUniqueTags(env.DB);
 
-      // Generate HTML pages
-      const pages = generateAllPages(recentArticles, featuredArticles, tags);
+      // Generate HTML pages with stats for footer
+      const totalArticles = recentArticles.length;
+      const lastUpdated = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      });
+      const pages = generateAllPages(recentArticles, featuredArticles, tags, {
+        sources: sources.length,
+        articles: totalArticles,
+        lastUpdated,
+      });
 
       // Generate RSS feed
       const rssFeed = generateRssFeed(recentArticles.slice(0, 50));

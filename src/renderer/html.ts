@@ -15,7 +15,7 @@ import type { Article } from '../types';
 
 const SITE_TITLE = 'Agentic AI Accounting';
 const SITE_DESCRIPTION =
-  'The latest news on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.';
+  'The latest on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.';
 const SITE_URL = 'https://agenticaiaccounting.com';
 
 // Tags shown in the nav bar filter list
@@ -30,6 +30,15 @@ const NAV_TAGS: { label: string; slug: string }[] = [
   { label: 'Research', slug: 'research' },
 ];
 
+// Source type badge colors
+const SOURCE_COLORS: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
+  hn:      { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
+  reddit:  { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
+  youtube: { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
+  arxiv:   { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
+  rss:     { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
+};
+
 // ---------------------------------------------------------------------------
 // CSS
 // ---------------------------------------------------------------------------
@@ -37,36 +46,48 @@ const NAV_TAGS: { label: string; slug: string }[] = [
 function getCSS(): string {
   return `
 :root {
-  --bg: #ffffff;
-  --bg-secondary: #f7f7f8;
-  --text: #1a1a1a;
-  --text-secondary: #555555;
-  --text-tertiary: #888888;
-  --border: #e5e5e5;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --featured-bg: #fafbff;
-  --featured-border: #dbe4ff;
-  --tag-bg: #f0f0f0;
-  --tag-text: #444444;
-  --shadow: 0 1px 3px rgba(0,0,0,0.06);
-  --radius: 6px;
+  --bg: #fafafa;
+  --bg-secondary: #f0f0f2;
+  --bg-card: #ffffff;
+  --text: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --border: #e4e4e7;
+  --accent: #0f766e;
+  --accent-hover: #0d9488;
+  --accent-subtle: #0f766e12;
+  --featured-bg: #fefff8;
+  --featured-border: #d4d97a;
+  --featured-accent: #65a30d;
+  --tag-bg: #f0f0f2;
+  --tag-text: #52525b;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04);
+  --radius: 8px;
+  --score-high: #16a34a;
+  --score-med: #ca8a04;
+  --score-low: #a1a1aa;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111111;
-    --bg-secondary: #1a1a1a;
-    --text: #e5e5e5;
-    --text-secondary: #aaaaaa;
-    --text-tertiary: #777777;
-    --border: #2a2a2a;
-    --accent: #5b8def;
-    --accent-hover: #7aa5ff;
-    --featured-bg: #151822;
-    --featured-border: #252d44;
-    --tag-bg: #252525;
-    --tag-text: #bbbbbb;
-    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --bg: #09090b;
+    --bg-secondary: #18181b;
+    --bg-card: #1c1c20;
+    --text: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #52525b;
+    --border: #27272a;
+    --accent: #2dd4bf;
+    --accent-hover: #5eead4;
+    --accent-subtle: #2dd4bf15;
+    --featured-bg: #1a1c12;
+    --featured-border: #4d5a1a;
+    --featured-accent: #a3e635;
+    --tag-bg: #27272a;
+    --tag-text: #a1a1aa;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --score-high: #4ade80;
+    --score-med: #facc15;
+    --score-low: #52525b;
   }
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -84,25 +105,42 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 /* Layout */
 .site-header{
   border-bottom:1px solid var(--border);
-  padding:1rem 0;
+  padding:1.25rem 0;
+  background:var(--bg-card);
 }
 .container{
-  max-width:760px;
+  max-width:780px;
   margin:0 auto;
-  padding:0 1rem;
+  padding:0 1.25rem;
 }
+.header-row{
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  background:var(--accent);
+  border-radius:8px;
+  flex-shrink:0;
+}
+.logo svg{display:block;}
 .site-title{
-  font-size:1.35rem;
+  font-size:1.3rem;
   font-weight:700;
   color:var(--text);
-  letter-spacing:-0.02em;
+  letter-spacing:-0.03em;
 }
 .site-title a{color:inherit;}
 .site-title a:hover{text-decoration:none;}
 .site-tagline{
-  font-size:0.85rem;
+  font-size:0.82rem;
   color:var(--text-secondary);
-  margin-top:0.15rem;
+  margin-top:0.1rem;
 }
 
 /* Nav tags */
@@ -110,36 +148,60 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   display:flex;
   flex-wrap:wrap;
   gap:0.4rem;
-  padding:0.75rem 0;
+  padding:0.7rem 0;
   border-bottom:1px solid var(--border);
+  background:var(--bg-card);
 }
 .tag-nav a{
-  font-size:0.8rem;
-  padding:0.25rem 0.65rem;
+  font-size:0.78rem;
+  padding:0.25rem 0.7rem;
   border-radius:100px;
   background:var(--tag-bg);
   color:var(--tag-text);
-  transition:background 0.15s;
+  transition:all 0.15s;
   white-space:nowrap;
+  font-weight:500;
 }
 .tag-nav a:hover{background:var(--border);text-decoration:none;}
 .tag-nav a.active{background:var(--accent);color:#fff;}
 
 /* Section headers */
 .section-label{
-  font-size:0.75rem;
+  font-size:0.72rem;
   font-weight:600;
   text-transform:uppercase;
-  letter-spacing:0.06em;
+  letter-spacing:0.08em;
   color:var(--text-tertiary);
-  margin:1.5rem 0 0.75rem;
+  margin:1.75rem 0 0.5rem;
+  padding-bottom:0.4rem;
+  border-bottom:1px solid var(--border);
+}
+
+/* Time group headers */
+.time-group{
+  font-size:0.72rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--accent);
+  margin:1.5rem 0 0.4rem;
+  padding:0.35rem 0;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+.time-group::after{
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--border);
 }
 
 /* Article cards */
 .article-card{
   display:flex;
   gap:0.85rem;
-  padding:0.85rem 0;
+  padding:0.75rem 0;
   border-bottom:1px solid var(--border);
 }
 .article-card:last-child{border-bottom:none;}
@@ -153,7 +215,7 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 }
 .article-body{flex:1;min-width:0;}
 .article-title{
-  font-size:0.95rem;
+  font-size:0.93rem;
   font-weight:600;
   line-height:1.35;
   color:var(--text);
@@ -161,16 +223,36 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .article-title a{color:inherit;}
 .article-title a:hover{color:var(--accent);}
 .article-meta{
-  font-size:0.78rem;
+  font-size:0.76rem;
   color:var(--text-tertiary);
   margin-top:0.2rem;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:0.35rem;
 }
-.article-meta .source-badge{
+.source-name{
   color:var(--text-secondary);
   font-weight:500;
 }
+.source-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:0.25rem;
+  font-size:0.68rem;
+  font-weight:600;
+  padding:0.1rem 0.4rem;
+  border-radius:3px;
+  letter-spacing:0.02em;
+}
+.source-badge.hn{background:var(--hn-bg,#ff660015);color:var(--hn-text,#ff6600);}
+.source-badge.reddit{background:var(--reddit-bg,#ff450015);color:var(--reddit-text,#e04520);}
+.source-badge.youtube{background:var(--yt-bg,#ff000012);color:var(--yt-text,#cc0000);}
+.source-badge.arxiv{background:var(--arxiv-bg,#b3131315);color:var(--arxiv-text,#b31313);}
+.source-badge.rss{background:var(--rss-bg,#ee802015);color:var(--rss-text,#c06010);}
+.meta-dot{color:var(--text-tertiary);}
 .article-summary{
-  font-size:0.83rem;
+  font-size:0.82rem;
   color:var(--text-secondary);
   margin-top:0.3rem;
   display:-webkit-box;
@@ -181,36 +263,88 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .article-tags{
   display:flex;
   flex-wrap:wrap;
-  gap:0.3rem;
+  gap:0.25rem;
   margin-top:0.35rem;
 }
 .article-tags a{
-  font-size:0.7rem;
-  padding:0.1rem 0.45rem;
+  font-size:0.68rem;
+  padding:0.1rem 0.4rem;
   border-radius:100px;
   background:var(--tag-bg);
   color:var(--tag-text);
 }
 .article-tags a:hover{background:var(--border);text-decoration:none;}
 
-/* Featured card */
+/* Score indicator */
+.score-dot{
+  display:inline-block;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  margin-right:0.15rem;
+  vertical-align:middle;
+}
+.score-high{background:var(--score-high);}
+.score-med{background:var(--score-med);}
+.score-low{background:var(--score-low);}
+
+/* Featured section */
+.featured-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0.75rem;
+  margin-bottom:0.5rem;
+}
 .featured-card{
   background:var(--featured-bg);
   border:1px solid var(--featured-border);
   border-radius:var(--radius);
   padding:1rem;
-  margin-bottom:0.6rem;
 }
-.featured-card .article-title{font-size:1.05rem;}
+.featured-card .article-title{font-size:1rem;}
 .featured-card .article-summary{
   -webkit-line-clamp:3;
+}
+.featured-label{
+  font-size:0.65rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--featured-accent);
+  margin-bottom:0.35rem;
+}
+
+/* Trending sidebar */
+.trending-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.4rem;
+  padding:0.65rem 0;
+  margin-bottom:0.25rem;
+}
+.trending-tag{
+  font-size:0.75rem;
+  padding:0.2rem 0.6rem;
+  border-radius:100px;
+  border:1px solid var(--border);
+  color:var(--text-secondary);
+  font-weight:500;
+  display:inline-flex;
+  align-items:center;
+  gap:0.3rem;
+}
+.trending-tag:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+.trending-count{
+  font-size:0.65rem;
+  color:var(--text-tertiary);
+  font-weight:400;
 }
 
 /* Pagination */
 .pagination{
   display:flex;
   justify-content:center;
-  gap:0.5rem;
+  gap:0.4rem;
   padding:1.5rem 0;
 }
 .pagination a,.pagination span{
@@ -219,9 +353,9 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   justify-content:center;
   min-width:2rem;
   height:2rem;
-  padding:0 0.6rem;
+  padding:0 0.55rem;
   border-radius:var(--radius);
-  font-size:0.85rem;
+  font-size:0.82rem;
   color:var(--text-secondary);
   border:1px solid var(--border);
 }
@@ -236,10 +370,13 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 /* Footer */
 .site-footer{
   border-top:1px solid var(--border);
-  padding:1.25rem 0;
+  padding:1.5rem 0;
   margin-top:1rem;
+  background:var(--bg-card);
+}
+.footer-inner{
   text-align:center;
-  font-size:0.78rem;
+  font-size:0.76rem;
   color:var(--text-tertiary);
 }
 .site-footer a{color:var(--text-tertiary);}
@@ -249,6 +386,13 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   justify-content:center;
   gap:1.2rem;
   flex-wrap:wrap;
+  margin-bottom:0.6rem;
+}
+.footer-stats{
+  font-size:0.7rem;
+  color:var(--text-tertiary);
+  margin-top:0.4rem;
+  opacity:0.7;
 }
 
 /* About page */
@@ -259,13 +403,25 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .about-content ul{margin:0.5rem 0 0.75rem 1.5rem;color:var(--text-secondary);}
 .about-content li{margin-bottom:0.3rem;}
 
+/* Dark mode badge overrides */
+@media (prefers-color-scheme: dark) {
+  .source-badge.hn{background:#ff660025;color:#ff8533;}
+  .source-badge.reddit{background:#ff450025;color:#ff6b4a;}
+  .source-badge.youtube{background:#ff000020;color:#ff4444;}
+  .source-badge.arxiv{background:#b3131325;color:#e05555;}
+  .source-badge.rss{background:#ee802025;color:#eea050;}
+}
+
 /* Responsive */
-@media (max-width:480px){
+@media (max-width:580px){
+  .featured-grid{grid-template-columns:1fr;}
   .article-thumb{width:64px;height:48px;}
-  .article-title{font-size:0.9rem;}
-  .featured-card .article-title{font-size:0.95rem;}
+  .article-title{font-size:0.88rem;}
+  .featured-card .article-title{font-size:0.93rem;}
   .tag-nav{gap:0.3rem;}
-  .tag-nav a{font-size:0.75rem;padding:0.2rem 0.5rem;}
+  .tag-nav a{font-size:0.73rem;padding:0.2rem 0.5rem;}
+  .header-row{gap:0.5rem;}
+  .logo{width:30px;height:30px;border-radius:6px;}
 }
 `;
 }
@@ -309,8 +465,40 @@ export function timeAgo(isoDate: string): string {
   return `${Math.floor(months / 12)}y ago`;
 }
 
+/** Classify an article into a time group. */
+export function timeGroup(isoDate: string): string {
+  const now = new Date();
+  const then = new Date(isoDate);
+  if (isNaN(then.getTime())) return 'Earlier';
+
+  const diffMs = now.getTime() - then.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  // Check if same calendar day
+  if (
+    now.getFullYear() === then.getFullYear() &&
+    now.getMonth() === then.getMonth() &&
+    now.getDate() === then.getDate()
+  ) {
+    return 'Today';
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (
+    yesterday.getFullYear() === then.getFullYear() &&
+    yesterday.getMonth() === then.getMonth() &&
+    yesterday.getDate() === then.getDate()
+  ) {
+    return 'Yesterday';
+  }
+
+  if (diffDays < 7) return 'This Week';
+  return 'Earlier';
+}
+
 /** Format an ISO date for the <time> element datetime attribute. */
-function isoDate(dateStr: string): string {
+function formatIsoDate(dateStr: string): string {
   try {
     return new Date(dateStr).toISOString();
   } catch {
@@ -318,27 +506,33 @@ function isoDate(dateStr: string): string {
   }
 }
 
-/** Format source type into a nicer display label. */
-function sourceLabel(article: Article): string {
-  const name = escapeHtml(article.sourceName);
-  return name;
+/** Get the score CSS class. */
+function scoreClass(score: number | null): string {
+  if (!score) return 'score-low';
+  if (score >= 70) return 'score-high';
+  if (score >= 40) return 'score-med';
+  return 'score-low';
 }
 
-/** Map source type to a small text indicator. */
-function sourceTypeIcon(type: string): string {
+/** Map source type to badge label and CSS class. */
+function sourceBadge(type: string): { label: string; cls: string } {
   switch (type) {
-    case 'reddit':
-      return 'Reddit';
-    case 'hn':
-      return 'HN';
-    case 'youtube':
-      return 'YouTube';
-    case 'arxiv':
-      return 'arXiv';
-    case 'rss':
-    default:
-      return '';
+    case 'reddit':  return { label: 'Reddit', cls: 'reddit' };
+    case 'hn':      return { label: 'HN', cls: 'hn' };
+    case 'youtube': return { label: 'YouTube', cls: 'youtube' };
+    case 'arxiv':   return { label: 'arXiv', cls: 'arxiv' };
+    case 'rss':     return { label: 'RSS', cls: 'rss' };
+    default:        return { label: type, cls: 'rss' };
   }
+}
+
+/** SVG logo — stylized "A" with circuit trace motif. */
+function logoSvg(): string {
+  return `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
+  <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
+  <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
+</svg>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -349,16 +543,9 @@ function sourceTypeIcon(type: string): string {
 export function articleCard(article: Article): string {
   const title = escapeHtml(article.title);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
-  const meta = sourceLabel(article);
   const ago = timeAgo(article.publishedAt);
-  const typeIcon = sourceTypeIcon(article.sourceType);
-  const metaParts = [
-    `<span class="source-badge">${meta}</span>`,
-    typeIcon ? `<span>${typeIcon}</span>` : '',
-    ago ? `<time datetime="${isoDate(article.publishedAt)}">${ago}</time>` : '',
-  ]
-    .filter(Boolean)
-    .join(' &middot; ');
+  const badge = sourceBadge(article.sourceType);
+  const sClass = scoreClass(article.relevanceScore);
 
   const thumb = article.imageUrl
     ? `<img class="article-thumb" src="${escapeHtml(article.imageUrl)}" alt="" loading="lazy" />`
@@ -374,7 +561,12 @@ export function articleCard(article: Article): string {
   ${thumb}
   <div class="article-body">
     <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
-    <div class="article-meta">${metaParts}</div>
+    <div class="article-meta">
+      <span class="${sClass} score-dot"></span>
+      <span class="source-name">${escapeHtml(article.sourceName)}</span>
+      <span class="source-badge ${badge.cls}">${badge.label}</span>
+      ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
+    </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
     ${tags}
   </div>
@@ -385,16 +577,8 @@ export function articleCard(article: Article): string {
 export function featuredCard(article: Article): string {
   const title = escapeHtml(article.title);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
-  const meta = sourceLabel(article);
   const ago = timeAgo(article.publishedAt);
-  const typeIcon = sourceTypeIcon(article.sourceType);
-  const metaParts = [
-    `<span class="source-badge">${meta}</span>`,
-    typeIcon ? `<span>${typeIcon}</span>` : '',
-    ago ? `<time datetime="${isoDate(article.publishedAt)}">${ago}</time>` : '',
-  ]
-    .filter(Boolean)
-    .join(' &middot; ');
+  const badge = sourceBadge(article.sourceType);
 
   const tags = article.tags.length
     ? `<div class="article-tags">${article.tags
@@ -403,14 +587,19 @@ export function featuredCard(article: Article): string {
     : '';
 
   return `<div class="featured-card">
+  <div class="featured-label">Featured</div>
   <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
-  <div class="article-meta">${metaParts}</div>
+  <div class="article-meta">
+    <span class="source-name">${escapeHtml(article.sourceName)}</span>
+    <span class="source-badge ${badge.cls}">${badge.label}</span>
+    ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
+  </div>
   ${summary ? `<p class="article-summary">${summary}</p>` : ''}
   ${tags}
 </div>`;
 }
 
-/** Render the tag navigation bar. `activeTag` is the currently selected tag slug (empty string for "All"). */
+/** Render the tag navigation bar. */
 export function tagNav(activeTag: string): string {
   const links = NAV_TAGS.map((t) => {
     const href = t.slug ? `/tag/${t.slug}` : '/';
@@ -423,6 +612,25 @@ export function tagNav(activeTag: string): string {
   </nav>`;
 }
 
+/** Render trending tags bar with article counts. */
+export function trendingTags(tagCounts: { tag: string; count: number }[]): string {
+  if (tagCounts.length === 0) return '';
+
+  const sorted = [...tagCounts].sort((a, b) => b.count - a.count).slice(0, 10);
+
+  const items = sorted
+    .map(
+      (tc) =>
+        `<a class="trending-tag" href="/tag/${escapeHtml(tc.tag)}">${escapeHtml(tc.tag.replace(/-/g, ' '))} <span class="trending-count">${tc.count}</span></a>`
+    )
+    .join('\n    ');
+
+  return `<div class="section-label">Trending This Week</div>
+  <div class="trending-bar">
+    ${items}
+  </div>`;
+}
+
 /** Render pagination controls. */
 export function pagination(
   currentPage: number,
@@ -433,14 +641,12 @@ export function pagination(
 
   const links: string[] = [];
 
-  // Previous
   if (currentPage > 1) {
     const prevHref =
       currentPage === 2 ? basePath || '/' : `${basePath}/page/${currentPage - 1}`;
     links.push(`<a href="${prevHref}">&larr; Prev</a>`);
   }
 
-  // Page numbers — show up to 7 pages with ellipsis
   const maxVisible = 7;
   let start = Math.max(1, currentPage - 3);
   let end = Math.min(totalPages, start + maxVisible - 1);
@@ -469,7 +675,6 @@ export function pagination(
     );
   }
 
-  // Next
   if (currentPage < totalPages) {
     links.push(
       `<a href="${basePath}/page/${currentPage + 1}">Next &rarr;</a>`
@@ -488,6 +693,7 @@ export interface LayoutOptions {
   description?: string;
   path?: string;
   activeTag?: string;
+  stats?: { sources: number; articles: number; lastUpdated: string };
 }
 
 /**
@@ -504,6 +710,11 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const canonicalPath = options.path ?? '/';
   const canonical = `${SITE_URL}${canonicalPath}`;
   const activeTag = options.activeTag ?? '';
+  const stats = options.stats;
+
+  const statsLine = stats
+    ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.articles.toLocaleString()} articles scored &middot; Updated ${stats.lastUpdated}</div>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -532,8 +743,13 @@ export function layout(body: string, options: LayoutOptions = {}): string {
 <body>
   <header class="site-header">
     <div class="container">
-      <div class="site-title"><a href="/">${escapeHtml(SITE_TITLE)}</a></div>
-      <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>
+      <div class="header-row">
+        <div class="logo">${logoSvg()}</div>
+        <div>
+          <div class="site-title"><a href="/">${escapeHtml(SITE_TITLE)}</a></div>
+          <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -544,12 +760,12 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   </main>
 
   <footer class="site-footer">
-    <div class="container">
+    <div class="container footer-inner">
       <div class="footer-links">
         <a href="/feed.xml">RSS Feed</a>
         <a href="/about">About</a>
-        <span>Updated hourly</span>
       </div>
+      ${statsLine}
     </div>
   </footer>
 </body>
