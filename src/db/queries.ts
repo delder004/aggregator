@@ -5,41 +5,6 @@ function escapeLike(value: string): string {
   return value.replace(/%/g, '\\%').replace(/_/g, '\\_');
 }
 
-export async function insertArticle(
-  db: D1Database,
-  article: Omit<Article, 'isPublished'> & { isPublished?: boolean }
-): Promise<void> {
-  await db
-    .prepare(
-      `INSERT OR IGNORE INTO articles
-       (id, url, title, source_type, source_name, author, published_at, fetched_at,
-        content_snippet, image_url, relevance_score, quality_score, social_score,
-        comment_count, company_mentions, ai_summary, tags, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(
-      article.id,
-      article.url,
-      article.title,
-      article.sourceType,
-      article.sourceName,
-      article.author,
-      article.publishedAt,
-      article.fetchedAt,
-      article.contentSnippet,
-      article.imageUrl,
-      article.relevanceScore,
-      article.qualityScore ?? null,
-      article.socialScore ?? null,
-      article.commentCount ?? null,
-      JSON.stringify(article.companyMentions ?? []),
-      article.aiSummary,
-      JSON.stringify(article.tags),
-      article.isPublished !== false ? 1 : 0
-    )
-    .run();
-}
-
 export async function getArticleByUrl(
   db: D1Database,
   url: string

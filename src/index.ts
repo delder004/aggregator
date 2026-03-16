@@ -323,24 +323,45 @@ async function runPipeline(env: Env): Promise<void> {
     try {
       companies = await getTrackedCompanies(env.DB);
       if (companies.length > 0 && scored.length > 0) {
-        const matchedCompanyIds = new Set<string>();
+        // Build URL-to-matches map first (no DB calls)
+        const urlToMatches = new Map<string, string[]>();
         for (const article of scored) {
           const matched = matchArticleToCompanies(article, companies);
           if (matched.length > 0) {
-            // Look up the article ID by URL to link in junction table
-            const dbArticle = await env.DB
-              .prepare('SELECT id FROM articles WHERE url = ?')
-              .bind(article.url)
-              .first<{ id: string }>();
-            if (dbArticle) {
-              await linkArticleToCompanies(env.DB, dbArticle.id, matched);
-              matched.forEach((id) => matchedCompanyIds.add(id));
-            }
+            urlToMatches.set(article.url, matched);
           }
         }
-        // Update stats for all matched companies
-        for (const companyId of matchedCompanyIds) {
-          await updateCompanyStats(env.DB, companyId);
+
+        if (urlToMatches.size > 0) {
+          // Batch lookup article IDs by URL (same pattern as dedup step)
+          const urls = [...urlToMatches.keys()];
+          const urlToId = new Map<string, string>();
+          for (let i = 0; i < urls.length; i += 100) {
+            const batch = urls.slice(i, i + 100);
+            const placeholders = batch.map(() => '?').join(',');
+            const result = await env.DB
+              .prepare(`SELECT id, url FROM articles WHERE url IN (${placeholders})`)
+              .bind(...batch)
+              .all();
+            for (const row of result.results) {
+              urlToId.set(row.url as string, row.id as string);
+            }
+          }
+
+          // Link articles to companies and collect matched company IDs
+          const matchedCompanyIds = new Set<string>();
+          for (const [url, companyIds] of urlToMatches) {
+            const articleId = urlToId.get(url);
+            if (articleId) {
+              await linkArticleToCompanies(env.DB, articleId, companyIds);
+              companyIds.forEach((id) => matchedCompanyIds.add(id));
+            }
+          }
+
+          // Update stats for all matched companies
+          for (const companyId of matchedCompanyIds) {
+            await updateCompanyStats(env.DB, companyId);
+          }
         }
         console.log(`Company tracking complete for ${scored.length} articles against ${companies.length} companies`);
       }
