@@ -42,8 +42,10 @@ export interface CollectedArticle {
 
 export interface ScoredArticle extends CollectedArticle {
   relevanceScore: number;
+  qualityScore: number;
   aiSummary: string;
   tags: string[];
+  companyMentions: string[];
 }
 
 export interface Collector {

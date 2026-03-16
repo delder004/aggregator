@@ -1,9 +1,9 @@
 import type { CollectedArticle, ScoredArticle, Env } from '../types';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-sonnet-4-5-20250514';
 
-const ALLOWED_TAGS = new Set([
+export const ALLOWED_TAGS = new Set([
   'audit',
   'tax',
   'bookkeeping',
@@ -21,53 +21,87 @@ const ALLOWED_TAGS = new Set([
   'case-study',
   'opinion',
   'research',
+  'product-launch',
+  'funding',
+  'partnership',
+  'integration',
+  'open-source',
 ]);
 
-const SYSTEM_PROMPT = `You are a content classifier for a news site about agentic AI in accounting.
+const SYSTEM_PROMPT = `You are a content classifier for agenticaiaccounting.com, a news aggregator focused on agentic AI in accounting.
 
-Score this article's relevance from 0-100:
+Score this article on TWO dimensions:
+
+## Relevance Score (0-100): How relevant is this to agentic AI in accounting?
 - 90-100: Directly about AI agents in accounting/bookkeeping/audit/tax
 - 70-89: About AI in finance/accounting broadly
 - 50-69: About agentic AI generally (applicable to accounting)
 - 30-49: About AI or accounting separately, tangentially related
 - 0-29: Not relevant
 
+## Quality Score (0-100): How good is this content editorially?
+- 90-100: Original research, deep analysis, exclusive reporting, primary sources
+- 70-89: Well-written analysis, expert commentary, good case studies
+- 50-69: Standard news coverage, press releases, product announcements
+- 30-49: Listicles, shallow takes, SEO content, rehashed news
+- 0-29: Spam, clickbait, ads, very low effort
+
+## Recency & Freshness
+- Breaking news about specific company actions, product launches, or regulatory changes should score +10-15 relevance over generic evergreen content
+- If the content is time-sensitive (e.g., a new product launch, regulatory deadline, funding round), note this in the summary
+
+## Social Signals
+When social engagement metrics are provided (upvotes, comments), factor community validation into the quality score. High engagement from technical communities (Hacker News, specialized subreddits) suggests higher quality content.
+
 Also provide:
-- tags: up to 5 from [audit, tax, bookkeeping, compliance, payroll, invoicing, fraud-detection, financial-reporting, agentic-ai, llm, automation, startup, big-4, regulation, case-study, opinion, research]
-- summary: 1-2 sentences for the feed (under 280 characters)
+- tags: up to 5 from [audit, tax, bookkeeping, compliance, payroll, invoicing, fraud-detection, financial-reporting, agentic-ai, llm, automation, startup, big-4, regulation, case-study, opinion, research, product-launch, funding, partnership, integration, open-source]
+- summary: 1-2 sentences for the feed (under 280 characters). Note if time-sensitive.
+- companyMentions: array of company names mentioned in the article (e.g., ["Deloitte", "Intuit", "OpenAI"]). Empty array if none.
 
 Respond with valid JSON only, no other text. Use this exact schema:
 {
   "relevanceScore": <number 0-100>,
+  "qualityScore": <number 0-100>,
   "tags": [<string>, ...],
-  "summary": "<string>"
+  "summary": "<string>",
+  "companyMentions": [<string>, ...]
 }`;
 
 interface ClassifierResponse {
   relevanceScore: number;
+  qualityScore: number;
   tags: string[];
   summary: string;
+  companyMentions: string[];
 }
 
 const CONCURRENCY = 10;
 
+/** Optional social signal data that can be attached to articles before scoring. */
+export interface SocialSignals {
+  upvotes?: number;
+  comments?: number;
+}
+
 /**
- * Score a batch of collected articles using Claude Haiku.
+ * Score a batch of collected articles using Claude Sonnet.
  * Runs up to CONCURRENCY API calls in parallel for speed.
  * On error, retries once, then assigns score 0.
  */
 export async function scoreArticles(
   articles: CollectedArticle[],
-  env: Env
+  env: Env,
+  socialSignalsMap?: Map<string, SocialSignals>
 ): Promise<ScoredArticle[]> {
   const results: ScoredArticle[] = new Array(articles.length);
 
   // Process in chunks of CONCURRENCY
   for (let i = 0; i < articles.length; i += CONCURRENCY) {
     const chunk = articles.slice(i, i + CONCURRENCY);
-    const promises = chunk.map(async (article, j) => {
+    const promises = chunk.map(async (article) => {
       try {
-        return await scoreOneArticle(article, env);
+        const signals = socialSignalsMap?.get(article.url);
+        return await scoreOneArticle(article, env, signals);
       } catch (error) {
         console.error(
           `Failed to score article "${article.title}" after retry:`,
@@ -76,8 +110,10 @@ export async function scoreArticles(
         return {
           ...article,
           relevanceScore: 0,
+          qualityScore: 0,
           aiSummary: '',
           tags: [],
+          companyMentions: [],
         } as ScoredArticle;
       }
     });
@@ -96,9 +132,10 @@ export async function scoreArticles(
  */
 async function scoreOneArticle(
   article: CollectedArticle,
-  env: Env
+  env: Env,
+  signals?: SocialSignals
 ): Promise<ScoredArticle> {
-  const userMessage = buildUserMessage(article);
+  const userMessage = buildUserMessage(article, signals);
 
   // First attempt
   try {
@@ -107,8 +144,10 @@ async function scoreOneArticle(
     return {
       ...article,
       relevanceScore: parsed.relevanceScore,
+      qualityScore: parsed.qualityScore,
       aiSummary: parsed.summary,
       tags: parsed.tags,
+      companyMentions: parsed.companyMentions,
     };
   } catch (firstError) {
     console.warn(
@@ -123,20 +162,46 @@ async function scoreOneArticle(
   return {
     ...article,
     relevanceScore: parsed.relevanceScore,
+    qualityScore: parsed.qualityScore,
     aiSummary: parsed.summary,
     tags: parsed.tags,
+    companyMentions: parsed.companyMentions,
   };
 }
 
-function buildUserMessage(article: CollectedArticle): string {
-  const parts = [
+/**
+ * Build the user message sent to Claude for classification.
+ * Includes title, source, author, content, social signals, and published date.
+ */
+export function buildUserMessage(
+  article: CollectedArticle,
+  signals?: SocialSignals
+): string {
+  const parts: string[] = [
     `Title: ${article.title}`,
-    `Source: ${article.sourceName}`,
+    `Source: ${article.sourceName} (${article.sourceType})`,
   ];
+
+  if (article.author) {
+    parts.push(`Author: ${article.author}`);
+  }
 
   if (article.contentSnippet) {
     parts.push(`Content: ${article.contentSnippet}`);
   }
+
+  if (signals && (signals.upvotes !== undefined || signals.comments !== undefined)) {
+    const signalParts: string[] = [];
+    if (signals.upvotes !== undefined) {
+      signalParts.push(`${signals.upvotes} upvotes`);
+    }
+    if (signals.comments !== undefined) {
+      signalParts.push(`${signals.comments} comments`);
+    }
+    parts.push(`Social: ${signalParts.join(', ')}`);
+  }
+
+  parts.push(`Published: ${article.publishedAt}`);
 
   return parts.join('\n');
 }
@@ -147,7 +212,7 @@ function buildUserMessage(article: CollectedArticle): string {
 async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
   const body = {
     model: MODEL,
-    max_tokens: 512,
+    max_tokens: 768,
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -191,10 +256,10 @@ async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
 
 /**
  * Parse the JSON response from Claude and validate all fields.
- * Clamps relevanceScore to 0-100, filters unknown tags,
- * and truncates summary to 280 characters.
+ * Clamps scores to 0-100, filters unknown tags,
+ * truncates summary to 280 characters, and validates companyMentions.
  */
-function parseAndValidateResponse(rawText: string): ClassifierResponse {
+export function parseAndValidateResponse(rawText: string): ClassifierResponse {
   // Strip markdown code fences if the model wraps the JSON
   let cleaned = rawText.trim();
   if (cleaned.startsWith('```')) {
@@ -229,6 +294,17 @@ function parseAndValidateResponse(rawText: string): ClassifierResponse {
     );
   }
 
+  // Validate and clamp qualityScore
+  let qualityScore = 0;
+  if (typeof obj.qualityScore === 'number') {
+    qualityScore = Math.round(obj.qualityScore);
+    qualityScore = Math.max(0, Math.min(100, qualityScore));
+  } else {
+    throw new Error(
+      `qualityScore is not a number: ${JSON.stringify(obj.qualityScore)}`
+    );
+  }
+
   // Validate tags — keep only allowed tags
   let tags: string[] = [];
   if (Array.isArray(obj.tags)) {
@@ -251,5 +327,13 @@ function parseAndValidateResponse(rawText: string): ClassifierResponse {
     );
   }
 
-  return { relevanceScore, tags, summary };
+  // Validate companyMentions
+  let companyMentions: string[] = [];
+  if (Array.isArray(obj.companyMentions)) {
+    companyMentions = obj.companyMentions
+      .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+      .map((name) => name.trim());
+  }
+
+  return { relevanceScore, qualityScore, tags, summary, companyMentions };
 }
