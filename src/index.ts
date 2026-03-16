@@ -108,7 +108,12 @@ export default {
   },
 };
 
-const MAX_SCORE_PER_RUN = 40;
+// Subrequest budget: Cloudflare Workers allow 1,000 subrequests per invocation.
+// With 38+ sources (each a fetch), dedup queries, enrichment fetches, scoring API calls,
+// DB inserts, backfill scoring, insight generation, company tracking, and page generation,
+// the budget is tight. Lowered from 40 to 25 to leave headroom for other pipeline stages.
+// Unscored articles are stored and picked up on subsequent runs via backfill.
+const MAX_SCORE_PER_RUN = 25;
 
 async function runPipeline(env: Env): Promise<void> {
     const startTime = Date.now();
@@ -201,8 +206,8 @@ async function runPipeline(env: Env): Promise<void> {
     console.log(`New articles after dedup: ${newArticles.length}`);
 
     // 3b. Enrich articles with fuller content before scoring
-    // Cap at 20 to stay within subrequest limits
-    const enrichLimit = Math.min(newArticles.length, 20);
+    // Cap at 10 to stay within subrequest limits (each enrichment is a fetch subrequest)
+    const enrichLimit = Math.min(newArticles.length, 10);
     for (let i = 0; i < enrichLimit; i++) {
       if (!newArticles[i].contentSnippet || newArticles[i].contentSnippet!.length < 200) {
         try {
@@ -301,8 +306,11 @@ async function runPipeline(env: Env): Promise<void> {
     console.log(`Inserted ${insertedCount} articles into D1`);
 
     // 5b. Backfill scoring for previously unscored articles (shared cap)
+    // Skip backfill if we already scored 15+ new articles this run to preserve subrequest budget
     const backfillBudget = MAX_SCORE_PER_RUN - scoredUsed;
-    if (backfillBudget > 0) {
+    if (scoredUsed >= 15) {
+      console.log(`Skipping backfill scoring: already scored ${scoredUsed} new articles this run (threshold: 15)`);
+    } else if (backfillBudget > 0) {
       try {
         const unscoredFromDb = await getUnscoredArticles(env.DB, backfillBudget);
         if (unscoredFromDb.length > 0) {
@@ -397,17 +405,22 @@ async function runPipeline(env: Env): Promise<void> {
     }
 
     // 5d. Generate insight summaries
+    // Skip if scoring consumed significant budget (20+ articles) to save ~10 subrequests
     let summaries: InsightSummary[] = [];
-    try {
-      const generated = await generateInsights(env);
-      if (generated.length > 0) {
-        for (const summary of generated) {
-          await insertSummary(env.DB, summary);
+    if (scoredUsed >= 20) {
+      console.log(`Skipping insight generation: scored ${scoredUsed} articles this run, preserving subrequest budget (threshold: 20)`);
+    } else {
+      try {
+        const generated = await generateInsights(env);
+        if (generated.length > 0) {
+          for (const summary of generated) {
+            await insertSummary(env.DB, summary);
+          }
+          console.log(`Generated ${generated.length} insight summaries`);
         }
-        console.log(`Generated ${generated.length} insight summaries`);
+      } catch (err) {
+        console.error('Insight generation failed:', err);
       }
-    } catch (err) {
-      console.error('Insight generation failed:', err);
     }
 
     // 6. Regenerate all HTML pages
