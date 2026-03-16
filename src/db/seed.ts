@@ -48,24 +48,7 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'AccountingWeb',
     config: JSON.stringify({ url: 'https://www.accountingweb.co.uk/rss' }),
   },
-  {
-    id: 'rss-techcrunch-ai',
-    source_type: 'rss',
-    name: 'TechCrunch AI',
-    config: JSON.stringify({ url: 'https://techcrunch.com/category/artificial-intelligence/feed/' }),
-  },
-  {
-    id: 'rss-venturebeat-ai',
-    source_type: 'rss',
-    name: 'VentureBeat AI',
-    config: JSON.stringify({ url: 'https://venturebeat.com/category/ai/feed/' }),
-  },
-  {
-    id: 'rss-import-ai',
-    source_type: 'rss',
-    name: 'Import AI',
-    config: JSON.stringify({ url: 'https://importai.substack.com/feed' }),
-  },
+  // Removed: TechCrunch AI, VentureBeat AI, Import AI (too broad, not accounting-specific)
   {
     id: 'rss-jason-staats',
     source_type: 'rss',
@@ -114,7 +97,7 @@ export const SEED_SOURCES: SeedSource[] = [
     id: 'reddit-fintech',
     source_type: 'reddit',
     name: 'r/fintech',
-    config: JSON.stringify({ subreddit: 'fintech', query: '"AI" OR "agentic" OR "automation"' }),
+    config: JSON.stringify({ subreddit: 'fintech', query: '("AI" OR "agentic" OR "automation") AND ("accounting" OR "audit" OR "bookkeeping" OR "tax" OR "CPA")' }),
   },
   {
     id: 'reddit-bookkeeping',
@@ -161,25 +144,8 @@ export const SEED_SOURCES: SeedSource[] = [
     config: JSON.stringify({ query: 'AI tax automation' }),
   },
 
-  // --- YouTube ---
-  {
-    id: 'yt-search-ai-accounting',
-    source_type: 'youtube',
-    name: 'YouTube: AI Accounting',
-    config: JSON.stringify({ query: 'AI accounting' }),
-  },
-  {
-    id: 'yt-search-agentic-finance',
-    source_type: 'youtube',
-    name: 'YouTube: Agentic AI Finance',
-    config: JSON.stringify({ query: 'agentic AI finance' }),
-  },
-  {
-    id: 'yt-search-ai-audit',
-    source_type: 'youtube',
-    name: 'YouTube: AI Audit Automation',
-    config: JSON.stringify({ query: 'AI audit automation' }),
-  },
+  // --- YouTube (search sources deactivated — too noisy; keeping Hector Garcia channel) ---
+  // yt-search-ai-accounting, yt-search-agentic-finance, yt-search-ai-audit removed from seed
   {
     id: 'yt-hector-garcia',
     source_type: 'youtube',

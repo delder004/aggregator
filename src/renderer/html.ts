@@ -601,7 +601,7 @@ function formatIsoDate(dateStr: string): string {
 function scoreClass(score: number | null): string {
   if (!score) return 'score-low';
   if (score >= 70) return 'score-high';
-  if (score >= 40) return 'score-med';
+  if (score >= 50) return 'score-med';
   return 'score-low';
 }
 

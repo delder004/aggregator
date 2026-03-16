@@ -28,16 +28,25 @@ export const ALLOWED_TAGS = new Set([
   'open-source',
 ]);
 
-const SYSTEM_PROMPT = `You are a content classifier for agenticaiaccounting.com, a news aggregator focused on agentic AI in accounting.
+const SYSTEM_PROMPT = `You are a strict content classifier for agenticaiaccounting.com, a niche news aggregator focused specifically on the intersection of AI/automation AND accounting/audit/tax/bookkeeping.
+
+CRITICAL: Content MUST be about BOTH artificial intelligence AND accounting to score well. Articles about only AI (without accounting) or only accounting (without AI) should score LOW.
 
 Score this article on TWO dimensions:
 
-## Relevance Score (0-100): How relevant is this to agentic AI in accounting?
-- 90-100: Directly about AI agents in accounting/bookkeeping/audit/tax
-- 70-89: About AI in finance/accounting broadly
-- 50-69: About agentic AI generally (applicable to accounting)
-- 30-49: About AI or accounting separately, tangentially related
-- 0-29: Not relevant
+## Relevance Score (0-100): How relevant is this to AI in accounting?
+- 90-100: Directly about AI agents/automation in accounting, bookkeeping, audit, or tax (e.g., "Deloitte deploys AI agents for audit", "AI-powered bookkeeping startup raises Series A")
+- 70-89: AI applied to accounting-adjacent finance with clear accounting implications (e.g., "AI fraud detection in accounts payable", "LLM for financial reporting")
+- 50-69: AI in broader finance/fintech with indirect accounting relevance (e.g., "AI in banking compliance" — related but not core accounting)
+- 30-49: Only about AI generally OR only about accounting, not both. Tangential at best.
+- 0-29: Not relevant to either AI or accounting, or relevant to only one with no connection to the other
+
+## STRICT SCORING RULES — read carefully:
+- Generic AI news (new models, AI policy, general AI capabilities) with NO mention of accounting/audit/tax/bookkeeping → score 0-25 max
+- General AI newsletters or commentary (e.g., Import AI, AI news roundups) → score 0-20 unless a specific article is about accounting
+- Accounting news with no AI/automation angle → score 20-35 max
+- Fintech/banking AI without accounting specifics → score 30-45 max
+- The article must EXPLICITLY discuss accounting, audit, tax, bookkeeping, CPA, or financial reporting AND AI/automation/agents to score above 50
 
 ## Quality Score (0-100): How good is this content editorially?
 - 90-100: Original research, deep analysis, exclusive reporting, primary sources
@@ -45,6 +54,11 @@ Score this article on TWO dimensions:
 - 50-69: Standard news coverage, press releases, product announcements
 - 30-49: Listicles, shallow takes, SEO content, rehashed news
 - 0-29: Spam, clickbait, ads, very low effort
+
+## Format Penalties (apply to quality score):
+- Podcast episodes: cap quality at 55 max (audio-only, not scannable, often rambling)
+- YouTube videos: cap quality at 55 max (video format, not scannable text content)
+- Podcast/video content that is a deep expert interview specifically about AI in accounting may score up to 65
 
 ## Recency & Freshness
 - Breaking news about specific company actions, product launches, or regulatory changes should score +10-15 relevance over generic evergreen content
@@ -83,9 +97,25 @@ export interface SocialSignals {
   comments?: number;
 }
 
+// Source types that get a relevance penalty (downplayed formats)
+const SOURCE_TYPE_RELEVANCE_PENALTY: Record<string, number> = {
+  youtube: 15,
+  // Podcasts come through as 'rss' sourceType, so we check sourceName patterns instead
+};
+
+// Podcast source name patterns (case-insensitive match)
+const PODCAST_PATTERNS = [/podcast/i, /\bpod\b/i, /transistor\.fm/i, /episode/i];
+
+function isPodcastSource(article: CollectedArticle): boolean {
+  return PODCAST_PATTERNS.some(
+    (p) => p.test(article.sourceName) || p.test(article.url)
+  );
+}
+
 /**
- * Score a batch of collected articles using Claude Sonnet.
+ * Score a batch of collected articles using Claude Haiku.
  * Runs up to CONCURRENCY API calls in parallel for speed.
+ * Applies post-scoring penalties for podcast/video source types.
  * On error, retries once, then assigns score 0.
  */
 export async function scoreArticles(
@@ -120,6 +150,21 @@ export async function scoreArticles(
     const scored = await Promise.all(promises);
     for (let j = 0; j < scored.length; j++) {
       results[i + j] = scored[j];
+    }
+  }
+
+  // Apply post-scoring penalties for downplayed source types
+  for (let i = 0; i < results.length; i++) {
+    const article = results[i];
+    const typePenalty = SOURCE_TYPE_RELEVANCE_PENALTY[article.sourceType] ?? 0;
+    const podcastPenalty = isPodcastSource(article) ? 15 : 0;
+    const penalty = Math.max(typePenalty, podcastPenalty);
+    if (penalty > 0) {
+      results[i] = {
+        ...article,
+        relevanceScore: Math.max(0, article.relevanceScore - penalty),
+        qualityScore: Math.min(article.qualityScore, 55),
+      };
     }
   }
 

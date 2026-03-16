@@ -246,7 +246,7 @@ async function runPipeline(env: Env): Promise<void> {
     }
 
     // Store unscored articles so they're deduped on next run
-    // but won't appear on the site (below 40 threshold)
+    // but won't appear on the site (below 50 threshold)
     const unscoredEntries = unscored.map((a) => ({
       ...a,
       relevanceScore: 0,
@@ -290,7 +290,7 @@ async function runPipeline(env: Env): Promise<void> {
             JSON.stringify(article.companyMentions ?? []),
             article.aiSummary,
             JSON.stringify(article.tags),
-            article.relevanceScore >= 40 ? 1 : 0,
+            article.relevanceScore >= 50 ? 1 : 0,
             wasScored ? now : null
           );
       });
@@ -331,7 +331,7 @@ async function runPipeline(env: Env): Promise<void> {
               s.relevanceScore,
               s.aiSummary,
               JSON.stringify(s.tags),
-              s.relevanceScore >= 40 ? 1 : 0,
+              s.relevanceScore >= 50 ? 1 : 0,
               now,
               s.qualityScore ?? null,
               s.companyMentions ? JSON.stringify(s.companyMentions) : null,
@@ -420,7 +420,7 @@ async function runPipeline(env: Env): Promise<void> {
       ).toISOString();
       const publishedArticles = await getPublishedArticles(env.DB, {
         limit: 1000,
-        minScore: 40,
+        minScore: 50,
       });
       const recentArticles = publishedArticles.filter(
         (a) => a.publishedAt >= thirtyDaysAgo

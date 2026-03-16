@@ -72,7 +72,7 @@ ${authorTag}${categoryTags ? categoryTags + '\n' : ''}${qualityTag}    </item>`;
  * Generate a valid RSS 2.0 XML feed from an array of articles.
  *
  * Articles are sorted by publishedAt descending (newest first).
- * Only published articles with a relevance score >= 40 should be passed in,
+ * Only published articles with a relevance score >= 50 should be passed in,
  * but this function does not filter — the caller is responsible for filtering.
  *
  * @param articles - Array of Article objects to include in the feed

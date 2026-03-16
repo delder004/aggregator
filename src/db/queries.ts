@@ -20,7 +20,7 @@ export async function getPublishedArticles(
   db: D1Database,
   options: { limit?: number; offset?: number; minScore?: number } = {}
 ): Promise<Article[]> {
-  const { limit = 20, offset = 0, minScore = 40 } = options;
+  const { limit = 20, offset = 0, minScore = 50 } = options;
   const results = await db
     .prepare(
       `SELECT * FROM articles
@@ -49,7 +49,7 @@ export async function getArticlesByTag(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= 40
+       WHERE is_published = 1 AND relevance_score >= 50
          AND tags LIKE ?
        ORDER BY published_at DESC
        LIMIT ? OFFSET ?`
@@ -123,7 +123,7 @@ export async function updateArticleScore(
 
 export async function getArticleCount(
   db: D1Database,
-  minScore: number = 40
+  minScore: number = 50
 ): Promise<number> {
   const row = await db
     .prepare(
@@ -141,7 +141,7 @@ export async function getArticleCountByTag(
   const row = await db
     .prepare(
       `SELECT COUNT(*) as count FROM articles
-       WHERE is_published = 1 AND relevance_score >= 40 AND tags LIKE ?`
+       WHERE is_published = 1 AND relevance_score >= 50 AND tags LIKE ?`
     )
     .bind(`%"${escapeLike(tag)}"%`)
     .first<{ count: number }>();
@@ -188,7 +188,7 @@ export async function getAllUniqueTags(db: D1Database): Promise<string[]> {
   const results = await db
     .prepare(
       `SELECT DISTINCT tags FROM articles
-       WHERE is_published = 1 AND relevance_score >= 40 AND tags IS NOT NULL`
+       WHERE is_published = 1 AND relevance_score >= 50 AND tags IS NOT NULL`
     )
     .all();
   const tagSet = new Set<string>();
@@ -211,7 +211,7 @@ export async function getCompanyArticles(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= 40
+       WHERE is_published = 1 AND relevance_score >= 50
          AND company_mentions LIKE ?
        ORDER BY published_at DESC
        LIMIT ?`
@@ -388,7 +388,7 @@ export async function getArticlesInRange(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= 40
+       WHERE is_published = 1 AND relevance_score >= 50
          AND published_at >= ? AND published_at < ?
        ORDER BY relevance_score DESC, published_at DESC
        LIMIT ?`

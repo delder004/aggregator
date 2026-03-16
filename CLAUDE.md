@@ -55,7 +55,7 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 - **Page weight < 50KB.** No external stylesheets, fonts, or libraries.
 - **Collectors must not throw.** Return empty arrays on failure and log errors — one broken source must not kill the cron job.
 - **30-day rolling window.** Feed shows articles from the last 30 days.
-- **Scoring threshold:** 40+ = published, 70+ = featured placement.
+- **Scoring threshold:** 50+ = published, 70+ = featured placement.
 - **All HTML is pre-rendered into KV** during the cron job, not on request.
 
 ## Cloudflare Workers Constraints

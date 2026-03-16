@@ -480,7 +480,7 @@ ${urls}</urlset>`;
 /**
  * Generate all static pages for the site.
  *
- * @param articles   All published articles (score >= 40, is_published = true), sorted by date.
+ * @param articles   All published articles (score >= 50, is_published = true), sorted by date.
  * @param featuredArticles  Articles with score >= 70, for featured placement.
  * @param tags       All known tags (used for tag page generation).
  * @param stats      Optional stats for the footer (sources count, articles count, last updated).
