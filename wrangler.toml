@@ -1,0 +1,15 @@
+name = "agenticaiaccounting"
+main = "src/index.ts"
+compatibility_date = "2025-03-14"
+
+[triggers]
+crons = ["0 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agenticaiaccounting-db"
+database_id = "placeholder-replace-after-creation"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "placeholder-replace-after-creation"

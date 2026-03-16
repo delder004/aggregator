@@ -1,0 +1,23 @@
+{
+  "name": "agenticaiaccounting",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/workers-types": "^4.20250313.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.7.3",
+    "vitest": "~2.1.8",
+    "wrangler": "^4.5.1"
+  }
+}

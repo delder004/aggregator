@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Node
+node_modules/
+.wrangler/
+.dev.vars
+
+# TypeScript
+*.tsbuildinfo
+
+# Worker types (generated)
+worker-configuration.d.ts
+
+# OS
+.DS_Store
