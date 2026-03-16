@@ -1,4 +1,4 @@
-import type { Article, SourceConfig, ScoredArticle, SourceType } from '../types';
+import type { Article, SourceConfig, ScoredArticle, SourceType, Company } from '../types';
 
 /** Escape SQL LIKE wildcards in user-provided values. */
 function escapeLike(value: string): string {
@@ -13,8 +13,9 @@ export async function insertArticle(
     .prepare(
       `INSERT OR IGNORE INTO articles
        (id, url, title, source_type, source_name, author, published_at, fetched_at,
-        content_snippet, image_url, relevance_score, ai_summary, tags, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        content_snippet, image_url, relevance_score, quality_score, social_score,
+        comment_count, company_mentions, ai_summary, tags, is_published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       article.id,
@@ -28,6 +29,10 @@ export async function insertArticle(
       article.contentSnippet,
       article.imageUrl,
       article.relevanceScore,
+      article.qualityScore ?? null,
+      article.socialScore ?? null,
+      article.commentCount ?? null,
+      JSON.stringify(article.companyMentions ?? []),
       article.aiSummary,
       JSON.stringify(article.tags),
       article.isPublished !== false ? 1 : 0
@@ -55,7 +60,14 @@ export async function getPublishedArticles(
     .prepare(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= ?
-       ORDER BY published_at DESC
+       ORDER BY (relevance_score * 0.5 + COALESCE(quality_score, 0) * 0.3 +
+         CASE WHEN julianday('now') - julianday(published_at) < 1 THEN 20
+              WHEN julianday('now') - julianday(published_at) < 3 THEN 10
+              WHEN julianday('now') - julianday(published_at) < 7 THEN 5
+              ELSE 0 END +
+         CASE WHEN COALESCE(social_score, 0) > 100 THEN 10
+              WHEN COALESCE(social_score, 0) > 10 THEN 5
+              ELSE 0 END) DESC
        LIMIT ? OFFSET ?`
     )
     .bind(minScore, limit, offset)
@@ -90,6 +102,7 @@ export async function getFeaturedArticles(
     .prepare(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= 70
+         AND (quality_score >= 50 OR quality_score IS NULL)
        ORDER BY published_at DESC
        LIMIT ?`
     )
@@ -120,14 +133,26 @@ export async function updateArticleScore(
   score: number,
   aiSummary: string,
   tags: string[],
-  isPublished: boolean
+  isPublished: boolean,
+  qualityScore?: number | null,
+  companyMentions?: string[]
 ): Promise<void> {
   await db
     .prepare(
-      `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?
+      `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
+       quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions)
        WHERE url = ?`
     )
-    .bind(score, aiSummary, JSON.stringify(tags), isPublished ? 1 : 0, new Date().toISOString(), url)
+    .bind(
+      score,
+      aiSummary,
+      JSON.stringify(tags),
+      isPublished ? 1 : 0,
+      new Date().toISOString(),
+      qualityScore ?? null,
+      companyMentions ? JSON.stringify(companyMentions) : null,
+      url
+    )
     .run();
 }
 
@@ -213,6 +238,24 @@ export async function getAllUniqueTags(db: D1Database): Promise<string[]> {
   return Array.from(tagSet).sort();
 }
 
+export async function getCompanyArticles(
+  db: D1Database,
+  companyName: string,
+  limit: number = 20
+): Promise<Article[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE is_published = 1 AND relevance_score >= 40
+         AND company_mentions LIKE ?
+       ORDER BY published_at DESC
+       LIMIT ?`
+    )
+    .bind(`%"${escapeLike(companyName)}"%`, limit)
+    .all();
+  return results.results.map(mapRowToArticle);
+}
+
 function mapRowToArticle(row: Record<string, unknown>): Article {
   let tags: string[] = [];
   try {
@@ -238,7 +281,14 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     contentSnippet: (row.content_snippet as string) || null,
     imageUrl: (row.image_url as string) || null,
     relevanceScore: row.relevance_score as number | null,
+<<<<<<< HEAD
     qualityScore: row.quality_score as number | null,
+=======
+    qualityScore: (row.quality_score as number | null) ?? null,
+    socialScore: (row.social_score as number | null) ?? null,
+    commentCount: (row.comment_count as number | null) ?? null,
+    companyMentions,
+>>>>>>> worktree-agent-a0580f41
     aiSummary: (row.ai_summary as string) || null,
     tags,
     isPublished: row.is_published === 1,

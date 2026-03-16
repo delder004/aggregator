@@ -1,10 +1,17 @@
-import type { Env, CollectedArticle, Collector, SourceConfig } from './types';
+import type { Env, CollectedArticle, Collector, SourceConfig, Company } from './types';
 import { rssCollector } from './collectors/rss';
 import { createRedditCollector } from './collectors/reddit';
 import { hackerNewsCollector } from './collectors/hackernews';
 import { createYouTubeCollector } from './collectors/youtube';
 import { arxivCollector } from './collectors/arxiv';
+import { substackCollector } from './collectors/substack';
+import { productHuntCollector } from './collectors/producthunt';
+import { ycCollector } from './collectors/ycombinator';
+import { companyBlogCollector } from './collectors/companyblog';
+import { pressReleaseCollector } from './collectors/pressrelease';
 import { scoreArticles } from './scoring/classifier';
+import { extractContent } from './scoring/content-extractor';
+import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats } from './company/tracker';
 import {
   getPublishedArticles,
   getFeaturedArticles,
@@ -32,6 +39,16 @@ function getCollector(
       return createYouTubeCollector(env);
     case 'arxiv':
       return arxivCollector;
+    case 'substack':
+      return substackCollector;
+    case 'producthunt':
+      return productHuntCollector;
+    case 'ycombinator':
+      return ycCollector;
+    case 'companyblog':
+      return companyBlogCollector;
+    case 'pressrelease':
+      return pressReleaseCollector;
     default:
       return null;
   }
@@ -163,6 +180,23 @@ async function runPipeline(env: Env): Promise<void> {
     }
     console.log(`New articles after dedup: ${newArticles.length}`);
 
+    // 3b. Enrich articles with fuller content before scoring
+    // Cap at 50 to stay within subrequest limits
+    const enrichLimit = Math.min(newArticles.length, 50);
+    for (let i = 0; i < enrichLimit; i++) {
+      if (!newArticles[i].contentSnippet || newArticles[i].contentSnippet!.length < 200) {
+        try {
+          const fullContent = await extractContent(newArticles[i].url);
+          if (fullContent) {
+            newArticles[i] = { ...newArticles[i], contentSnippet: fullContent };
+          }
+        } catch (err) {
+          // Content extraction is best-effort — don't break the pipeline
+          console.warn(`Content extraction failed for ${newArticles[i].url}:`, err);
+        }
+      }
+    }
+
     // 4. Score new articles with Claude Haiku
     // Cap per-run to stay within Workers subrequest limits
     const toScore = newArticles.slice(0, MAX_SCORE_PER_RUN);
@@ -211,8 +245,9 @@ async function runPipeline(env: Env): Promise<void> {
           .prepare(
             `INSERT OR IGNORE INTO articles
              (id, url, title, source_type, source_name, author, published_at, fetched_at,
-              content_snippet, image_url, relevance_score, ai_summary, tags, is_published, scored_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              content_snippet, image_url, relevance_score, quality_score, social_score,
+              comment_count, company_mentions, ai_summary, tags, is_published, scored_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           )
           .bind(
             generateId(),
@@ -226,6 +261,10 @@ async function runPipeline(env: Env): Promise<void> {
             article.contentSnippet,
             article.imageUrl,
             article.relevanceScore,
+            article.qualityScore ?? null,
+            article.socialScore ?? null,
+            article.commentCount ?? null,
+            JSON.stringify(article.companyMentions ?? []),
             article.aiSummary,
             JSON.stringify(article.tags),
             article.relevanceScore >= 40 ? 1 : 0,
@@ -276,6 +315,24 @@ async function runPipeline(env: Env): Promise<void> {
       }
     }
 
+    // 5c. Company tracking — match scored articles to tracked companies
+    let companies: Company[] = [];
+    try {
+      companies = await getTrackedCompanies(env.DB);
+      if (companies.length > 0 && scored.length > 0) {
+        for (const article of scored) {
+          const matched = matchArticleToCompanies(article, companies);
+          if (matched.length > 0) {
+            await linkArticleToCompanies(env.DB, article.url, matched);
+          }
+        }
+        await updateCompanyStats(env.DB, companies);
+        console.log(`Company tracking complete for ${scored.length} articles against ${companies.length} companies`);
+      }
+    } catch (err) {
+      console.error('Company tracking failed:', err);
+    }
+
     // 6. Regenerate all HTML pages
     try {
       const thirtyDaysAgo = new Date(
@@ -293,11 +350,21 @@ async function runPipeline(env: Env): Promise<void> {
 
       const totalArticles = recentArticles.length;
       const lastUpdated = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+      // Refresh company list for page generation (stats may have updated)
+      let companiesForPages = companies;
+      try {
+        if (companiesForPages.length === 0) {
+          companiesForPages = await getTrackedCompanies(env.DB);
+        }
+      } catch {
+        // Use whatever we already have
+      }
+
       const pages = generateAllPages(recentArticles, featuredArticles, tags, {
         sources: sources.length,
         articles: totalArticles,
         lastUpdated,
-      });
+      }, companiesForPages);
 
       const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
       pages['/feed.xml'] = rssFeed;

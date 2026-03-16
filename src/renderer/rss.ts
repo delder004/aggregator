@@ -54,6 +54,10 @@ function renderItem(article: Article): string {
     ? `      <author>${escapeXml(article.author)}</author>\n`
     : '';
 
+  const qualityTag = article.qualityScore != null
+    ? `      <agenticai:quality>${article.qualityScore}</agenticai:quality>\n`
+    : '';
+
   return `    <item>
       <title>${title}</title>
       <link>${link}</link>
@@ -61,7 +65,7 @@ function renderItem(article: Article): string {
       <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
       <source url="https://agenticaiaccounting.com">${source}</source>
-${authorTag}${categoryTags ? categoryTags + '\n' : ''}    </item>`;
+${authorTag}${categoryTags ? categoryTags + '\n' : ''}${qualityTag}    </item>`;
 }
 
 /**
@@ -85,7 +89,7 @@ export function generateRssFeed(articles: Article[]): string {
   const items = sorted.map(renderItem).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:agenticai="https://agenticaiaccounting.com/ns">
   <channel>
     <title>Agentic AI Accounting</title>
     <link>https://agenticaiaccounting.com</link>

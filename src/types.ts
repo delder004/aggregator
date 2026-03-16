@@ -29,7 +29,9 @@ export type SourceType =
   | 'arxiv'
   | 'substack'
   | 'producthunt'
-  | 'ycombinator';
+  | 'ycombinator'
+  | 'companyblog'
+  | 'pressrelease';
 
 export interface SourceConfig {
   id: string;

@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article } from '../types';
+import type { Article, Company } from '../types';
 import {
   layout,
   articleCard,
@@ -257,15 +257,20 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
   <h2>How It Works</h2>
   <p>
     Every hour, our system collects new content from RSS feeds, Reddit,
-    Hacker News, YouTube, and arXiv. Each article is scored for relevance
-    by an AI classifier (Claude by Anthropic). Articles scoring above our
-    relevance threshold are published to the feed. High-scoring articles
-    receive featured placement.
+    Hacker News, YouTube, arXiv, Substack newsletters, and company blogs.
+    Each article is scored for both relevance and quality by an AI classifier
+    (Claude by Anthropic). Articles scoring above our relevance threshold
+    are published to the feed. High-scoring articles receive featured placement.
+  </p>
+  <p>
+    We also track key companies in the AI-accounting space, linking articles
+    to the companies they mention. This makes it easy to follow developments
+    around specific vendors and startups.
   </p>
   <p>
     There is no editorial staff. The entire pipeline — collection, scoring,
-    and publishing — is automated. This means the feed is comprehensive and
-    timely, though occasional off-topic results may slip through.
+    company tracking, and publishing — is automated. This means the feed is
+    comprehensive and timely, though occasional off-topic results may slip through.
   </p>
 
   <h2>Sources</h2>
@@ -274,11 +279,14 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
     <li><strong>RSS feeds:</strong> Accounting Today, Journal of Accountancy,
       Going Concern, CPA Practice Advisor, AccountingWeb, TechCrunch AI,
       VentureBeat AI, and select newsletters and podcasts</li>
+    <li><strong>Substack:</strong> AI and accounting-focused newsletters</li>
     <li><strong>Reddit:</strong> r/accounting, r/artificial, r/MachineLearning,
       r/fintech, r/Bookkeeping, r/taxpros</li>
     <li><strong>Hacker News:</strong> AI + accounting keyword searches</li>
     <li><strong>YouTube:</strong> Key channels and topic searches</li>
     <li><strong>arXiv:</strong> CS/AI papers related to accounting and finance</li>
+    <li><strong>Company blogs:</strong> Direct tracking of AI-accounting vendors</li>
+    <li><strong>Press releases:</strong> Product launches and industry news</li>
   </ul>
 
   <h2>Technical Details</h2>
@@ -305,6 +313,57 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
       ...layoutOpts,
     }),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Companies page
+// ---------------------------------------------------------------------------
+
+function generateCompaniesPage(
+  companies: Company[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+
+  // Sort companies by article count descending
+  const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
+
+  let body = `<div class="section-label">Tracked Companies</div>\n`;
+  body += `<p style="color:var(--text-secondary);margin:0.5rem 0 1rem;font-size:0.85rem;">Companies active in AI-powered accounting, ranked by coverage.</p>\n`;
+
+  if (sorted.length === 0) {
+    body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet.</p>`;
+  } else {
+    body += `<div style="display:flex;flex-direction:column;gap:0;">\n`;
+    for (const company of sorted) {
+      const slug = escapeHtml(company.slug);
+      const name = escapeHtml(company.name);
+      const desc = company.description ? escapeHtml(company.description) : '';
+      const lastMention = company.lastMentionedAt
+        ? `Last mentioned ${escapeHtml(company.lastMentionedAt.split('T')[0])}`
+        : '';
+
+      body += `<a href="/company/${slug}" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit;">
+  <div>
+    <span style="font-weight:600;font-size:0.93rem;color:var(--text);">${name}</span>
+    ${desc ? `<span style="font-size:0.8rem;color:var(--text-secondary);margin-left:0.5rem;">${desc}</span>` : ''}
+    ${lastMention ? `<div style="font-size:0.72rem;color:var(--text-tertiary);margin-top:0.15rem;">${lastMention}</div>` : ''}
+  </div>
+  <span style="font-size:0.8rem;font-weight:600;color:var(--accent);white-space:nowrap;margin-left:1rem;">${company.articleCount} article${company.articleCount !== 1 ? 's' : ''}</span>
+</a>\n`;
+    }
+    body += `</div>\n`;
+  }
+
+  pages['/companies'] = layout(body, {
+    title: 'Companies',
+    description: 'Companies tracked in AI-powered accounting news.',
+    path: '/companies',
+    activeTag: 'companies',
+    ...layoutOpts,
+  });
+
+  return pages;
 }
 
 // ---------------------------------------------------------------------------
@@ -348,13 +407,15 @@ ${urls}</urlset>`;
  * @param featuredArticles  Articles with score >= 70, for featured placement.
  * @param tags       All known tags (used for tag page generation).
  * @param stats      Optional stats for the footer (sources count, articles count, last updated).
+ * @param companies  Optional list of tracked companies for the companies page.
  * @returns A Record mapping URL paths to HTML strings.
  */
 export function generateAllPages(
   articles: Article[],
   featuredArticles: Article[],
   tags: string[],
-  stats?: { sources: number; articles: number; lastUpdated: string }
+  stats?: { sources: number; articles: number; lastUpdated: string },
+  companies?: Company[]
 ): Record<string, string> {
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
@@ -374,6 +435,10 @@ export function generateAllPages(
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
   };
+
+  if (companies && companies.length > 0) {
+    Object.assign(pages, generateCompaniesPage(companies, layoutOpts));
+  }
 
   pages['/sitemap.xml'] = generateSitemap(
     articles,
