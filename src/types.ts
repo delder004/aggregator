@@ -30,7 +30,8 @@ export type SourceType =
   | 'producthunt'
   | 'ycombinator'
   | 'companyblog'
-  | 'pressrelease';
+  | 'pressrelease'
+  | 'blogscraper';
 
 export interface SourceConfig {
   id: string;

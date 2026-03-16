@@ -189,6 +189,32 @@ export const SEED_SOURCES: SeedSource[] = [
     config: JSON.stringify({ url: 'https://blog.xero.com/feed/', company: 'Xero' }),
   },
 
+  // --- Blog Scrapers (companies without RSS feeds) ---
+  {
+    id: 'scrape-rillet',
+    source_type: 'blogscraper',
+    name: 'Rillet Blog',
+    config: JSON.stringify({ url: 'https://www.rillet.com/blog', articlePathPrefix: '/blog/', company: 'Rillet' }),
+  },
+  {
+    id: 'scrape-puzzle',
+    source_type: 'blogscraper',
+    name: 'Puzzle Blog',
+    config: JSON.stringify({ url: 'https://www.puzzle.io/blog', articlePathPrefix: '/blog/', company: 'Puzzle' }),
+  },
+  {
+    id: 'scrape-dualentry',
+    source_type: 'blogscraper',
+    name: 'Dual Entry Blog',
+    config: JSON.stringify({ url: 'https://dualentry.com/blog', articlePathPrefix: '/blog/', company: 'Dual Entry' }),
+  },
+  {
+    id: 'scrape-campfire',
+    source_type: 'blogscraper',
+    name: 'Campfire Blog',
+    config: JSON.stringify({ url: 'https://www.campfire.ai/blog', articlePathPrefix: '/blog/', company: 'Campfire' }),
+  },
+
   // --- Y Combinator ---
   {
     id: 'yc-accounting-ai',

@@ -8,6 +8,7 @@ import { productHuntCollector } from './collectors/producthunt';
 import { ycombinatorCollector } from './collectors/ycombinator';
 import { companyBlogCollector } from './collectors/companyblog';
 import { pressReleaseCollector } from './collectors/pressrelease';
+import { blogScraperCollector } from './collectors/blogscraper';
 import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
 import { extractContent } from './scoring/content-extractor';
 import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats } from './company/tracker';
@@ -49,6 +50,8 @@ function getCollector(
       return companyBlogCollector;
     case 'pressrelease':
       return pressReleaseCollector;
+    case 'blogscraper':
+      return blogScraperCollector;
     default:
       return null;
   }
