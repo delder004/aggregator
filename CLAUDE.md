@@ -61,7 +61,7 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 ## Cloudflare Workers Constraints
 
 - **1,000 subrequest limit** per invocation (fetch calls + D1 queries all count). Batch D1 operations (IN clauses, `d1.batch()`) and cap external API calls per run. RSS feeds capped at 50 items each. Source updates and backfill score updates are batched.
-- **CPU time limits.** Scoring is capped at 25 articles per cron run (`MAX_SCORE_PER_RUN`) with 10 concurrent requests. Unscored articles are stored and picked up on subsequent runs.
+- **CPU time limits.** Scoring is capped at 40 articles per cron run (`MAX_SCORE_PER_RUN`) with 10 concurrent requests. Unscored articles are stored and picked up on subsequent runs.
 - **No `this` in module exports.** Pipeline logic lives in a standalone `runPipeline()` function, not a method — both `scheduled()` and the `/cron` fetch route call it directly.
 - **Web APIs only.** No Node.js built-ins. Use `fetch`, `DOMParser`, `Response`, etc.
 
@@ -81,6 +81,10 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 - **Workers.dev URL:** `https://agenticaiaccounting.dmelder.workers.dev/`
 - **Custom domain:** `agenticaiaccounting.com` (DNS not yet connected to Cloudflare — still on GoDaddy nameservers)
 - **Logs:** Cloudflare dashboard → Workers → agenticaiaccounting → Logs, or `npx wrangler tail`
+- **Manual cron trigger:**
+  ```bash
+  curl -H "X-Cron-Key: $CRON_SECRET" https://agenticaiaccounting.dmelder.workers.dev/cron
+  ```
 
 ## Workflow
 
