@@ -1,5 +1,10 @@
 import type { Article, SourceConfig, ScoredArticle, SourceType } from '../types';
 
+/** Escape SQL LIKE wildcards in user-provided values. */
+function escapeLike(value: string): string {
+  return value.replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 export async function insertArticle(
   db: D1Database,
   article: Omit<Article, 'isPublished'> & { isPublished?: boolean }
@@ -72,7 +77,7 @@ export async function getArticlesByTag(
        ORDER BY published_at DESC
        LIMIT ? OFFSET ?`
     )
-    .bind(`%"${tag}"%`, limit, offset)
+    .bind(`%"${escapeLike(tag)}"%`, limit, offset)
     .all();
   return results.results.map(mapRowToArticle);
 }
@@ -100,7 +105,7 @@ export async function getUnscoredArticles(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE relevance_score = 0 OR relevance_score IS NULL
+       WHERE scored_at IS NULL
        ORDER BY fetched_at DESC
        LIMIT ?`
     )
@@ -119,10 +124,10 @@ export async function updateArticleScore(
 ): Promise<void> {
   await db
     .prepare(
-      `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?
+      `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?
        WHERE url = ?`
     )
-    .bind(score, aiSummary, JSON.stringify(tags), isPublished ? 1 : 0, url)
+    .bind(score, aiSummary, JSON.stringify(tags), isPublished ? 1 : 0, new Date().toISOString(), url)
     .run();
 }
 
@@ -148,7 +153,7 @@ export async function getArticleCountByTag(
       `SELECT COUNT(*) as count FROM articles
        WHERE is_published = 1 AND relevance_score >= 40 AND tags LIKE ?`
     )
-    .bind(`%"${tag}"%`)
+    .bind(`%"${escapeLike(tag)}"%`)
     .first<{ count: number }>();
   return row?.count ?? 0;
 }

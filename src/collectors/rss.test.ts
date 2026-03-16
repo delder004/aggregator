@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RssCollector } from './rss';
+import { rssCollector } from './rss';
 import type { SourceConfig } from '../types';
 
 function makeConfig(url: string, name = 'Test Feed'): SourceConfig {
@@ -105,10 +105,9 @@ const LONG_DESCRIPTION = `<?xml version="1.0" encoding="UTF-8"?>
 </rss>`;
 
 describe('RssCollector', () => {
-  let collector: RssCollector;
+  const collector = rssCollector;
 
   beforeEach(() => {
-    collector = new RssCollector();
     vi.restoreAllMocks();
   });
 

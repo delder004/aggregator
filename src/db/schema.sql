@@ -12,12 +12,14 @@ CREATE TABLE IF NOT EXISTS articles (
     relevance_score INTEGER,
     ai_summary TEXT,
     tags TEXT,
-    is_published INTEGER DEFAULT 1
+    is_published INTEGER DEFAULT 1,
+    scored_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_published_at ON articles(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_relevance ON articles(relevance_score DESC);
 CREATE INDEX IF NOT EXISTS idx_source_type ON articles(source_type);
+CREATE INDEX IF NOT EXISTS idx_scored_at ON articles(scored_at);
 
 CREATE TABLE IF NOT EXISTS sources (
     id TEXT PRIMARY KEY,

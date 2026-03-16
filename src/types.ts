@@ -54,6 +54,7 @@ export interface Env {
   DB: D1Database;
   KV: KVNamespace;
   CLAUDE_API_KEY: string;
+  CRON_SECRET?: string;
   REDDIT_CLIENT_ID?: string;
   REDDIT_CLIENT_SECRET?: string;
   YOUTUBE_API_KEY?: string;

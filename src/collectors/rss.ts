@@ -288,10 +288,8 @@ function parseAtomEntry(
   };
 }
 
-/**
- * RSS/Atom feed collector implementing the Collector interface.
- */
-export class RssCollector implements Collector {
+/** RSS/Atom feed collector implementing the Collector interface. */
+export const rssCollector: Collector = {
   async collect(config: SourceConfig): Promise<CollectedArticle[]> {
     const feedUrl = config.config.url;
     if (!feedUrl) {
@@ -354,8 +352,5 @@ export class RssCollector implements Collector {
       console.error(`[RSS] Error collecting from ${config.name} (${feedUrl}):`, err);
       return [];
     }
-  }
-}
-
-/** Default singleton instance for convenience. */
-export const rssCollector = new RssCollector();
+  },
+};
