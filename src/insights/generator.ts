@@ -187,7 +187,7 @@ export async function generateInsight(
 /**
  * Main entry point: generate insight summaries for all applicable periods.
  * Checks DB to avoid regenerating existing summaries.
- * Skips periods with fewer than 3 articles.
+ * Skips periods with fewer than 1 article.
  */
 export async function generateInsights(
   env: Env,
@@ -217,8 +217,8 @@ export async function generateInsights(
         period.periodEnd,
       );
 
-      // Need at least 3 articles to generate a meaningful summary
-      if (articles.length < 3) {
+      // Need at least 1 article to generate a meaningful summary
+      if (articles.length < 1) {
         console.log(
           `Only ${articles.length} articles for ${period.periodType} ${period.title}, skipping`,
         );
