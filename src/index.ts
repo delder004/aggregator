@@ -47,7 +47,7 @@ export default {
   async fetch(
     request: Request,
     env: Env,
-    _ctx: ExecutionContext
+    ctx: ExecutionContext
   ): Promise<Response> {
     const url = new URL(request.url);
     let path = url.pathname;
@@ -55,6 +55,12 @@ export default {
     // Normalize: strip trailing slash except for root
     if (path !== '/' && path.endsWith('/')) {
       path = path.slice(0, -1);
+    }
+
+    // Manual cron trigger endpoint (authenticated via API key)
+    if (path === '/cron' && request.headers.get('X-Cron-Key') === env.CLAUDE_API_KEY) {
+      ctx.waitUntil(this.scheduled({} as ScheduledEvent, env, ctx));
+      return new Response('Cron triggered', { status: 200 });
     }
 
     // Serve pre-rendered pages from KV
