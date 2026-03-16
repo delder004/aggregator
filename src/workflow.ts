@@ -28,6 +28,12 @@ import { generateInsights } from './insights/generator';
 
 const MAX_SCORE_PER_RUN = 50;
 const ENRICH_LIMIT = 20;
+const SOURCES_PER_BATCH = 20;
+
+interface CollectBatchResult {
+  articles: CollectedArticle[];
+  sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }>;
+}
 
 function getCollector(
   sourceType: string,
@@ -91,61 +97,94 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
     const startTimeISO = new Date(startTime).toISOString();
     console.log('Pipeline workflow started');
 
-    // Step 1: Collect and store articles
+    // Step 1a: Load all active sources from DB
+    const sources = await step.do(
+      'load-sources',
+      {
+        retries: { limit: 2, delay: '5 seconds' },
+      },
+      async () => {
+        try {
+          const allSources = await getAllActiveSources(this.env.DB);
+          console.log(`Loaded ${allSources.length} active sources`);
+          return allSources;
+        } catch (err) {
+          console.error('Failed to load sources:', err);
+          return [] as SourceConfig[];
+        }
+      }
+    );
+
+    // Step 1b: Collect articles in batches (each batch gets its own subrequest budget)
+    const batchResults: CollectBatchResult[] = [];
+    const batchCount = Math.ceil(sources.length / SOURCES_PER_BATCH);
+    for (let b = 0; b < batchCount; b++) {
+      const start = b * SOURCES_PER_BATCH;
+      const batchSources = sources.slice(start, start + SOURCES_PER_BATCH);
+      const result = await step.do(
+        `collect-batch-${b}`,
+        {
+          retries: { limit: 1, delay: '5 seconds' },
+        },
+        async () => {
+          const sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }> = [];
+          const collectResults = await Promise.all(
+            batchSources.map(async (source): Promise<CollectedArticle[]> => {
+              const collector = getCollector(source.sourceType, this.env);
+              if (!collector) {
+                console.warn(`No collector for source type: ${source.sourceType}`);
+                return [];
+              }
+
+              try {
+                const articles = await collector.collect(source);
+                console.log(
+                  `Collected ${articles.length} articles from ${source.name}`
+                );
+
+                sourceUpdates.push({
+                  id: source.id,
+                  lastFetchedAt: new Date().toISOString(),
+                  errorCount: 0,
+                });
+
+                return articles;
+              } catch (err) {
+                console.error(`Collector failed for ${source.name}:`, err);
+                sourceUpdates.push({
+                  id: source.id,
+                  errorCount: source.errorCount + 1,
+                });
+                return [];
+              }
+            })
+          );
+
+          const articles = collectResults.flat();
+          console.log(`Batch ${b}: collected ${articles.length} articles from ${batchSources.length} sources`);
+
+          return { articles, sourceUpdates } as CollectBatchResult;
+        }
+      );
+      batchResults.push(result);
+    }
+
+    // Merge all batch results
+    const allCollected = batchResults.flatMap(r => r.articles);
+    const allSourceUpdates = batchResults.flatMap(r => r.sourceUpdates);
+    console.log(`Total collected: ${allCollected.length} articles from ${sources.length} sources`);
+
+    // Step 1c: Store and score articles
     const collection = await step.do(
-      'collect-and-store',
+      'store-and-score',
       {
         retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
       },
       async () => {
-        // 1. Get all active sources
-        let sources: SourceConfig[];
-        try {
-          sources = await getAllActiveSources(this.env.DB);
-        } catch (err) {
-          console.error('Failed to load sources:', err);
-          return { collected: 0, new: 0, scored: 0, inserted: 0, sourceCount: 0 };
-        }
-        console.log(`Loaded ${sources.length} active sources`);
-
-        // 2. Collect articles from all sources in parallel
-        const sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }> = [];
-        const collectResults = await Promise.all(
-          sources.map(async (source): Promise<CollectedArticle[]> => {
-            const collector = getCollector(source.sourceType, this.env);
-            if (!collector) {
-              console.warn(`No collector for source type: ${source.sourceType}`);
-              return [];
-            }
-
-            try {
-              const articles = await collector.collect(source);
-              console.log(
-                `Collected ${articles.length} articles from ${source.name}`
-              );
-
-              sourceUpdates.push({
-                id: source.id,
-                lastFetchedAt: new Date().toISOString(),
-                errorCount: 0,
-              });
-
-              return articles;
-            } catch (err) {
-              console.error(`Collector failed for ${source.name}:`, err);
-              sourceUpdates.push({
-                id: source.id,
-                errorCount: source.errorCount + 1,
-              });
-              return [];
-            }
-          })
-        );
-
-        // Batch all source updates into a single D1 call
-        if (sourceUpdates.length > 0) {
+        // 1. Batch update source statuses
+        if (allSourceUpdates.length > 0) {
           try {
-            const stmts = sourceUpdates.map((u) => {
+            const stmts = allSourceUpdates.map((u) => {
               if (u.lastFetchedAt) {
                 return this.env.DB.prepare('UPDATE sources SET last_fetched_at = ?, error_count = ? WHERE id = ?')
                   .bind(u.lastFetchedAt, u.errorCount, u.id);
@@ -159,10 +198,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
           }
         }
 
-        const allCollected = collectResults.flat();
-        console.log(`Total collected: ${allCollected.length} articles`);
-
-        // 3. Deduplicate by URL — batch query existing URLs from DB
+        // 2. Deduplicate by URL — batch query existing URLs from DB
         let newArticles: CollectedArticle[] = allCollected;
         try {
           const urls = allCollected.map((a) => a.url);
@@ -184,7 +220,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
         }
         console.log(`New articles after dedup: ${newArticles.length}`);
 
-        // 3b. Enrich articles with fuller content before scoring
+        // 3. Enrich articles with fuller content before scoring
         const enrichLimit = Math.min(newArticles.length, ENRICH_LIMIT);
         for (let i = 0; i < enrichLimit; i++) {
           if (!newArticles[i].contentSnippet || newArticles[i].contentSnippet!.length < 200) {
