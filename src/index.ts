@@ -59,7 +59,7 @@ export default {
 
     // Manual cron trigger endpoint (authenticated via API key)
     if (path === '/cron' && request.headers.get('X-Cron-Key') === env.CLAUDE_API_KEY) {
-      ctx.waitUntil(this.scheduled({} as ScheduledEvent, env, ctx));
+      ctx.waitUntil(runPipeline(env));
       return new Response('Cron triggered', { status: 200 });
     }
 
@@ -83,8 +83,13 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    ctx: ExecutionContext
+    _ctx: ExecutionContext
   ): Promise<void> {
+    await runPipeline(env);
+  },
+};
+
+async function runPipeline(env: Env): Promise<void> {
     const startTime = Date.now();
     console.log('Cron job started');
 
@@ -285,5 +290,4 @@ export default {
     console.log(
       `Cron job completed in ${elapsed}ms. Collected: ${allCollected.length}, New: ${newArticles.length}, Inserted: ${insertedCount}`
     );
-  },
-};
+}
