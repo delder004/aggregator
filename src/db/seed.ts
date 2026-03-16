@@ -117,40 +117,110 @@ export const SEED_SOURCES: SeedSource[] = [
     id: 'hn-ai-accounting',
     source_type: 'hn',
     name: 'HN: AI Accounting',
-    config: JSON.stringify({ query: 'AI accounting' }),
+    config: JSON.stringify({ query: 'accounting automation, accounting AI, accounting software' }),
   },
   {
     id: 'hn-agentic-finance',
     source_type: 'hn',
     name: 'HN: Agentic AI Finance',
-    config: JSON.stringify({ query: 'agentic AI finance' }),
+    config: JSON.stringify({ query: 'agentic accounting, AI finance, fintech automation' }),
   },
   {
     id: 'hn-ai-audit',
     source_type: 'hn',
     name: 'HN: AI Audit',
-    config: JSON.stringify({ query: 'AI audit' }),
+    config: JSON.stringify({ query: 'audit automation, AI audit, automated compliance' }),
   },
   {
     id: 'hn-ai-bookkeeping',
     source_type: 'hn',
     name: 'HN: AI Bookkeeping',
-    config: JSON.stringify({ query: 'AI bookkeeping' }),
+    config: JSON.stringify({ query: 'bookkeeping software, QuickBooks AI, Xero' }),
   },
   {
     id: 'hn-ai-tax',
     source_type: 'hn',
     name: 'HN: AI Tax Automation',
-    config: JSON.stringify({ query: 'AI tax automation' }),
+    config: JSON.stringify({ query: 'tax automation, tax software, CPA automation' }),
   },
 
-  // --- YouTube (search sources deactivated — too noisy; keeping Hector Garcia channel) ---
-  // yt-search-ai-accounting, yt-search-agentic-finance, yt-search-ai-audit removed from seed
+  // --- Substack Newsletters ---
+  {
+    id: 'substack-ai-accountant',
+    source_type: 'substack',
+    name: 'The AI Accountant',
+    config: JSON.stringify({ url: 'https://theaiaccountant.substack.com/feed' }),
+  },
+  {
+    id: 'substack-future-of-finance',
+    source_type: 'substack',
+    name: 'Future of Finance',
+    config: JSON.stringify({ url: 'https://futureoffinance.substack.com/feed' }),
+  },
+
+  // --- Company Blogs ---
+  {
+    id: 'blog-intuit-ai',
+    source_type: 'companyblog',
+    name: 'Intuit AI Blog',
+    config: JSON.stringify({ url: 'https://www.intuit.com/blog/feed/', company: 'Intuit' }),
+  },
+  {
+    id: 'blog-xero',
+    source_type: 'companyblog',
+    name: 'Xero Blog',
+    config: JSON.stringify({ url: 'https://www.xero.com/blog/feed/', company: 'Xero' }),
+  },
+  {
+    id: 'blog-sage',
+    source_type: 'companyblog',
+    name: 'Sage Blog',
+    config: JSON.stringify({ url: 'https://www.sage.com/en-us/blog/feed/', company: 'Sage' }),
+  },
+
+  // --- Y Combinator ---
+  {
+    id: 'yc-accounting-ai',
+    source_type: 'ycombinator',
+    name: 'YC: Accounting & AI Startups',
+    config: JSON.stringify({
+      companyQueries: 'accounting,bookkeeping,tax automation',
+      hnQueries: 'Launch HN accounting,Show HN accounting,Show HN bookkeeping,Launch HN tax',
+    }),
+  },
+
+  // --- YouTube ---
   {
     id: 'yt-hector-garcia',
     source_type: 'youtube',
     name: 'YouTube: Hector Garcia CPA',
     config: JSON.stringify({ channelId: 'UC00MExfC3vuP9680IUW0jLA' }),
+  },
+  {
+    id: 'yt-earmark-cpe',
+    source_type: 'youtube',
+    name: 'YouTube: Earmark CPE',
+    config: JSON.stringify({ channelId: 'UCUq-v6FqGYVEkJPceSscgFQ' }),
+  },
+  {
+    id: 'yt-accounting-podcast',
+    source_type: 'youtube',
+    name: 'YouTube: The Accounting Podcast',
+    config: JSON.stringify({ channelId: 'UCbK1yTMuV3Zy7V-Tt9XBTBA' }),
+  },
+
+  // --- Additional Reddit ---
+  {
+    id: 'reddit-chatgpt',
+    source_type: 'reddit',
+    name: 'r/ChatGPT',
+    config: JSON.stringify({ subreddit: 'ChatGPT', query: '"accounting" OR "bookkeeping" OR "audit" OR "CPA" OR "tax"' }),
+  },
+  {
+    id: 'reddit-accounting-tech',
+    source_type: 'reddit',
+    name: 'r/accounting (tech)',
+    config: JSON.stringify({ subreddit: 'accounting', query: '"ChatGPT" OR "Claude" OR "GPT" OR "LLM" OR "copilot"' }),
   },
 
   // --- arXiv ---

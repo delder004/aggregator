@@ -19,19 +19,35 @@ INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_c
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-fintech', 'reddit', 'r/fintech', '{"subreddit":"fintech","query":"\"accounting\" OR \"audit\" OR \"bookkeeping\" OR \"tax\" OR \"CPA\""}', 1, 0);
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-bookkeeping', 'reddit', 'r/Bookkeeping', '{"subreddit":"Bookkeeping","query":"\"AI\" OR \"automation\" OR \"agent\""}', 1, 0);
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-taxpros', 'reddit', 'r/taxpros', '{"subreddit":"taxpros","query":"\"AI\" OR \"automation\" OR \"agentic\""}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-chatgpt', 'reddit', 'r/ChatGPT', '{"subreddit":"ChatGPT","query":"\"accounting\" OR \"bookkeeping\" OR \"audit\" OR \"CPA\" OR \"tax\""}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-accounting-tech', 'reddit', 'r/accounting (tech)', '{"subreddit":"accounting","query":"\"ChatGPT\" OR \"Claude\" OR \"GPT\" OR \"LLM\" OR \"copilot\""}', 1, 0);
 
 -- Hacker News
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-accounting', 'hn', 'HN: AI Accounting', '{"query":"AI accounting"}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-agentic-finance', 'hn', 'HN: Agentic AI Finance', '{"query":"agentic AI finance"}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-audit', 'hn', 'HN: AI Audit', '{"query":"AI audit"}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-bookkeeping', 'hn', 'HN: AI Bookkeeping', '{"query":"AI bookkeeping"}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-tax', 'hn', 'HN: AI Tax Automation', '{"query":"AI tax automation"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-accounting', 'hn', 'HN: AI Accounting', '{"query":"accounting automation, accounting AI, accounting software"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-agentic-finance', 'hn', 'HN: Agentic AI Finance', '{"query":"agentic accounting, AI finance, fintech automation"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-audit', 'hn', 'HN: AI Audit', '{"query":"audit automation, AI audit, automated compliance"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-bookkeeping', 'hn', 'HN: AI Bookkeeping', '{"query":"bookkeeping software, QuickBooks AI, Xero"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-tax', 'hn', 'HN: AI Tax Automation', '{"query":"tax automation, tax software, CPA automation"}', 1, 0);
 
--- YouTube (search sources deactivated — too noisy; keeping Hector Garcia channel)
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-ai-accounting', 'youtube', 'YouTube: AI Accounting', '{"query":"AI accounting"}', 0, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-agentic-finance', 'youtube', 'YouTube: Agentic AI Finance', '{"query":"agentic AI finance"}', 0, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-ai-audit', 'youtube', 'YouTube: AI Audit Automation', '{"query":"AI audit automation"}', 0, 0);
+-- Substack Newsletters
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('substack-ai-accountant', 'substack', 'The AI Accountant', '{"url":"https://theaiaccountant.substack.com/feed"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('substack-future-of-finance', 'substack', 'Future of Finance', '{"url":"https://futureoffinance.substack.com/feed"}', 1, 0);
+
+-- Company Blogs
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('blog-intuit-ai', 'companyblog', 'Intuit AI Blog', '{"url":"https://www.intuit.com/blog/feed/","company":"Intuit"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('blog-xero', 'companyblog', 'Xero Blog', '{"url":"https://www.xero.com/blog/feed/","company":"Xero"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('blog-sage', 'companyblog', 'Sage Blog', '{"url":"https://www.sage.com/en-us/blog/feed/","company":"Sage"}', 1, 0);
+
+-- Y Combinator
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yc-accounting-ai', 'ycombinator', 'YC: Accounting & AI Startups', '{"companyQueries":"accounting,bookkeeping,tax automation","hnQueries":"Launch HN accounting,Show HN accounting,Show HN bookkeeping,Launch HN tax"}', 1, 0);
+
+-- YouTube (search sources re-activated; channel sources added)
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-ai-accounting', 'youtube', 'YouTube: AI Accounting', '{"query":"AI accounting"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-agentic-finance', 'youtube', 'YouTube: Agentic AI Finance', '{"query":"agentic AI finance"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-search-ai-audit', 'youtube', 'YouTube: AI Audit Automation', '{"query":"AI audit automation"}', 1, 0);
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-hector-garcia', 'youtube', 'YouTube: Hector Garcia CPA', '{"channelId":"UC00MExfC3vuP9680IUW0jLA"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-earmark-cpe', 'youtube', 'YouTube: Earmark CPE', '{"channelId":"UCUq-v6FqGYVEkJPceSscgFQ"}', 1, 0);
+INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('yt-accounting-podcast', 'youtube', 'YouTube: The Accounting Podcast', '{"channelId":"UCbK1yTMuV3Zy7V-Tt9XBTBA"}', 1, 0);
 
 -- arXiv
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('arxiv-ai-accounting', 'arxiv', 'arXiv: AI + Accounting', '{"query":"cat:cs.AI AND (all:accounting OR all:audit OR all:bookkeeping OR all:financial+reporting)"}', 1, 0);

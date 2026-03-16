@@ -111,7 +111,7 @@ export default {
   },
 };
 
-const MAX_SCORE_PER_RUN = 25;
+const MAX_SCORE_PER_RUN = 40;
 
 async function runPipeline(env: Env): Promise<void> {
     const startTime = Date.now();

@@ -3,7 +3,6 @@ import {
   buildUserMessage,
   parseAndValidateResponse,
   ALLOWED_TAGS,
-  isPodcastSource,
   MIN_PUBLISH_SCORE,
 } from './classifier';
 import type { CollectedArticle } from '../types';
@@ -371,56 +370,3 @@ describe('MIN_PUBLISH_SCORE', () => {
   });
 });
 
-describe('isPodcastSource', () => {
-  it('should detect "Podcast" in source name', () => {
-    const article = makeArticle({ sourceName: 'The Accounting Podcast' });
-    expect(isPodcastSource(article)).toBe(true);
-  });
-
-  it('should detect "podcast" case-insensitively', () => {
-    const article = makeArticle({ sourceName: 'Jason On Firms PODCAST' });
-    expect(isPodcastSource(article)).toBe(true);
-  });
-
-  it('should detect transistor.fm in URL', () => {
-    const article = makeArticle({
-      sourceName: 'Some Feed',
-      url: 'https://feeds.transistor.fm/some-show/episode-1',
-    });
-    expect(isPodcastSource(article)).toBe(true);
-  });
-
-  it('should NOT match regular RSS sources', () => {
-    const article = makeArticle({
-      sourceName: 'Accounting Today',
-      url: 'https://www.accountingtoday.com/some-article',
-    });
-    expect(isPodcastSource(article)).toBe(false);
-  });
-
-  it('should NOT match articles with "episode" in title/URL but no podcast indicators', () => {
-    const article = makeArticle({
-      sourceName: 'Going Concern',
-      url: 'https://www.goingconcern.com/episode-of-fraud-at-firm',
-    });
-    expect(isPodcastSource(article)).toBe(false);
-  });
-
-  it('should NOT match YouTube sources', () => {
-    const article = makeArticle({
-      sourceType: 'youtube',
-      sourceName: 'YouTube: Hector Garcia CPA',
-      url: 'https://www.youtube.com/watch?v=abc123',
-    });
-    expect(isPodcastSource(article)).toBe(false);
-  });
-
-  it('should NOT match HN or Reddit sources', () => {
-    const article = makeArticle({
-      sourceType: 'hn',
-      sourceName: 'HN: AI Accounting',
-      url: 'https://news.ycombinator.com/item?id=123',
-    });
-    expect(isPodcastSource(article)).toBe(false);
-  });
-});

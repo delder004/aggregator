@@ -59,9 +59,9 @@ Score this article on TWO dimensions:
 - 0-29: Spam, clickbait, ads, very low effort
 
 ## Format Penalties (apply to quality score):
-- Podcast episodes: cap quality at 55 max (audio-only, not scannable, often rambling)
-- YouTube videos: cap quality at 55 max (video format, not scannable text content)
-- Podcast/video content that is a deep expert interview specifically about AI in accounting may score up to 65
+- Podcast episodes: cap quality at 60 max (audio-only, not scannable, often rambling)
+- YouTube videos: cap quality at 60 max (video format, not scannable text content)
+- Podcast/video content that is a deep expert interview specifically about AI in accounting may score up to 75
 
 ## Recency & Freshness
 - Breaking news about specific company actions, product launches, or regulatory changes should score +10-15 relevance over generic evergreen content
@@ -100,25 +100,9 @@ export interface SocialSignals {
   comments?: number;
 }
 
-// Source types that get a relevance penalty (downplayed formats)
-const SOURCE_TYPE_RELEVANCE_PENALTY: Record<string, number> = {
-  youtube: 15,
-  // Podcasts come through as 'rss' sourceType, so we check sourceName patterns instead
-};
-
-// Podcast source name patterns (case-insensitive match)
-const PODCAST_NAME_PATTERNS = [/podcast/i, /transistor\.fm/i];
-
-export function isPodcastSource(article: CollectedArticle): boolean {
-  return PODCAST_NAME_PATTERNS.some(
-    (p) => p.test(article.sourceName) || p.test(article.url)
-  );
-}
-
 /**
  * Score a batch of collected articles using Claude Haiku.
  * Runs up to CONCURRENCY API calls in parallel for speed.
- * Applies post-scoring penalties for podcast/video source types.
  * On error, retries once, then assigns score 0.
  */
 export async function scoreArticles(
@@ -153,21 +137,6 @@ export async function scoreArticles(
     const scored = await Promise.all(promises);
     for (let j = 0; j < scored.length; j++) {
       results[i + j] = scored[j];
-    }
-  }
-
-  // Apply post-scoring penalties for downplayed source types
-  for (let i = 0; i < results.length; i++) {
-    const article = results[i];
-    const typePenalty = SOURCE_TYPE_RELEVANCE_PENALTY[article.sourceType] ?? 0;
-    const podcastPenalty = isPodcastSource(article) ? 15 : 0;
-    const penalty = Math.max(typePenalty, podcastPenalty);
-    if (penalty > 0) {
-      results[i] = {
-        ...article,
-        relevanceScore: Math.max(0, article.relevanceScore - penalty),
-        qualityScore: Math.min(article.qualityScore, 55),
-      };
     }
   }
 
