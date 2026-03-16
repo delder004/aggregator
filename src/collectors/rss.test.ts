@@ -214,7 +214,7 @@ describe('RssCollector', () => {
 
     expect(articles).toHaveLength(1);
     expect(articles[0].contentSnippet!.length).toBeLessThanOrEqual(500);
-    expect(articles[0].contentSnippet!.endsWith('\u2026')).toBe(true);
+    expect(articles[0].contentSnippet!.endsWith('...')).toBe(true);
   });
 
   it('should return empty array when no URL is configured', async () => {

@@ -102,8 +102,8 @@ describe('generateRssFeed', () => {
     expect(xml).toContain('&gt;');
     expect(xml).toContain('&quot;');
     expect(xml).toContain('&apos;');
-    // Should NOT contain unescaped special chars inside element content
-    expect(xml).not.toMatch(/<title>[^<]*[&][^a]/); // no raw & in title
+    // Should NOT contain unescaped ampersands (& not followed by amp;, lt;, gt;, quot;, apos;, or #)
+    expect(xml).not.toMatch(/&(?!amp;|lt;|gt;|quot;|apos;|#)/)
   });
 
   it('sorts articles by publishedAt descending (newest first)', () => {
