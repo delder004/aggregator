@@ -12,12 +12,16 @@ export interface Article {
   contentSnippet: string | null;
   imageUrl: string | null;
   relevanceScore: number | null;
+  qualityScore: number | null;
+  socialScore: number | null;
+  commentCount: number | null;
+  companyMentions: string[];
   aiSummary: string | null;
   tags: string[];
   isPublished: boolean;
 }
 
-export type SourceType = 'rss' | 'reddit' | 'hn' | 'youtube' | 'arxiv';
+export type SourceType = 'rss' | 'reddit' | 'hn' | 'youtube' | 'arxiv' | 'substack' | 'producthunt' | 'ycombinator' | 'companyblog' | 'pressrelease';
 
 export interface SourceConfig {
   id: string;
@@ -38,16 +42,30 @@ export interface CollectedArticle {
   publishedAt: string;
   contentSnippet: string | null;
   imageUrl: string | null;
+  socialScore?: number;
+  commentCount?: number;
 }
 
 export interface ScoredArticle extends CollectedArticle {
   relevanceScore: number;
+  qualityScore?: number;
+  companyMentions?: string[];
   aiSummary: string;
   tags: string[];
 }
 
 export interface Collector {
   collect(config: SourceConfig): Promise<CollectedArticle[]>;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  website: string | null;
+  articleCount: number;
+  lastMentionedAt: string | null;
 }
 
 export interface Env {
