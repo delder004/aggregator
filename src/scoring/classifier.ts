@@ -3,6 +3,9 @@ import type { CollectedArticle, ScoredArticle, Env } from '../types';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
 
+/** Minimum relevance score for an article to be published on the site. */
+export const MIN_PUBLISH_SCORE = 50;
+
 export const ALLOWED_TAGS = new Set([
   'audit',
   'tax',
@@ -104,10 +107,10 @@ const SOURCE_TYPE_RELEVANCE_PENALTY: Record<string, number> = {
 };
 
 // Podcast source name patterns (case-insensitive match)
-const PODCAST_PATTERNS = [/podcast/i, /\bpod\b/i, /transistor\.fm/i, /episode/i];
+const PODCAST_NAME_PATTERNS = [/podcast/i, /transistor\.fm/i];
 
-function isPodcastSource(article: CollectedArticle): boolean {
-  return PODCAST_PATTERNS.some(
+export function isPodcastSource(article: CollectedArticle): boolean {
+  return PODCAST_NAME_PATTERNS.some(
     (p) => p.test(article.sourceName) || p.test(article.url)
   );
 }

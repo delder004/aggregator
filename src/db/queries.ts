@@ -1,4 +1,5 @@
 import type { Article, SourceConfig, ScoredArticle, SourceType, InsightSummary, InsightPeriodType } from '../types';
+import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
 
 /** Escape SQL LIKE wildcards in user-provided values. */
 function escapeLike(value: string): string {
@@ -20,7 +21,7 @@ export async function getPublishedArticles(
   db: D1Database,
   options: { limit?: number; offset?: number; minScore?: number } = {}
 ): Promise<Article[]> {
-  const { limit = 20, offset = 0, minScore = 50 } = options;
+  const { limit = 20, offset = 0, minScore = MIN_PUBLISH_SCORE } = options;
   const results = await db
     .prepare(
       `SELECT * FROM articles
@@ -123,7 +124,7 @@ export async function updateArticleScore(
 
 export async function getArticleCount(
   db: D1Database,
-  minScore: number = 50
+  minScore: number = MIN_PUBLISH_SCORE
 ): Promise<number> {
   const row = await db
     .prepare(

@@ -97,7 +97,7 @@ export const SEED_SOURCES: SeedSource[] = [
     id: 'reddit-fintech',
     source_type: 'reddit',
     name: 'r/fintech',
-    config: JSON.stringify({ subreddit: 'fintech', query: '("AI" OR "agentic" OR "automation") AND ("accounting" OR "audit" OR "bookkeeping" OR "tax" OR "CPA")' }),
+    config: JSON.stringify({ subreddit: 'fintech', query: '"accounting" OR "audit" OR "bookkeeping" OR "tax" OR "CPA"' }),
   },
   {
     id: 'reddit-bookkeeping',

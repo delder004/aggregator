@@ -9,7 +9,7 @@ import { productHuntCollector } from './collectors/producthunt';
 import { ycombinatorCollector } from './collectors/ycombinator';
 import { companyBlogCollector } from './collectors/companyblog';
 import { pressReleaseCollector } from './collectors/pressrelease';
-import { scoreArticles } from './scoring/classifier';
+import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
 import { extractContent } from './scoring/content-extractor';
 import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats } from './company/tracker';
 import {
@@ -246,7 +246,7 @@ async function runPipeline(env: Env): Promise<void> {
     }
 
     // Store unscored articles so they're deduped on next run
-    // but won't appear on the site (below 50 threshold)
+    // but won't appear on the site (below MIN_PUBLISH_SCORE threshold)
     const unscoredEntries = unscored.map((a) => ({
       ...a,
       relevanceScore: 0,
@@ -290,7 +290,7 @@ async function runPipeline(env: Env): Promise<void> {
             JSON.stringify(article.companyMentions ?? []),
             article.aiSummary,
             JSON.stringify(article.tags),
-            article.relevanceScore >= 50 ? 1 : 0,
+            article.relevanceScore >= MIN_PUBLISH_SCORE ? 1 : 0,
             wasScored ? now : null
           );
       });
@@ -331,7 +331,7 @@ async function runPipeline(env: Env): Promise<void> {
               s.relevanceScore,
               s.aiSummary,
               JSON.stringify(s.tags),
-              s.relevanceScore >= 50 ? 1 : 0,
+              s.relevanceScore >= MIN_PUBLISH_SCORE ? 1 : 0,
               now,
               s.qualityScore ?? null,
               s.companyMentions ? JSON.stringify(s.companyMentions) : null,
@@ -420,7 +420,7 @@ async function runPipeline(env: Env): Promise<void> {
       ).toISOString();
       const publishedArticles = await getPublishedArticles(env.DB, {
         limit: 1000,
-        minScore: 50,
+        minScore: MIN_PUBLISH_SCORE,
       });
       const recentArticles = publishedArticles.filter(
         (a) => a.publishedAt >= thirtyDaysAgo

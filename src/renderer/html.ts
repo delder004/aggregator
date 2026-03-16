@@ -8,6 +8,7 @@
  */
 
 import type { Article, InsightSummary, InsightPeriodType } from '../types';
+import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -601,7 +602,7 @@ function formatIsoDate(dateStr: string): string {
 function scoreClass(score: number | null): string {
   if (!score) return 'score-low';
   if (score >= 70) return 'score-high';
-  if (score >= 50) return 'score-med';
+  if (score >= MIN_PUBLISH_SCORE) return 'score-med';
   return 'score-low';
 }
 
