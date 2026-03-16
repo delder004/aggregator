@@ -93,6 +93,39 @@ export async function getFeaturedArticles(
   return results.results.map(mapRowToArticle);
 }
 
+export async function getUnscoredArticles(
+  db: D1Database,
+  limit: number = 50
+): Promise<Article[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE relevance_score = 0 OR relevance_score IS NULL
+       ORDER BY fetched_at DESC
+       LIMIT ?`
+    )
+    .bind(limit)
+    .all();
+  return results.results.map(mapRowToArticle);
+}
+
+export async function updateArticleScore(
+  db: D1Database,
+  url: string,
+  score: number,
+  aiSummary: string,
+  tags: string[],
+  isPublished: boolean
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?
+       WHERE url = ?`
+    )
+    .bind(score, aiSummary, JSON.stringify(tags), isPublished ? 1 : 0, url)
+    .run();
+}
+
 export async function getArticleCount(
   db: D1Database,
   minScore: number = 40

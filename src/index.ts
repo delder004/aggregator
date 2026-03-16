@@ -12,6 +12,8 @@ import {
   getFeaturedArticles,
   getAllActiveSources,
   getAllUniqueTags,
+  getUnscoredArticles,
+  updateArticleScore,
   updateSource,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
@@ -196,6 +198,38 @@ export default {
       }
     }
     console.log(`Inserted ${insertedCount} articles into D1`);
+
+    // 5b. Score previously unscored articles from DB
+    try {
+      const unscoredFromDb = await getUnscoredArticles(env.DB, MAX_SCORE_PER_RUN);
+      if (unscoredFromDb.length > 0) {
+        console.log(`Backfill scoring ${unscoredFromDb.length} unscored articles from DB`);
+        const backfillInput = unscoredFromDb.map((a) => ({
+          url: a.url,
+          title: a.title,
+          sourceType: a.sourceType,
+          sourceName: a.sourceName,
+          author: a.author,
+          publishedAt: a.publishedAt,
+          contentSnippet: a.contentSnippet,
+          imageUrl: a.imageUrl,
+        }));
+        const backfillScored = await scoreArticles(backfillInput, env);
+        for (const s of backfillScored) {
+          await updateArticleScore(
+            env.DB,
+            s.url,
+            s.relevanceScore,
+            s.aiSummary,
+            s.tags,
+            s.relevanceScore >= 40
+          );
+        }
+        console.log(`Backfill scored ${backfillScored.length} articles`);
+      }
+    } catch (err) {
+      console.error('Backfill scoring failed:', err);
+    }
 
     // 6. Regenerate all HTML pages
     try {
