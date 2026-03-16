@@ -59,8 +59,8 @@ export default {
 
     // Manual cron trigger endpoint (authenticated via API key)
     if (path === '/cron' && request.headers.get('X-Cron-Key') === env.CLAUDE_API_KEY) {
-      ctx.waitUntil(runPipeline(env));
-      return new Response('Cron triggered', { status: 200 });
+      await runPipeline(env);
+      return new Response('Cron completed', { status: 200 });
     }
 
     // Serve pre-rendered pages from KV
@@ -136,24 +136,32 @@ async function runPipeline(env: Env): Promise<void> {
     await Promise.all(collectPromises);
     console.log(`Total collected: ${allCollected.length} articles`);
 
-    // 3. Deduplicate by URL — skip articles already in DB
-    const newArticles: CollectedArticle[] = [];
-    for (const article of allCollected) {
-      try {
-        const existing = await getArticleByUrl(env.DB, article.url);
-        if (!existing) {
-          newArticles.push(article);
+    // 3. Deduplicate by URL — batch query existing URLs from DB
+    let newArticles: CollectedArticle[] = allCollected;
+    try {
+      const urls = allCollected.map((a) => a.url);
+      // Query existing URLs in batches of 100 (using IN clause)
+      const existingUrls = new Set<string>();
+      for (let i = 0; i < urls.length; i += 100) {
+        const batch = urls.slice(i, i + 100);
+        const placeholders = batch.map(() => '?').join(',');
+        const result = await env.DB
+          .prepare(`SELECT url FROM articles WHERE url IN (${placeholders})`)
+          .bind(...batch)
+          .all();
+        for (const row of result.results) {
+          existingUrls.add(row.url as string);
         }
-      } catch {
-        // On DB error, skip dedup check and include article
-        newArticles.push(article);
       }
+      newArticles = allCollected.filter((a) => !existingUrls.has(a.url));
+    } catch (err) {
+      console.error('Dedup query failed, treating all as new:', err);
     }
     console.log(`New articles after dedup: ${newArticles.length}`);
 
     // 4. Score new articles with Claude Haiku
     // Cap per-run to avoid hitting Workers CPU time limits
-    const MAX_SCORE_PER_RUN = 200;
+    const MAX_SCORE_PER_RUN = 100;
     const toScore = newArticles.slice(0, MAX_SCORE_PER_RUN);
     const unscored = newArticles.slice(MAX_SCORE_PER_RUN);
 
@@ -183,29 +191,41 @@ async function runPipeline(env: Env): Promise<void> {
     }));
     scored = [...scored, ...unscoredEntries];
 
-    // 5. Store scored articles in D1
+    // 5. Store scored articles in D1 (batched to reduce subrequests)
     let insertedCount = 0;
-    for (const article of scored) {
+    const now = new Date().toISOString();
+    for (let i = 0; i < scored.length; i += 50) {
+      const batch = scored.slice(i, i + 50);
+      const stmts = batch.map((article) =>
+        env.DB
+          .prepare(
+            `INSERT OR IGNORE INTO articles
+             (id, url, title, source_type, source_name, author, published_at, fetched_at,
+              content_snippet, image_url, relevance_score, ai_summary, tags, is_published)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            generateId(),
+            article.url,
+            article.title,
+            article.sourceType,
+            article.sourceName,
+            article.author,
+            article.publishedAt,
+            now,
+            article.contentSnippet,
+            article.imageUrl,
+            article.relevanceScore,
+            article.aiSummary,
+            JSON.stringify(article.tags),
+            article.relevanceScore >= 40 ? 1 : 0
+          )
+      );
       try {
-        await insertArticle(env.DB, {
-          id: generateId(),
-          url: article.url,
-          title: article.title,
-          sourceType: article.sourceType,
-          sourceName: article.sourceName,
-          author: article.author,
-          publishedAt: article.publishedAt,
-          fetchedAt: new Date().toISOString(),
-          contentSnippet: article.contentSnippet,
-          imageUrl: article.imageUrl,
-          relevanceScore: article.relevanceScore,
-          aiSummary: article.aiSummary,
-          tags: article.tags,
-          isPublished: article.relevanceScore >= 40,
-        });
-        insertedCount++;
+        await env.DB.batch(stmts);
+        insertedCount += batch.length;
       } catch (err) {
-        console.error(`Failed to insert article ${article.url}:`, err);
+        console.error(`Batch insert failed at offset ${i}:`, err);
       }
     }
     console.log(`Inserted ${insertedCount} articles into D1`);
