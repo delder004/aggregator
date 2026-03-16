@@ -346,8 +346,15 @@ export const rssCollector: Collector = {
         }
       }
 
-      console.log(`[RSS] Collected ${articles.length} articles from ${config.name} (${feedUrl})`);
-      return articles;
+      // Cap at 50 most recent articles per feed to limit dedup overhead
+      // (some podcast feeds return 500+ episodes from their full back catalog)
+      const capped = articles.slice(0, 50);
+      if (articles.length > 50) {
+        console.log(`[RSS] Capped ${articles.length} → 50 articles from ${config.name} (${feedUrl})`);
+      } else {
+        console.log(`[RSS] Collected ${articles.length} articles from ${config.name} (${feedUrl})`);
+      }
+      return capped;
     } catch (err) {
       console.error(`[RSS] Error collecting from ${config.name} (${feedUrl}):`, err);
       return [];

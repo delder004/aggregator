@@ -150,6 +150,10 @@ async function scoreOneArticle(
       companyMentions: parsed.companyMentions,
     };
   } catch (firstError) {
+    // Don't retry on subrequest limit — it will always fail again
+    if (firstError instanceof Error && firstError.message.includes('Too many subrequests')) {
+      throw firstError;
+    }
     console.warn(
       `First scoring attempt failed for "${article.title}", retrying:`,
       firstError

@@ -111,7 +111,7 @@ export default {
   },
 };
 
-const MAX_SCORE_PER_RUN = 40;
+const MAX_SCORE_PER_RUN = 25;
 
 async function runPipeline(env: Env): Promise<void> {
     const startTime = Date.now();
@@ -128,6 +128,7 @@ async function runPipeline(env: Env): Promise<void> {
     console.log(`Loaded ${sources.length} active sources`);
 
     // 2. Collect articles from all sources in parallel
+    const sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }> = [];
     const collectResults = await Promise.all(
       sources.map(async (source): Promise<CollectedArticle[]> => {
         const collector = getCollector(source.sourceType, env);
@@ -142,7 +143,8 @@ async function runPipeline(env: Env): Promise<void> {
             `Collected ${articles.length} articles from ${source.name}`
           );
 
-          await updateSource(env.DB, source.id, {
+          sourceUpdates.push({
+            id: source.id,
             lastFetchedAt: new Date().toISOString(),
             errorCount: 0,
           });
@@ -150,13 +152,31 @@ async function runPipeline(env: Env): Promise<void> {
           return articles;
         } catch (err) {
           console.error(`Collector failed for ${source.name}:`, err);
-          await updateSource(env.DB, source.id, {
+          sourceUpdates.push({
+            id: source.id,
             errorCount: source.errorCount + 1,
           });
           return [];
         }
       })
     );
+
+    // Batch all source updates into a single D1 call
+    if (sourceUpdates.length > 0) {
+      try {
+        const stmts = sourceUpdates.map((u) => {
+          if (u.lastFetchedAt) {
+            return env.DB.prepare('UPDATE sources SET last_fetched_at = ?, error_count = ? WHERE id = ?')
+              .bind(u.lastFetchedAt, u.errorCount, u.id);
+          }
+          return env.DB.prepare('UPDATE sources SET error_count = ? WHERE id = ?')
+            .bind(u.errorCount, u.id);
+        });
+        await env.DB.batch(stmts);
+      } catch (err) {
+        console.error('Batch source update failed:', err);
+      }
+    }
 
     const allCollected = collectResults.flat();
     console.log(`Total collected: ${allCollected.length} articles`);
@@ -301,15 +321,25 @@ async function runPipeline(env: Env): Promise<void> {
             imageUrl: a.imageUrl,
           }));
           const backfillScored = await scoreArticles(backfillInput, env);
-          for (const s of backfillScored) {
-            await updateArticleScore(
-              env.DB,
-              s.url,
+          // Batch all score updates into a single D1 call
+          const updateStmts = backfillScored.map((s) =>
+            env.DB.prepare(
+              `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
+               quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions)
+               WHERE url = ?`
+            ).bind(
               s.relevanceScore,
               s.aiSummary,
-              s.tags,
-              s.relevanceScore >= 40
-            );
+              JSON.stringify(s.tags),
+              s.relevanceScore >= 40 ? 1 : 0,
+              now,
+              s.qualityScore ?? null,
+              s.companyMentions ? JSON.stringify(s.companyMentions) : null,
+              s.url
+            )
+          );
+          if (updateStmts.length > 0) {
+            await env.DB.batch(updateStmts);
           }
           console.log(`Backfill scored ${backfillScored.length} articles`);
         }
