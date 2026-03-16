@@ -49,33 +49,41 @@ interface ClassifierResponse {
   summary: string;
 }
 
+const CONCURRENCY = 10;
+
 /**
  * Score a batch of collected articles using Claude Haiku.
- * Each article is scored individually via a separate API call.
+ * Runs up to CONCURRENCY API calls in parallel for speed.
  * On error, retries once, then assigns score 0.
  */
 export async function scoreArticles(
   articles: CollectedArticle[],
   env: Env
 ): Promise<ScoredArticle[]> {
-  const results: ScoredArticle[] = [];
+  const results: ScoredArticle[] = new Array(articles.length);
 
-  for (const article of articles) {
-    try {
-      const scored = await scoreOneArticle(article, env);
-      results.push(scored);
-    } catch (error) {
-      console.error(
-        `Failed to score article "${article.title}" after retry:`,
-        error
-      );
-      // Assign score 0 on complete failure
-      results.push({
-        ...article,
-        relevanceScore: 0,
-        aiSummary: '',
-        tags: [],
-      });
+  // Process in chunks of CONCURRENCY
+  for (let i = 0; i < articles.length; i += CONCURRENCY) {
+    const chunk = articles.slice(i, i + CONCURRENCY);
+    const promises = chunk.map(async (article, j) => {
+      try {
+        return await scoreOneArticle(article, env);
+      } catch (error) {
+        console.error(
+          `Failed to score article "${article.title}" after retry:`,
+          error
+        );
+        return {
+          ...article,
+          relevanceScore: 0,
+          aiSummary: '',
+          tags: [],
+        } as ScoredArticle;
+      }
+    });
+    const scored = await Promise.all(promises);
+    for (let j = 0; j < scored.length; j++) {
+      results[i + j] = scored[j];
     }
   }
 

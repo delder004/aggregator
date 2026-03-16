@@ -142,7 +142,7 @@ export default {
 
     // 4. Score new articles with Claude Haiku
     // Cap per-run to avoid hitting Workers CPU time limits
-    const MAX_SCORE_PER_RUN = 50;
+    const MAX_SCORE_PER_RUN = 200;
     const toScore = newArticles.slice(0, MAX_SCORE_PER_RUN);
     const unscored = newArticles.slice(MAX_SCORE_PER_RUN);
 
