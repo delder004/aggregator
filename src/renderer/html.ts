@@ -35,7 +35,6 @@ const NAV_TAGS: { label: string; slug: string }[] = [
 // Source type badge colors
 const SOURCE_COLORS: Record<string, { bg: string; text: string; darkBg: string; darkText: string }> = {
   hn:          { bg: '#ff660015', text: '#ff6600', darkBg: '#ff660025', darkText: '#ff8533' },
-  reddit:      { bg: '#ff450015', text: '#e04520', darkBg: '#ff450025', darkText: '#ff6b4a' },
   youtube:     { bg: '#ff000012', text: '#cc0000', darkBg: '#ff000020', darkText: '#ff4444' },
   arxiv:       { bg: '#b3131315', text: '#b31313', darkBg: '#b3131325', darkText: '#e05555' },
   rss:         { bg: '#ee802015', text: '#c06010', darkBg: '#ee802025', darkText: '#eea050' },
@@ -251,7 +250,6 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   letter-spacing:0.02em;
 }
 .source-badge.hn{background:var(--hn-bg,#ff660015);color:var(--hn-text,#ff6600);}
-.source-badge.reddit{background:var(--reddit-bg,#ff450015);color:var(--reddit-text,#e04520);}
 .source-badge.youtube{background:var(--yt-bg,#ff000012);color:var(--yt-text,#cc0000);}
 .source-badge.arxiv{background:var(--arxiv-bg,#b3131315);color:var(--arxiv-text,#b31313);}
 .source-badge.rss{background:var(--rss-bg,#ee802015);color:var(--rss-text,#c06010);}
@@ -467,7 +465,6 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 /* Dark mode badge overrides */
 @media (prefers-color-scheme: dark) {
   .source-badge.hn{background:#ff660025;color:#ff8533;}
-  .source-badge.reddit{background:#ff450025;color:#ff6b4a;}
   .source-badge.youtube{background:#ff000020;color:#ff4444;}
   .source-badge.arxiv{background:#b3131325;color:#e05555;}
   .source-badge.rss{background:#ee802025;color:#eea050;}
@@ -609,7 +606,6 @@ function scoreClass(score: number | null): string {
 /** Map source type to badge label and CSS class. */
 function sourceBadge(type: string): { label: string; cls: string } {
   switch (type) {
-    case 'reddit':      return { label: 'Reddit', cls: 'reddit' };
     case 'hn':          return { label: 'HN', cls: 'hn' };
     case 'youtube':     return { label: 'YouTube', cls: 'youtube' };
     case 'arxiv':       return { label: 'arXiv', cls: 'arxiv' };

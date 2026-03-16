@@ -12,16 +12,6 @@ INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_c
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('rss-accounting-podcast', 'rss', 'The Accounting Podcast', '{"url":"https://feeds.transistor.fm/cloud-accounting-podcast"}', 1, 0);
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('rss-earmark-podcast', 'rss', 'Earmark Podcast', '{"url":"https://feeds.transistor.fm/earmark-accounting-podcast"}', 1, 0);
 
--- Reddit
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-accounting', 'reddit', 'r/accounting', '{"subreddit":"accounting","query":"\"AI\" OR \"automation\" OR \"agentic\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-artificial', 'reddit', 'r/artificial', '{"subreddit":"artificial","query":"\"accounting\" OR \"audit\" OR \"bookkeeping\" OR \"finance\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-machinelearning', 'reddit', 'r/MachineLearning', '{"subreddit":"MachineLearning","query":"\"accounting\" OR \"audit\" OR \"financial\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-fintech', 'reddit', 'r/fintech', '{"subreddit":"fintech","query":"\"accounting\" OR \"audit\" OR \"bookkeeping\" OR \"tax\" OR \"CPA\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-bookkeeping', 'reddit', 'r/Bookkeeping', '{"subreddit":"Bookkeeping","query":"\"AI\" OR \"automation\" OR \"agent\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-taxpros', 'reddit', 'r/taxpros', '{"subreddit":"taxpros","query":"\"AI\" OR \"automation\" OR \"agentic\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-chatgpt', 'reddit', 'r/ChatGPT', '{"subreddit":"ChatGPT","query":"\"accounting\" OR \"bookkeeping\" OR \"audit\" OR \"CPA\" OR \"tax\""}', 1, 0);
-INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('reddit-accounting-tech', 'reddit', 'r/accounting (tech)', '{"subreddit":"accounting","query":"\"ChatGPT\" OR \"Claude\" OR \"GPT\" OR \"LLM\" OR \"copilot\""}', 1, 0);
-
 -- Hacker News
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-ai-accounting', 'hn', 'HN: AI Accounting', '{"query":"accounting automation, accounting AI, accounting software"}', 1, 0);
 INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count) VALUES ('hn-agentic-finance', 'hn', 'HN: Agentic AI Finance', '{"query":"agentic accounting, AI finance, fintech automation"}', 1, 0);

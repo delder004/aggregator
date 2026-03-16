@@ -259,7 +259,7 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
 
   <h2>How It Works</h2>
   <p>
-    Every hour, our system collects new content from RSS feeds, Reddit,
+    Every hour, our system collects new content from RSS feeds,
     Hacker News, YouTube, arXiv, Substack newsletters, and company blogs.
     Each article is scored for both relevance and quality by an AI classifier
     (Claude by Anthropic). Articles scoring above our relevance threshold
@@ -283,8 +283,6 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
       Going Concern, CPA Practice Advisor, AccountingWeb, TechCrunch AI,
       VentureBeat AI, and select newsletters and podcasts</li>
     <li><strong>Substack:</strong> AI and accounting-focused newsletters</li>
-    <li><strong>Reddit:</strong> r/accounting, r/artificial, r/MachineLearning,
-      r/fintech, r/Bookkeeping, r/taxpros</li>
     <li><strong>Hacker News:</strong> AI + accounting keyword searches</li>
     <li><strong>YouTube:</strong> Key channels and topic searches</li>
     <li><strong>arXiv:</strong> CS/AI papers related to accounting and finance</li>

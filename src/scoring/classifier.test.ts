@@ -315,9 +315,9 @@ describe('buildUserMessage', () => {
   });
 
   it('should include source type in parentheses', () => {
-    const article = makeArticle({ sourceType: 'reddit', sourceName: 'r/accounting' });
+    const article = makeArticle({ sourceType: 'hn', sourceName: 'Hacker News' });
     const message = buildUserMessage(article);
-    expect(message).toContain('Source: r/accounting (reddit)');
+    expect(message).toContain('Source: Hacker News (hn)');
   });
 
   it('should produce correctly ordered output with all fields', () => {

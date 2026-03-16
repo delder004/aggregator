@@ -23,7 +23,6 @@ export interface Article {
 
 export type SourceType =
   | 'rss'
-  | 'reddit'
   | 'hn'
   | 'youtube'
   | 'arxiv'
@@ -88,8 +87,6 @@ export interface Env {
   KV: KVNamespace;
   CLAUDE_API_KEY: string;
   CRON_SECRET?: string;
-  REDDIT_CLIENT_ID?: string;
-  REDDIT_CLIENT_SECRET?: string;
   YOUTUBE_API_KEY?: string;
   PRODUCTHUNT_API_TOKEN?: string;
 }

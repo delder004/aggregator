@@ -1,6 +1,5 @@
 import type { Env, CollectedArticle, Collector, SourceConfig, Company, InsightSummary } from './types';
 import { rssCollector } from './collectors/rss';
-import { createRedditCollector } from './collectors/reddit';
 import { hackerNewsCollector } from './collectors/hackernews';
 import { createYouTubeCollector } from './collectors/youtube';
 import { arxivCollector } from './collectors/arxiv';
@@ -34,8 +33,6 @@ function getCollector(
   switch (sourceType) {
     case 'rss':
       return rssCollector;
-    case 'reddit':
-      return createRedditCollector(env);
     case 'hn':
       return hackerNewsCollector;
     case 'youtube':
