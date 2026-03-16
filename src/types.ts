@@ -90,6 +90,7 @@ export interface Env {
   CRON_SECRET?: string;
   YOUTUBE_API_KEY?: string;
   PRODUCTHUNT_API_TOKEN?: string;
+  PIPELINE_WORKFLOW: Workflow;
 }
 
 // -- Insights Summary types --
