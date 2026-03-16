@@ -18,3 +18,8 @@ id = "bf47d4e3ebcf48dbaecb61d968a870fb"
 [observability.logs]
 enabled = true
 invocation_logs = true
+
+[[workflows]]
+name = "agenticaiaccounting-pipeline"
+binding = "PIPELINE_WORKFLOW"
+class_name = "PipelineWorkflow"
