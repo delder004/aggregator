@@ -73,6 +73,13 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'Earmark Podcast',
     config: JSON.stringify({ url: 'https://feeds.transistor.fm/earmark-accounting-podcast' }),
   },
+  // Person blog
+  {
+    id: 'rss-blake-oliver',
+    source_type: 'rss',
+    name: 'Blake Oliver, CPA',
+    config: JSON.stringify({ url: 'https://www.blakeoliver.com/blog?format=rss' }),
+  },
 
   // --- Reddit ---
   {
@@ -157,6 +164,18 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'Future of Finance',
     config: JSON.stringify({ url: 'https://futureoffinance.substack.com/feed' }),
   },
+  {
+    id: 'substack-accounting-vc',
+    source_type: 'substack',
+    name: 'The Accounting VC',
+    config: JSON.stringify({ url: 'https://theaccountingvc.substack.com/feed' }),
+  },
+  {
+    id: 'substack-digital-disruptors',
+    source_type: 'substack',
+    name: 'Digital Disruptors in Accrual World',
+    config: JSON.stringify({ url: 'https://digitoolsinaccrualworld.substack.com/feed' }),
+  },
 
   // --- Company Blogs ---
   {
@@ -166,16 +185,46 @@ export const SEED_SOURCES: SeedSource[] = [
     config: JSON.stringify({ url: 'https://www.intuit.com/blog/feed/', company: 'Intuit' }),
   },
   {
-    id: 'blog-xero',
+    id: 'blog-botkeeper',
     source_type: 'companyblog',
-    name: 'Xero Blog',
-    config: JSON.stringify({ url: 'https://www.xero.com/blog/feed/', company: 'Xero' }),
+    name: 'Botkeeper Blog',
+    config: JSON.stringify({ url: 'https://www.botkeeper.com/blog/rss.xml', company: 'Botkeeper' }),
+  },
+  {
+    id: 'blog-docyt',
+    source_type: 'companyblog',
+    name: 'Docyt Blog',
+    config: JSON.stringify({ url: 'https://docyt.com/feed/', company: 'Docyt' }),
+  },
+  {
+    id: 'blog-digits',
+    source_type: 'companyblog',
+    name: 'Digits Blog',
+    config: JSON.stringify({ url: 'https://www.digits.com/blog/rss.xml', company: 'Digits' }),
+  },
+  {
+    id: 'blog-appzen',
+    source_type: 'companyblog',
+    name: 'AppZen Blog',
+    config: JSON.stringify({ url: 'https://www.appzen.com/blog/rss.xml', company: 'AppZen' }),
+  },
+  {
+    id: 'blog-stampli',
+    source_type: 'companyblog',
+    name: 'Stampli Blog',
+    config: JSON.stringify({ url: 'https://www.stampli.com/blog/feed/', company: 'Stampli' }),
   },
   {
     id: 'blog-sage',
     source_type: 'companyblog',
     name: 'Sage Blog',
     config: JSON.stringify({ url: 'https://www.sage.com/en-us/blog/feed/', company: 'Sage' }),
+  },
+  {
+    id: 'blog-xero',
+    source_type: 'companyblog',
+    name: 'Xero Blog',
+    config: JSON.stringify({ url: 'https://blog.xero.com/feed/', company: 'Xero' }),
   },
 
   // --- Y Combinator ---
