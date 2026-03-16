@@ -19,6 +19,7 @@ import {
   insightCard,
   insightNav,
   periodToSlug,
+  NAV_TAGS,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured } from './diversity';
@@ -177,7 +178,15 @@ function generateTagPages(
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
-  const tags = collectTags(articles);
+
+  // Always generate pages for nav tags (so /tag/audit etc. never 404),
+  // then union with any additional tags found in articles.
+  const navTagSlugs = NAV_TAGS
+    .map((t) => t.slug)
+    .filter((s) => s !== '' && s !== 'companies');
+  const articleTags = collectTags(articles);
+  const allTagsSet = new Set<string>([...navTagSlugs, ...articleTags]);
+  const tags = [...allTagsSet].sort();
 
   for (const tag of tags) {
     const filtered = sortByDate(

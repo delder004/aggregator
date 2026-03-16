@@ -20,7 +20,7 @@ const SITE_DESCRIPTION =
 const SITE_URL = 'https://agenticaiaccounting.com';
 
 // Tags shown in the nav bar filter list
-const NAV_TAGS: { label: string; slug: string }[] = [
+export const NAV_TAGS: { label: string; slug: string }[] = [
   { label: 'All', slug: '' },
   { label: 'Audit', slug: 'audit' },
   { label: 'Tax', slug: 'tax' },
