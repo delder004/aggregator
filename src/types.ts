@@ -17,7 +17,7 @@ export interface Article {
   isPublished: boolean;
 }
 
-export type SourceType = 'rss' | 'reddit' | 'hn' | 'youtube' | 'arxiv';
+export type SourceType = 'rss' | 'reddit' | 'hn' | 'youtube' | 'arxiv' | 'substack';
 
 export interface SourceConfig {
   id: string;
