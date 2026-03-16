@@ -21,7 +21,7 @@ npm install                          # install dependencies
 npx wrangler dev                     # local dev server
 npx wrangler deploy                  # deploy to production
 npx wrangler d1 execute DB --local --file=src/db/schema.sql   # init local DB
-npx wrangler d1 execute DB --file=src/db/schema.sql           # init production DB
+npx wrangler d1 execute DB --remote --file=src/db/schema.sql  # init production DB
 npx tsc --noEmit                     # type check
 npx vitest run                       # run tests
 npx wrangler types                   # regenerate Env type bindings
@@ -60,10 +60,27 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 
 ## Cloudflare Workers Constraints
 
-- **1,000 subrequest limit** per invocation (fetch calls + D1 queries all count). Batch D1 operations (IN clauses, `d1.batch()`) and cap external API calls per run.
-- **CPU time limits.** Scoring is capped at 100 articles per cron run with 10 concurrent requests. Unscored articles are stored and picked up on subsequent runs.
+- **1,000 subrequest limit** per invocation (fetch calls + D1 queries all count). Batch D1 operations (IN clauses, `d1.batch()`) and cap external API calls per run. Budget: ~50 collection + ~30 source updates + ~16 dedup + ~20 enrichment + ~80 scoring (40 × 2 retry) + inserts + company tracking + insights + page gen + KV writes.
+- **CPU time limits.** Scoring is capped at 40 articles per cron run (`MAX_SCORE_PER_RUN`) with 10 concurrent requests. Unscored articles are stored and picked up on subsequent runs.
 - **No `this` in module exports.** Pipeline logic lives in a standalone `runPipeline()` function, not a method — both `scheduled()` and the `/cron` fetch route call it directly.
 - **Web APIs only.** No Node.js built-ins. Use `fetch`, `DOMParser`, `Response`, etc.
+
+## Database Migrations
+
+- **Schema file:** `src/db/schema.sql` — canonical table definitions (used for fresh DBs).
+- **Migration files:** `src/db/migration-*.sql` — incremental changes for existing production DBs.
+- **When adding tables or columns:** create a new `migration-NNN-description.sql` file AND update `schema.sql`. Migrations must be idempotent (`IF NOT EXISTS`, `ADD COLUMN` guarded).
+- **Always run migrations on production** after creating them:
+  ```bash
+  npx wrangler d1 execute DB --remote --file=src/db/migration-NNN-description.sql
+  ```
+- **Verify after deploy:** check that queries referencing new tables/columns don't fail. Use `wrangler tail` or Cloudflare dashboard logs.
+
+## Production
+
+- **Workers.dev URL:** `https://agenticaiaccounting.dmelder.workers.dev/`
+- **Custom domain:** `agenticaiaccounting.com` (DNS not yet connected to Cloudflare — still on GoDaddy nameservers)
+- **Logs:** Cloudflare dashboard → Workers → agenticaiaccounting → Logs, or `npx wrangler tail`
 
 ## Workflow
 
