@@ -8,8 +8,8 @@ crons = ["0 * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "agenticaiaccounting-db"
-database_id = "placeholder-replace-after-creation"
+database_id = "2a4fa461-6163-4394-9ad1-3049d49a036c"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "placeholder-replace-after-creation"
+id = "bf47d4e3ebcf48dbaecb61d968a870fb"
