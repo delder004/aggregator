@@ -84,7 +84,9 @@ export function generateRssFeed(articles: Article[]): string {
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
 
-  const lastBuildDate = toRfc822(new Date().toISOString());
+  const lastBuildDate = sorted.length > 0
+    ? toRfc822(sorted[0].publishedAt)
+    : toRfc822(new Date().toISOString());
 
   const items = sorted.map(renderItem).join('\n');
 

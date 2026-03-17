@@ -483,7 +483,13 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
           const tags = await getAllUniqueTags(this.env.DB);
 
           const totalArticles = recentArticles.length;
-          const lastUpdated = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+          const latestPublished = recentArticles.reduce(
+            (max, a) => (a.publishedAt > max ? a.publishedAt : max),
+            ''
+          );
+          const lastUpdated = latestPublished
+            ? new Date(latestPublished).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
+            : new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 
           // Get source count
           let sourceCount = 0;
