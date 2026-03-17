@@ -72,7 +72,8 @@ When social engagement metrics are provided (upvotes, comments), factor communit
 
 Also provide:
 - tags: up to 5 from [audit, tax, bookkeeping, compliance, payroll, invoicing, fraud-detection, financial-reporting, agentic-ai, llm, automation, startup, big-4, regulation, case-study, opinion, research, product-launch, funding, partnership, integration, open-source]
-- summary: 1-2 sentences for the feed (under 280 characters). Note if time-sensitive.
+- headline: Write a concise, journalist-style headline under 80 characters. Remove dates, author names, site names, and the word "Article". Use active voice, present tense where possible.
+- summary: A punchy 1-sentence TLDR that tells the reader "so what" — the key takeaway or news, not a description. Under 200 characters. Use specifics (numbers, names, outcomes) over vague descriptions. Bad: "Overview of AI benefits for accounting teams." Good: "GPT-5.4 tops DualEntry's accounting benchmark at 77% but still fails 1 in 3 tasks."
 - companyMentions: array of company names mentioned in the article (e.g., ["Deloitte", "Intuit", "OpenAI"]). Empty array if none.
 
 Respond with valid JSON only, no other text. Use this exact schema:
@@ -80,6 +81,7 @@ Respond with valid JSON only, no other text. Use this exact schema:
   "relevanceScore": <number 0-100>,
   "qualityScore": <number 0-100>,
   "tags": [<string>, ...],
+  "headline": "<string>",
   "summary": "<string>",
   "companyMentions": [<string>, ...]
 }`;
@@ -343,8 +345,8 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
   let summary = '';
   if (typeof obj.summary === 'string' && obj.summary.trim().length > 0) {
     summary = obj.summary.trim();
-    if (summary.length > 280) {
-      summary = summary.slice(0, 277) + '...';
+    if (summary.length > 200) {
+      summary = summary.slice(0, 197) + '...';
     }
   } else {
     throw new Error(

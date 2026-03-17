@@ -150,7 +150,7 @@ describe('parseAndValidateResponse', () => {
     expect(result.tags).toHaveLength(5);
   });
 
-  it('should truncate summary to 280 characters', () => {
+  it('should truncate summary to 200 characters', () => {
     const longSummary = 'A'.repeat(300);
     const json = JSON.stringify({
       relevanceScore: 50,
@@ -160,7 +160,7 @@ describe('parseAndValidateResponse', () => {
       companyMentions: [],
     });
     const result = parseAndValidateResponse(json);
-    expect(result.summary.length).toBe(280);
+    expect(result.summary.length).toBe(200);
     expect(result.summary.endsWith('...')).toBe(true);
   });
 
