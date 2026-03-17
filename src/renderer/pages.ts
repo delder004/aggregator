@@ -22,7 +22,7 @@ import {
   NAV_TAGS,
   type LayoutOptions,
 } from './html';
-import { diversifyFeatured } from './diversity';
+import { diversifyFeatured, diversifyFeed } from './diversity';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -94,7 +94,7 @@ function renderTimeGrouped(articles: Article[]): string {
   let html = '';
   for (const g of groups) {
     html += `<div class="time-group">${escapeHtml(g.label)}</div>\n`;
-    html += renderSourceClusters(g.articles);
+    html += renderSourceClusters(diversifyFeed(g.articles));
   }
 
   return html;

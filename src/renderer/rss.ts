@@ -35,7 +35,7 @@ function sourceLabel(sourceName: string): string {
  * Generate a single RSS <item> element for an article.
  */
 function renderItem(article: Article): string {
-  const title = escapeXml(article.title);
+  const title = escapeXml(article.headline || article.title);
   const link = escapeXml(article.url);
   const guid = escapeXml(article.url);
   const description = article.aiSummary

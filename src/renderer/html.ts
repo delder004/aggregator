@@ -632,7 +632,7 @@ function logoSvg(): string {
 
 /** Render a single article card (standard list form). */
 export function articleCard(article: Article): string {
-  const title = escapeHtml(article.title);
+  const title = escapeHtml(article.headline || article.title);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
   const ago = timeAgo(article.publishedAt);
   const badge = sourceBadge(article.sourceType);
@@ -681,7 +681,7 @@ export function articleCard(article: Article): string {
 
 /** Render a featured article card (larger, with background). */
 export function featuredCard(article: Article): string {
-  const title = escapeHtml(article.title);
+  const title = escapeHtml(article.headline || article.title);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
   const ago = timeAgo(article.publishedAt);
   const badge = sourceBadge(article.sourceType);
