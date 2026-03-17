@@ -359,7 +359,7 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
   if (typeof obj.headline === 'string' && obj.headline.trim().length > 0) {
     headline = obj.headline.trim();
     if (headline.length > 80) {
-      headline = headline.slice(0, 80);
+      headline = headline.slice(0, 77) + '...';
     }
   }
 

@@ -1,4 +1,8 @@
 import type { Collector, CollectedArticle, SourceConfig } from '../types';
+import { sanitizeTitle } from './utils';
+
+// Re-export for backwards compatibility
+export { sanitizeTitle } from './utils';
 
 /**
  * Blog scraper collector — fetches HTML blog listing pages and extracts
@@ -19,70 +23,6 @@ const LINK_REGEX = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
 // Strip HTML tags from a string
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
-}
-
-/**
- * Decode common HTML entities that the simple stripHtml misses.
- */
-function decodeHtmlEntities(text: string): string {
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
-}
-
-/**
- * Sanitize a scraped blog title by removing common noise patterns:
- * - Leading "Article" prefix
- * - Leading date patterns (e.g., "March 01, 2026")
- * - Trailing author/team suffixes
- * - HTML entities
- * - Overly long titles truncated at a sentence boundary
- */
-export function sanitizeTitle(raw: string): string {
-  let title = raw.trim();
-
-  // Decode HTML entities
-  title = decodeHtmlEntities(title);
-
-  // Strip leading "Article" prefix (case-insensitive, word boundary)
-  title = title.replace(/^Article\b\s*/i, '');
-
-  // Strip leading date patterns: "Month DD, YYYY" at start of string
-  title = title.replace(
-    /^(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\s*/i,
-    ''
-  );
-
-  // Strip trailing known author/team suffixes
-  title = title.replace(/(?:Team|Staff|Editor|Admin|Blog)$/i, '').trim();
-
-  // Truncate at the first natural sentence boundary if title is > 120 chars
-  if (title.length > 120) {
-    // Look for ". " or " — " or ": " after 40 chars
-    const breakPoints = [
-      title.indexOf('. ', 40),
-      title.indexOf(' — ', 40),
-      title.indexOf(': ', 40),
-    ].filter((i) => i > 0);
-
-    if (breakPoints.length > 0) {
-      const breakAt = Math.min(...breakPoints);
-      // Include the period/colon but not the space after
-      title = title.slice(0, breakAt + 1);
-    } else {
-      // Hard truncate
-      title = title.slice(0, 117) + '...';
-    }
-  }
-
-  return title.trim();
 }
 
 /**
