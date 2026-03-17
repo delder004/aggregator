@@ -1,7 +1,6 @@
 name = "agenticaiaccounting"
 main = "src/index.ts"
 compatibility_date = "2025-03-14"
-usage_model = "standard"
 
 [triggers]
 crons = ["0 * * * *"]
