@@ -20,8 +20,51 @@ function stripHtml(html: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'")
     .replace(/&nbsp;/g, ' ')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Sanitize an RSS/Atom title by removing common noise patterns:
+ * - Leading "Article" prefix
+ * - Leading date patterns (e.g., "March 01, 2026")
+ * - Trailing author/team suffixes
+ * - Overly long titles truncated at a sentence boundary
+ */
+function sanitizeTitle(raw: string): string {
+  let title = raw.trim();
+
+  // Strip leading "Article" prefix (case-insensitive, word boundary)
+  title = title.replace(/^Article\b\s*/i, '');
+
+  // Strip leading date patterns: "Month DD, YYYY" at start of string
+  title = title.replace(
+    /^(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\s*/i,
+    ''
+  );
+
+  // Strip trailing known author/team suffixes
+  title = title.replace(/(?:Team|Staff|Editor|Admin|Blog)$/i, '').trim();
+
+  // Truncate at the first natural sentence boundary if title is > 120 chars
+  if (title.length > 120) {
+    const breakPoints = [
+      title.indexOf('. ', 40),
+      title.indexOf(' — ', 40),
+      title.indexOf(': ', 40),
+    ].filter((i) => i > 0);
+
+    if (breakPoints.length > 0) {
+      const breakAt = Math.min(...breakPoints);
+      title = title.slice(0, breakAt + 1);
+    } else {
+      title = title.slice(0, 117) + '...';
+    }
+  }
+
+  return title.trim();
 }
 
 /** Truncate a string to maxLen characters, adding ellipsis if truncated. */
@@ -227,7 +270,7 @@ function parseRssItem(
 
   return {
     url: resolvedLink,
-    title: stripHtml(title).trim(),
+    title: sanitizeTitle(stripHtml(title)),
     sourceType: 'rss',
     sourceName,
     author: author ? stripHtml(author) : null,
@@ -278,7 +321,7 @@ function parseAtomEntry(
 
   return {
     url: link,
-    title: stripHtml(title).trim(),
+    title: sanitizeTitle(stripHtml(title)),
     sourceType: 'rss',
     sourceName,
     author: author ? stripHtml(author) : null,
