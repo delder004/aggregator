@@ -101,12 +101,14 @@ export async function updateArticleScore(
   tags: string[],
   isPublished: boolean,
   qualityScore?: number | null,
-  companyMentions?: string[]
+  companyMentions?: string[],
+  headline?: string | null
 ): Promise<void> {
   await db
     .prepare(
       `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
-       quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions)
+       quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions),
+       headline = COALESCE(?, headline)
        WHERE url = ?`
     )
     .bind(
@@ -117,6 +119,7 @@ export async function updateArticleScore(
       new Date().toISOString(),
       qualityScore ?? null,
       companyMentions ? JSON.stringify(companyMentions) : null,
+      headline ?? null,
       url
     )
     .run();

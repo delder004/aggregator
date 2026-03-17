@@ -332,7 +332,8 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
           const updateStmts = scored.map((s) =>
             this.env.DB.prepare(
               `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
-               quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions)
+               quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions),
+               headline = COALESCE(?, headline)
                WHERE url = ?`
             ).bind(
               s.relevanceScore,
@@ -342,6 +343,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
               now,
               s.qualityScore ?? null,
               s.companyMentions ? JSON.stringify(s.companyMentions) : null,
+              s.headline || null,
               s.url
             )
           );
