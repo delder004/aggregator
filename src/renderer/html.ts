@@ -627,6 +627,17 @@ function logoSvg(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Company link map — set once before rendering to link company tags to /company/{id}
+// ---------------------------------------------------------------------------
+
+let _companyNameToId: Map<string, string> | undefined;
+
+/** Set the company name → ID map used by article cards for linking. */
+export function setCompanyLinkMap(map: Map<string, string>): void {
+  _companyNameToId = map;
+}
+
+// ---------------------------------------------------------------------------
 // Components
 // ---------------------------------------------------------------------------
 
@@ -658,7 +669,11 @@ export function articleCard(article: Article): string {
 
   const companyTags = article.companyMentions && article.companyMentions.length > 0
     ? `<div class="article-tags">${article.companyMentions
-        .map((c) => `<a class="company-tag" href="/companies">${escapeHtml(c)}</a>`)
+        .map((c) => {
+          const companyId = _companyNameToId?.get(c);
+          const href = companyId ? `/company/${escapeHtml(companyId)}` : '/companies';
+          return `<a class="company-tag" href="${href}">${escapeHtml(c)}</a>`;
+        })
         .join('')}</div>`
     : '';
 
