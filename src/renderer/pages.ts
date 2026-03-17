@@ -108,7 +108,8 @@ function generateHomepage(
   featured: Article[],
   latest: Article[],
   allArticles: Article[],
-  layoutOpts: Partial<LayoutOptions>
+  layoutOpts: Partial<LayoutOptions>,
+  summaries?: InsightSummary[]
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
@@ -133,6 +134,15 @@ function generateHomepage(
   // Trending tags
   const tagCounts = countTags(allArticles);
   body += trendingTags(tagCounts);
+
+  // Insights section — show latest summaries
+  if (summaries && summaries.length > 0) {
+    const latestSummaries = sortSummaries(summaries).slice(0, 3);
+    body += `<div class="section-label">Insights <a href="/insights" style="font-size:0.75rem;font-weight:400;color:var(--accent);margin-left:0.5rem;">View all &rarr;</a></div>\n`;
+    body += `<div class="insights-grid">\n`;
+    body += latestSummaries.map((s) => insightCard(s)).join('\n');
+    body += `\n</div>\n`;
+  }
 
   // Latest section — time-grouped
   body += `<div class="section-label">Latest</div>\n`;
@@ -515,7 +525,7 @@ export function generateAllPages(
   const layoutOpts: Partial<LayoutOptions> = stats ? { stats } : {};
 
   const pages: Record<string, string> = {
-    ...generateHomepage(featured, latest, articles, layoutOpts),
+    ...generateHomepage(featured, latest, articles, layoutOpts, summaries),
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
   };
