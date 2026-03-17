@@ -90,5 +90,5 @@ CREATE TABLE IF NOT EXISTS company_insights (
     FOREIGN KEY (company_id) REFERENCES companies(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_company_insights_company ON company_insights(company_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_company_insights_company_unique ON company_insights(company_id);
 CREATE INDEX IF NOT EXISTS idx_company_insights_generated ON company_insights(generated_at DESC);

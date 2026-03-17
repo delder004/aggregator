@@ -33,6 +33,19 @@ const ARTICLES_PER_PAGE = 20;
 const SITE_URL = 'https://agenticaiaccounting.com';
 
 // ---------------------------------------------------------------------------
+// Helpers (general)
+// ---------------------------------------------------------------------------
+
+/** Safely extract hostname from a URL string, returning the raw string on failure. */
+function safeHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -612,7 +625,7 @@ function generateCompaniesPage(
     ${desc ? `<p class="article-summary">${desc}</p>` : ''}
     <div class="article-meta">
       <span class="source-name">${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
-      ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank" style="color:var(--text-tertiary);">${escapeHtml(new URL(c.website).hostname)}</a>` : ''}
+      ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank" style="color:var(--text-tertiary);">${escapeHtml(safeHostname(c.website))}</a>` : ''}
       ${lastMention ? `<span class="meta-dot">&middot;</span> <span>${lastMention}</span>` : ''}
     </div>
   </div>
@@ -668,7 +681,7 @@ function generateCompanyDetailPages(
       body += `<span class="company-tag" style="cursor:default;">${escapeHtml(company.category)}</span>`;
     }
     if (company.website) {
-      body += `<a href="${escapeHtml(company.website)}" rel="noopener" target="_blank">${escapeHtml(new URL(company.website).hostname)}</a>`;
+      body += `<a href="${escapeHtml(company.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(company.website))}</a>`;
     }
     body += `<span>${articles.length} article${articles.length !== 1 ? 's' : ''}</span>`;
     body += `</div>`;

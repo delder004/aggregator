@@ -238,7 +238,8 @@ export async function getAllCompanyArticles(
       `SELECT ac.company_id, a.* FROM article_companies ac
        JOIN articles a ON a.id = ac.article_id
        WHERE a.is_published = 1 AND a.relevance_score >= 50
-       ORDER BY a.published_at DESC`
+       ORDER BY a.published_at DESC
+       LIMIT 2500`
     )
     .all();
 
@@ -468,14 +469,7 @@ export async function getAllCompanyInsights(
   db: D1Database
 ): Promise<Map<string, CompanyInsight>> {
   const results = await db
-    .prepare(
-      `SELECT ci.* FROM company_insights ci
-       INNER JOIN (
-         SELECT company_id, MAX(generated_at) as max_gen
-         FROM company_insights
-         GROUP BY company_id
-       ) latest ON ci.company_id = latest.company_id AND ci.generated_at = latest.max_gen`
-    )
+    .prepare('SELECT * FROM company_insights')
     .all();
   const map = new Map<string, CompanyInsight>();
   for (const row of results.results) {
@@ -485,14 +479,20 @@ export async function getAllCompanyInsights(
   return map;
 }
 
-export async function insertCompanyInsight(
+export async function upsertCompanyInsight(
   db: D1Database,
   insight: CompanyInsight
 ): Promise<void> {
   await db
     .prepare(
       `INSERT INTO company_insights (id, company_id, content, content_html, article_count, generated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(company_id) DO UPDATE SET
+         id = excluded.id,
+         content = excluded.content,
+         content_html = excluded.content_html,
+         article_count = excluded.article_count,
+         generated_at = excluded.generated_at`
     )
     .bind(
       insight.id,

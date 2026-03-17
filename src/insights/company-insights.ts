@@ -6,15 +6,13 @@
 
 import type { Env, Article, Company, CompanyInsight } from '../types';
 import { markdownToHtml } from './markdown';
+import { callClaudeAPI } from './claude-api';
 import { getTrackedCompanies } from '../company/tracker';
 import {
   getAllCompanyArticles,
   getAllCompanyInsights,
-  insertCompanyInsight,
+  upsertCompanyInsight,
 } from '../db/queries';
-
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20251001';
 
 /** Regenerate insights at most once per 24 hours per company. */
 const REGEN_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -93,7 +91,7 @@ export async function generateCompanyInsights(
       const articles = companyArticles.get(company.id) ?? [];
       const insight = await generateSingleCompanyInsight(company, articles, env);
       if (insight) {
-        await insertCompanyInsight(env.DB, insight);
+        await upsertCompanyInsight(env.DB, insight);
         results.push(insight);
       }
     } catch (err) {
@@ -111,7 +109,7 @@ async function generateSingleCompanyInsight(
   env: Env,
 ): Promise<CompanyInsight | null> {
   const userMessage = buildUserMessage(company, articles);
-  const markdown = await callClaudeAPI(userMessage, env);
+  const markdown = await callClaudeAPI(SYSTEM_PROMPT, userMessage, env);
 
   const trimmed = markdown.length > 2000 ? markdown.slice(0, 2000) : markdown;
   const contentHtml = markdownToHtml(trimmed);
@@ -152,37 +150,3 @@ function buildUserMessage(company: Company, articles: Article[]): string {
   return lines.join('\n');
 }
 
-async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
-  const body = {
-    model: MODEL,
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user' as const, content: userMessage }],
-  };
-
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': env.CLAUDE_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Claude API returned ${response.status}: ${errorText}`);
-  }
-
-  const data = (await response.json()) as {
-    content: Array<{ type: string; text?: string }>;
-  };
-
-  const textBlock = data.content?.find((b) => b.type === 'text' && b.text);
-  if (!textBlock?.text) {
-    throw new Error('No text content in Claude API response');
-  }
-
-  return textBlock.text;
-}

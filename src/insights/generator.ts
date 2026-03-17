@@ -5,10 +5,8 @@
 
 import type { Env, Article, InsightSummary, InsightPeriodType } from '../types';
 import { markdownToHtml } from './markdown';
+import { callClaudeAPI } from './claude-api';
 import { summaryExistsForPeriod, getArticlesInRange } from '../db/queries';
-
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-haiku-4-5-20251001';
 
 const SYSTEM_PROMPT = `You are a briefing writer for a news site about agentic AI in accounting.
 
@@ -147,7 +145,7 @@ export async function generateInsight(
 ): Promise<InsightSummary | null> {
   try {
     const userMessage = buildUserMessage(articles, period);
-    const markdownContent = await callClaudeAPI(userMessage, env);
+    const markdownContent = await callClaudeAPI(SYSTEM_PROMPT, userMessage, env);
 
     // Truncate if too long (safety measure)
     const trimmed = markdownContent.length > 2000
@@ -261,48 +259,6 @@ function buildUserMessage(articles: Article[], period: PeriodWindow): string {
   }
 
   return lines.join('\n');
-}
-
-async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
-  const body = {
-    model: MODEL,
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user' as const,
-        content: userMessage,
-      },
-    ],
-  };
-
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': env.CLAUDE_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Claude API returned ${response.status}: ${errorText}`);
-  }
-
-  const data = (await response.json()) as {
-    content: Array<{ type: string; text?: string }>;
-  };
-
-  const textBlock = data.content?.find(
-    (block) => block.type === 'text' && block.text,
-  );
-  if (!textBlock?.text) {
-    throw new Error('No text content in Claude API response');
-  }
-
-  return textBlock.text;
 }
 
 // -- Date formatting helpers --

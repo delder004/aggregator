@@ -107,13 +107,14 @@ export function matchArticleToCompanies(
 
 /**
  * Check if text contains a company name as a word boundary match.
- * Avoids false positives (e.g., "sage" matching "message").
+ * Avoids false positives (e.g., "sage" matching "message",
+ * "stacks" matching "tech stacks").
  */
 function textContainsCompany(text: string, companyName: string): boolean {
   const name = companyName.toLowerCase();
-  if (name.length < 6) {
-    // Short names (e.g., "Sage", "Ramp", "Brex") need word boundary matching
-    // to avoid false positives like "sage" matching "message"
+  if (name.length < 8) {
+    // Short names (e.g., "Sage", "Kick", "Stacks", "Mesh") need word boundary
+    // matching to avoid false positives in common English words
     const regex = new RegExp(`\\b${escapeRegex(name)}\\b`, 'i');
     return regex.test(text);
   }
