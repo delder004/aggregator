@@ -225,6 +225,34 @@ export async function getCompanyArticles(
   return results.results.map(mapRowToArticle);
 }
 
+/**
+ * Fetch all articles linked to companies via the junction table,
+ * grouped by company ID. Returns a Map<companyId, Article[]>.
+ */
+export async function getAllCompanyArticles(
+  db: D1Database,
+  limitPerCompany: number = 50
+): Promise<Map<string, Article[]>> {
+  const results = await db
+    .prepare(
+      `SELECT ac.company_id, a.* FROM article_companies ac
+       JOIN articles a ON a.id = ac.article_id
+       WHERE a.is_published = 1 AND a.relevance_score >= 50
+       ORDER BY a.published_at DESC`
+    )
+    .all();
+
+  const map = new Map<string, Article[]>();
+  for (const row of results.results) {
+    const companyId = row.company_id as string;
+    const article = mapRowToArticle(row);
+    if (!map.has(companyId)) map.set(companyId, []);
+    const articles = map.get(companyId)!;
+    if (articles.length < limitPerCompany) articles.push(article);
+  }
+  return map;
+}
+
 function mapRowToArticle(row: Record<string, unknown>): Article {
   let tags: string[] = [];
   try {

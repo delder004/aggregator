@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from 'cloudflare:workers';
-import type { Env, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, InsightSummary, SourceType } from './types';
+import type { Env, Article, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, InsightSummary, SourceType } from './types';
 import { rssCollector } from './collectors/rss';
 import { hackerNewsCollector } from './collectors/hackernews';
 import { createYouTubeCollector } from './collectors/youtube';
@@ -20,6 +20,7 @@ import {
   getUnscoredArticles,
   insertSummary,
   getAllRecentSummaries,
+  getAllCompanyArticles,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
@@ -507,6 +508,13 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             // Use empty array if fetch fails
           }
 
+          let companyArticles = new Map<string, Article[]>();
+          try {
+            companyArticles = await getAllCompanyArticles(this.env.DB);
+          } catch (err) {
+            console.error('Failed to fetch company articles:', err);
+          }
+
           let summaries: InsightSummary[] = [];
           try {
             summaries = await getAllRecentSummaries(this.env.DB);
@@ -518,7 +526,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             sources: sourceCount,
             articles: totalArticles,
             lastUpdated,
-          }, summaries, companies);
+          }, summaries, companies, companyArticles);
 
           const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
           pages['/feed.xml'] = rssFeed;

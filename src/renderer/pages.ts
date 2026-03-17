@@ -19,6 +19,7 @@ import {
   insightCard,
   insightNav,
   periodToSlug,
+  setCompanyLinkMap,
   NAV_TAGS,
   type LayoutOptions,
 } from './html';
@@ -466,7 +467,8 @@ function generateInsightsPages(
 function generateSitemap(
   articles: Article[],
   tags: string[],
-  totalLatestPages: number
+  totalLatestPages: number,
+  companies?: Company[]
 ): string {
   const now = new Date().toISOString().split('T')[0];
 
@@ -482,8 +484,15 @@ function generateSitemap(
     urls += `  <url><loc>${SITE_URL}/tag/${escapeHtml(tag)}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   }
 
+  urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
+
+  if (companies) {
+    for (const c of companies) {
+      urls += `  <url><loc>${SITE_URL}/company/${escapeHtml(c.id)}</loc><changefreq>hourly</changefreq><priority>0.6</priority></url>\n`;
+    }
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -509,7 +518,8 @@ export function generateAllPages(
   tags: string[],
   stats?: { sources: number; articles: number; lastUpdated: string },
   summaries?: InsightSummary[],
-  companies?: Company[]
+  companies?: Company[],
+  companyArticles?: Map<string, Article[]>
 ): Record<string, string> {
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
@@ -524,6 +534,18 @@ export function generateAllPages(
 
   const layoutOpts: Partial<LayoutOptions> = stats ? { stats } : {};
 
+  // Set company name → id lookup for linking company tags in article cards
+  if (companies) {
+    const nameToId = new Map<string, string>();
+    for (const c of companies) {
+      nameToId.set(c.name, c.id);
+      for (const alias of c.aliases) {
+        nameToId.set(alias, c.id);
+      }
+    }
+    setCompanyLinkMap(nameToId);
+  }
+
   const pages: Record<string, string> = {
     ...generateHomepage(featured, latest, articles, layoutOpts, summaries),
     ...generateTagPages(articles, layoutOpts),
@@ -535,13 +557,16 @@ export function generateAllPages(
   }
 
   if (companies && companies.length > 0) {
-    Object.assign(pages, generateCompaniesPage(companies, layoutOpts));
+    const articleMap = companyArticles ?? new Map<string, Article[]>();
+    Object.assign(pages, generateCompaniesPage(companies, articleMap, layoutOpts));
+    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, layoutOpts));
   }
 
   pages['/sitemap.xml'] = generateSitemap(
     articles,
     effectiveTags,
-    totalLatestPages
+    totalLatestPages,
+    companies
   );
 
   return pages;
@@ -553,32 +578,45 @@ export function generateAllPages(
 
 function generateCompaniesPage(
   companies: Company[],
+  companyArticles: Map<string, Article[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
 
-  const companyRows = sorted
-    .map((c) => {
+  // Group companies by category
+  const categories = new Map<string, Company[]>();
+  for (const c of sorted) {
+    const cat = c.category || 'Other';
+    if (!categories.has(cat)) categories.set(cat, []);
+    categories.get(cat)!.push(c);
+  }
+
+  let companyRows = '';
+  for (const [category, cos] of categories) {
+    companyRows += `<div class="time-group">${escapeHtml(category)}</div>\n`;
+    for (const c of cos) {
       const name = escapeHtml(c.name);
       const desc = c.description ? escapeHtml(c.description) : '';
-      const website = c.website ? escapeHtml(c.website) : '';
       const count = c.articleCount;
+      const companyArticleCount = companyArticles.get(c.id)?.length ?? 0;
+      const articleCount = Math.max(count, companyArticleCount);
       const lastMention = c.lastMentionedAt
         ? `Last mentioned ${new Date(c.lastMentionedAt).toLocaleDateString()}`
         : '';
 
-      return `<div class="article-card" style="align-items:center;">
+      companyRows += `<div class="article-card" style="align-items:center;">
   <div class="article-body">
-    <h3 class="article-title">${website ? `<a href="${website}" rel="noopener" target="_blank">${name}</a>` : name}</h3>
+    <h3 class="article-title"><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
     ${desc ? `<p class="article-summary">${desc}</p>` : ''}
     <div class="article-meta">
-      <span class="source-name">${count} article${count !== 1 ? 's' : ''}</span>
+      <span class="source-name">${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
+      ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank" style="color:var(--text-tertiary);">${escapeHtml(new URL(c.website).hostname)}</a>` : ''}
       ${lastMention ? `<span class="meta-dot">&middot;</span> <span>${lastMention}</span>` : ''}
     </div>
   </div>
-</div>`;
-    })
-    .join('\n');
+</div>\n`;
+    }
+  }
 
   const body = `
 <div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
@@ -595,4 +633,57 @@ ${companyRows}`;
       ...layoutOpts,
     }),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Company detail pages
+// ---------------------------------------------------------------------------
+
+function generateCompanyDetailPages(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+
+  for (const company of companies) {
+    const articles = companyArticles.get(company.id) ?? [];
+    const path = `/company/${company.id}`;
+    const name = escapeHtml(company.name);
+
+    // Company header
+    let body = `<div class="section-label"><a href="/companies" style="color:var(--text-tertiary);">Companies</a> &rsaquo; ${name}</div>\n`;
+
+    body += `<div style="padding:1rem 0;border-bottom:1px solid var(--border);margin-bottom:1rem;">`;
+    body += `<h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;">${name}</h1>`;
+    if (company.description) {
+      body += `<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;">${escapeHtml(company.description)}</p>`;
+    }
+    body += `<div class="article-meta">`;
+    if (company.category) {
+      body += `<span class="company-tag" style="cursor:default;">${escapeHtml(company.category)}</span>`;
+    }
+    if (company.website) {
+      body += `<a href="${escapeHtml(company.website)}" rel="noopener" target="_blank">${escapeHtml(new URL(company.website).hostname)}</a>`;
+    }
+    body += `<span>${articles.length} article${articles.length !== 1 ? 's' : ''}</span>`;
+    body += `</div>`;
+    body += `</div>\n`;
+
+    // Article feed
+    if (articles.length > 0) {
+      body += renderTimeGrouped(articles);
+    } else {
+      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet for ${name}. Check back soon.</p>`;
+    }
+
+    pages[path] = layout(body, {
+      title: `${company.name} — Feed`,
+      description: `Latest news and articles about ${company.name} in AI-powered accounting.`,
+      path,
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }
