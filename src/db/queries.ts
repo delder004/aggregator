@@ -1,4 +1,4 @@
-import type { Article, SourceConfig, ScoredArticle, SourceType, InsightSummary, InsightPeriodType } from '../types';
+import type { Article, SourceConfig, ScoredArticle, SourceType, InsightSummary, InsightPeriodType, CompanyInsight } from '../types';
 import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
 
 /** Escape SQL LIKE wildcards in user-provided values. */
@@ -444,4 +444,74 @@ export async function getAllRecentSummaries(
     .bind(limit)
     .all();
   return results.results.map(mapRowToSummary);
+}
+
+// -- Company Insights queries --
+
+export async function getCompanyInsight(
+  db: D1Database,
+  companyId: string
+): Promise<CompanyInsight | null> {
+  const row = await db
+    .prepare(
+      `SELECT * FROM company_insights
+       WHERE company_id = ?
+       ORDER BY generated_at DESC
+       LIMIT 1`
+    )
+    .bind(companyId)
+    .first();
+  return row ? mapRowToCompanyInsight(row) : null;
+}
+
+export async function getAllCompanyInsights(
+  db: D1Database
+): Promise<Map<string, CompanyInsight>> {
+  const results = await db
+    .prepare(
+      `SELECT ci.* FROM company_insights ci
+       INNER JOIN (
+         SELECT company_id, MAX(generated_at) as max_gen
+         FROM company_insights
+         GROUP BY company_id
+       ) latest ON ci.company_id = latest.company_id AND ci.generated_at = latest.max_gen`
+    )
+    .all();
+  const map = new Map<string, CompanyInsight>();
+  for (const row of results.results) {
+    const insight = mapRowToCompanyInsight(row);
+    map.set(insight.companyId, insight);
+  }
+  return map;
+}
+
+export async function insertCompanyInsight(
+  db: D1Database,
+  insight: CompanyInsight
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO company_insights (id, company_id, content, content_html, article_count, generated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      insight.id,
+      insight.companyId,
+      insight.content,
+      insight.contentHtml,
+      insight.articleCount,
+      insight.generatedAt
+    )
+    .run();
+}
+
+function mapRowToCompanyInsight(row: Record<string, unknown>): CompanyInsight {
+  return {
+    id: row.id as string,
+    companyId: row.company_id as string,
+    content: row.content as string,
+    contentHtml: row.content_html as string,
+    articleCount: (row.article_count as number) || 0,
+    generatedAt: row.generated_at as string,
+  };
 }

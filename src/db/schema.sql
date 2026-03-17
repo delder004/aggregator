@@ -79,3 +79,16 @@ CREATE TABLE IF NOT EXISTS summaries (
 CREATE INDEX IF NOT EXISTS idx_summaries_period ON summaries(period_type, period_start DESC);
 CREATE INDEX IF NOT EXISTS idx_summaries_generated ON summaries(generated_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_summaries_period_unique ON summaries(period_type, period_start);
+
+CREATE TABLE IF NOT EXISTS company_insights (
+    id TEXT PRIMARY KEY,
+    company_id TEXT NOT NULL,
+    content TEXT NOT NULL,
+    content_html TEXT NOT NULL,
+    article_count INTEGER NOT NULL DEFAULT 0,
+    generated_at TEXT NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_company_insights_company ON company_insights(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_insights_generated ON company_insights(generated_at DESC);

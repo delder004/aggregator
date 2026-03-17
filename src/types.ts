@@ -112,3 +112,12 @@ export interface InsightSummary {
   topArticleIds: string[];
   generatedAt: string;
 }
+
+export interface CompanyInsight {
+  id: string;
+  companyId: string;
+  content: string;
+  contentHtml: string;
+  articleCount: number;
+  generatedAt: string;
+}

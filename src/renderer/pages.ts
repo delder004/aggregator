@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article, InsightSummary, InsightPeriodType, Company } from '../types';
+import type { Article, InsightSummary, InsightPeriodType, Company, CompanyInsight } from '../types';
 import {
   layout,
   articleCard,
@@ -519,7 +519,8 @@ export function generateAllPages(
   stats?: { sources: number; articles: number; lastUpdated: string },
   summaries?: InsightSummary[],
   companies?: Company[],
-  companyArticles?: Map<string, Article[]>
+  companyArticles?: Map<string, Article[]>,
+  companyInsights?: Map<string, CompanyInsight>
 ): Record<string, string> {
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
@@ -558,8 +559,9 @@ export function generateAllPages(
 
   if (companies && companies.length > 0) {
     const articleMap = companyArticles ?? new Map<string, Article[]>();
+    const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
     Object.assign(pages, generateCompaniesPage(companies, articleMap, layoutOpts));
-    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, layoutOpts));
+    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, layoutOpts));
   }
 
   pages['/sitemap.xml'] = generateSitemap(
@@ -642,12 +644,14 @@ ${companyRows}`;
 function generateCompanyDetailPages(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
+  companyInsights: Map<string, CompanyInsight>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
   for (const company of companies) {
     const articles = companyArticles.get(company.id) ?? [];
+    const insight = companyInsights.get(company.id);
     const path = `/company/${company.id}`;
     const name = escapeHtml(company.name);
 
@@ -670,8 +674,20 @@ function generateCompanyDetailPages(
     body += `</div>`;
     body += `</div>\n`;
 
+    // Company insight (AI-generated overview)
+    if (insight) {
+      body += `<div class="insight-card" style="margin:1rem 0;">`;
+      body += `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">`;
+      body += `<span class="insight-badge daily">${escapeHtml(company.name)} Insights</span>`;
+      body += `<span style="font-size:0.72rem;color:var(--text-tertiary);">Updated ${new Date(insight.generatedAt).toLocaleDateString()}</span>`;
+      body += `</div>`;
+      body += `<div class="insight-content" style="padding:0;">\n${insight.contentHtml}\n</div>`;
+      body += `</div>\n`;
+    }
+
     // Article feed
     if (articles.length > 0) {
+      body += `<div class="section-label">Recent Coverage</div>\n`;
       body += renderTimeGrouped(articles);
     } else {
       body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet for ${name}. Check back soon.</p>`;
