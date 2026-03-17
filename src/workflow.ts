@@ -514,15 +514,45 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
           const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
           pages['/feed.xml'] = rssFeed;
 
-          // Write pages to KV in batches of 25
+          // Conditional writes: only write pages whose content has changed
+          const HASH_KEY = '__page_hashes__';
+          const oldHashesRaw = await this.env.KV.get(HASH_KEY, 'text');
+          const oldHashes: Record<string, string> = oldHashesRaw
+            ? JSON.parse(oldHashesRaw)
+            : {};
+
           const entries = Object.entries(pages);
-          for (let i = 0; i < entries.length; i += 25) {
-            const batch = entries.slice(i, i + 25);
+          const newHashes: Record<string, string> = {};
+          const changed: [string, string][] = [];
+
+          for (const [path, html] of entries) {
+            const buf = await crypto.subtle.digest(
+              'SHA-256',
+              new TextEncoder().encode(html)
+            );
+            const hash = [...new Uint8Array(buf)]
+              .map((b) => b.toString(16).padStart(2, '0'))
+              .join('');
+            newHashes[path] = hash;
+            if (oldHashes[path] !== hash) {
+              changed.push([path, html]);
+            }
+          }
+
+          // Write only changed pages in batches of 25
+          for (let i = 0; i < changed.length; i += 25) {
+            const batch = changed.slice(i, i + 25);
             await Promise.all(batch.map(([path, html]) => this.env.KV.put(path, html)));
           }
-          console.log(`Wrote ${entries.length} pages to KV`);
 
-          return { pagesWritten: entries.length };
+          // Persist updated hashes (1 write)
+          await this.env.KV.put(HASH_KEY, JSON.stringify(newHashes));
+
+          console.log(
+            `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys (${entries.length - changed.length} skipped)`
+          );
+
+          return { pagesWritten: changed.length };
         } catch (err) {
           console.error('Page generation failed:', err);
           return { pagesWritten: 0 };
