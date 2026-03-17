@@ -11,7 +11,6 @@ import { companyBlogCollector } from './collectors/companyblog';
 import { pressReleaseCollector } from './collectors/pressrelease';
 import { blogScraperCollector } from './collectors/blogscraper';
 import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
-import { extractContent } from './scoring/content-extractor';
 import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats } from './company/tracker';
 import {
   getPublishedArticles,
@@ -27,7 +26,6 @@ import { generateRssFeed } from './renderer/rss';
 import { generateInsights } from './insights/generator';
 
 const MAX_SCORE_PER_RUN = 50;
-const ENRICH_LIMIT = 20;
 const SOURCES_PER_BATCH = 10;
 
 interface CollectBatchResult {
@@ -91,13 +89,16 @@ async function getRecentlyScoredArticles(db: D1Database, since: string): Promise
   }));
 }
 
-export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
+/**
+ * CollectWorkflow — collects articles from sources and stores them in D1.
+ * Does NOT score, generate insights, or render pages.
+ */
+export class CollectWorkflow extends WorkflowEntrypoint<Env> {
   async run(event: Readonly<WorkflowEvent<unknown>>, step: WorkflowStep) {
     const startTime = Date.now();
-    const startTimeISO = new Date(startTime).toISOString();
-    console.log('Pipeline workflow started');
+    console.log('Collect workflow started');
 
-    // Step 1a: Load all active sources from DB
+    // Step 1: Load all active sources from DB
     const sources = await step.do(
       'load-sources',
       {
@@ -115,9 +116,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
-    // Step 1b: Collect articles in batches
-    // Each batch is separated by step.sleep() to force the workflow to checkpoint
-    // and resume in a new invocation with a fresh subrequest budget.
+    // Step 2: Collect articles in batches
     const batchResults: CollectBatchResult[] = [];
     const batchCount = Math.ceil(sources.length / SOURCES_PER_BATCH);
     for (let b = 0; b < batchCount; b++) {
@@ -179,12 +178,12 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
     const allSourceUpdates = batchResults.flatMap(r => r.sourceUpdates);
     console.log(`Total collected: ${allCollected.length} articles from ${sources.length} sources`);
 
-    // Sleep before store-and-score to get fresh subrequest budget
+    // Sleep before store to get fresh subrequest budget
     await step.sleep('pre-store-pause', '1 second');
 
-    // Step 1c: Store and score articles
-    const collection = await step.do(
-      'store-and-score',
+    // Step 3: Store articles (no scoring, no enrichment)
+    const storeResult = await step.do(
+      'store-articles',
       {
         retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
       },
@@ -228,63 +227,12 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
         }
         console.log(`New articles after dedup: ${newArticles.length}`);
 
-        // 3. Enrich articles with fuller content before scoring
-        const enrichLimit = Math.min(newArticles.length, ENRICH_LIMIT);
-        for (let i = 0; i < enrichLimit; i++) {
-          if (!newArticles[i].contentSnippet || newArticles[i].contentSnippet!.length < 200) {
-            try {
-              const fullContent = await extractContent(newArticles[i].url);
-              if (fullContent) {
-                newArticles[i] = { ...newArticles[i], contentSnippet: fullContent };
-              }
-            } catch (err) {
-              console.warn(`Content extraction failed for ${newArticles[i].url}:`, err);
-            }
-          }
-        }
-
-        // 4. Score new articles with Claude Haiku
-        const toScore = newArticles.slice(0, MAX_SCORE_PER_RUN);
-        const unscored = newArticles.slice(MAX_SCORE_PER_RUN);
-        let scoredUsed = 0;
-
-        let scored = toScore.map((a) => ({
-          ...a,
-          relevanceScore: 0,
-          qualityScore: 0,
-          aiSummary: '',
-          tags: [] as string[],
-          companyMentions: [] as string[],
-        }));
-
-        if (toScore.length > 0) {
-          try {
-            scored = await scoreArticles(toScore, this.env);
-            scoredUsed = scored.length;
-            console.log(`Scored ${scored.length} articles (${unscored.length} deferred to next run)`);
-          } catch (err) {
-            console.error('Scoring pipeline failed:', err);
-          }
-        }
-
-        // Store unscored articles so they're deduped on next run
-        const unscoredEntries = unscored.map((a) => ({
-          ...a,
-          relevanceScore: 0,
-          qualityScore: 0,
-          aiSummary: '',
-          tags: [] as string[],
-          companyMentions: [] as string[],
-        }));
-        const allToInsert = [...scored, ...unscoredEntries];
-
-        // 5. Store articles in D1 (batched to reduce subrequests)
+        // 3. Insert new articles with relevance_score = 0 (no scoring)
         let insertedCount = 0;
         const now = new Date().toISOString();
-        for (let i = 0; i < allToInsert.length; i += 50) {
-          const batch = allToInsert.slice(i, i + 50);
+        for (let i = 0; i < newArticles.length; i += 50) {
+          const batch = newArticles.slice(i, i + 50);
           const stmts = batch.map((article) => {
-            const wasScored = article.relevanceScore > 0 || article.aiSummary !== '';
             return this.env.DB
               .prepare(
                 `INSERT OR IGNORE INTO articles
@@ -304,15 +252,15 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
                 now,
                 article.contentSnippet,
                 article.imageUrl,
-                article.relevanceScore,
-                article.qualityScore ?? null,
+                0, // relevance_score = 0 (unscored)
+                null,
                 article.socialScore ?? null,
                 article.commentCount ?? null,
-                JSON.stringify(article.companyMentions ?? []),
-                article.aiSummary,
-                JSON.stringify(article.tags),
-                article.relevanceScore >= MIN_PUBLISH_SCORE ? 1 : 0,
-                wasScored ? now : null
+                JSON.stringify([]),
+                '', // no ai_summary
+                JSON.stringify([]),
+                0, // not published until scored
+                null // not scored yet
               );
           });
           try {
@@ -327,37 +275,47 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
         return {
           collected: allCollected.length,
           new: newArticles.length,
-          scored: scoredUsed,
           inserted: insertedCount,
           sourceCount: sources.length,
         };
       }
     );
 
-    await step.sleep('pre-backfill-pause', '1 second');
+    const elapsed = Date.now() - startTime;
+    console.log(
+      `Collect workflow completed in ${elapsed}ms. ` +
+      `Collected: ${storeResult.collected}, New: ${storeResult.new}, ` +
+      `Inserted: ${storeResult.inserted}, Sources: ${storeResult.sourceCount}`
+    );
+  }
+}
 
-    // Step 2: Backfill scoring for previously unscored articles
-    const backfill = await step.do(
-      'backfill-scoring',
+/**
+ * ProcessWorkflow — scores unscored articles, tracks companies,
+ * generates insights, and renders pages to KV.
+ */
+export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
+  async run(event: Readonly<WorkflowEvent<unknown>>, step: WorkflowStep) {
+    const startTime = Date.now();
+    const startTimeISO = new Date(startTime).toISOString();
+    console.log('Process workflow started');
+
+    // Step 1: Score unscored articles
+    const scoring = await step.do(
+      'score-articles',
       {
         retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
       },
       async () => {
-        const backfillBudget = MAX_SCORE_PER_RUN - collection.scored;
-        if (backfillBudget <= 0) {
-          console.log('No backfill budget remaining');
-          return { backfilled: 0 };
-        }
-
         try {
-          const unscoredFromDb = await getUnscoredArticles(this.env.DB, backfillBudget);
+          const unscoredFromDb = await getUnscoredArticles(this.env.DB, MAX_SCORE_PER_RUN);
           if (unscoredFromDb.length === 0) {
-            console.log('No unscored articles to backfill');
-            return { backfilled: 0 };
+            console.log('No unscored articles to score');
+            return { scored: 0 };
           }
 
-          console.log(`Backfill scoring ${unscoredFromDb.length} unscored articles from DB`);
-          const backfillInput = unscoredFromDb.map((a) => ({
+          console.log(`Scoring ${unscoredFromDb.length} unscored articles`);
+          const scoreInput = unscoredFromDb.map((a) => ({
             url: a.url,
             title: a.title,
             sourceType: a.sourceType,
@@ -367,10 +325,10 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
             contentSnippet: a.contentSnippet,
             imageUrl: a.imageUrl,
           }));
-          const backfillScored = await scoreArticles(backfillInput, this.env);
+          const scored = await scoreArticles(scoreInput, this.env);
           const now = new Date().toISOString();
           // Batch all score updates into a single D1 call
-          const updateStmts = backfillScored.map((s) =>
+          const updateStmts = scored.map((s) =>
             this.env.DB.prepare(
               `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
                quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions)
@@ -389,18 +347,18 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
           if (updateStmts.length > 0) {
             await this.env.DB.batch(updateStmts);
           }
-          console.log(`Backfill scored ${backfillScored.length} articles`);
-          return { backfilled: backfillScored.length };
+          console.log(`Scored ${scored.length} articles`);
+          return { scored: scored.length };
         } catch (err) {
-          console.error('Backfill scoring failed:', err);
-          return { backfilled: 0 };
+          console.error('Scoring failed:', err);
+          return { scored: 0 };
         }
       }
     );
 
     await step.sleep('pre-company-pause', '1 second');
 
-    // Step 3: Company tracking
+    // Step 2: Company tracking
     const companyTracking = await step.do(
       'company-tracking',
       {
@@ -475,7 +433,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
 
     await step.sleep('pre-insights-pause', '1 second');
 
-    // Step 4: Generate insights
+    // Step 3: Generate insights
     const insights = await step.do(
       'generate-insights',
       {
@@ -500,7 +458,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
 
     await step.sleep('pre-render-pause', '1 second');
 
-    // Step 5: Render pages
+    // Step 4: Render pages
     const rendering = await step.do(
       'render-pages',
       {
@@ -524,6 +482,15 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
           const totalArticles = recentArticles.length;
           const lastUpdated = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 
+          // Get source count
+          let sourceCount = 0;
+          try {
+            const sources = await getAllActiveSources(this.env.DB);
+            sourceCount = sources.length;
+          } catch {
+            // Use 0 if fetch fails
+          }
+
           let companies: Company[] = [];
           try {
             companies = await getTrackedCompanies(this.env.DB);
@@ -539,7 +506,7 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
           }
 
           const pages = generateAllPages(recentArticles, featuredArticles, tags, {
-            sources: collection.sourceCount,
+            sources: sourceCount,
             articles: totalArticles,
             lastUpdated,
           }, summaries, companies);
@@ -565,9 +532,8 @@ export class PipelineWorkflow extends WorkflowEntrypoint<Env> {
 
     const elapsed = Date.now() - startTime;
     console.log(
-      `Pipeline workflow completed in ${elapsed}ms. ` +
-      `Collected: ${collection.collected}, New: ${collection.new}, Scored: ${collection.scored}, ` +
-      `Inserted: ${collection.inserted}, Backfilled: ${backfill.backfilled}, ` +
+      `Process workflow completed in ${elapsed}ms. ` +
+      `Scored: ${scoring.scored}, ` +
       `Companies matched: ${companyTracking.matched}, Insights: ${insights.generated}, ` +
       `Pages: ${rendering.pagesWritten}`
     );

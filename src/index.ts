@@ -1,6 +1,6 @@
 import type { Env } from './types';
 
-export { PipelineWorkflow } from './workflow';
+export { CollectWorkflow, ProcessWorkflow } from './workflow';
 
 export default {
   async fetch(
@@ -22,8 +22,13 @@ export default {
       if (!cronSecret || request.headers.get('X-Cron-Key') !== cronSecret) {
         return new Response('Unauthorized', { status: 401 });
       }
-      const instance = await env.PIPELINE_WORKFLOW.create();
-      return new Response(JSON.stringify({ status: 'started', instanceId: instance.id }), {
+      const collectInstance = await env.COLLECT_WORKFLOW.create();
+      const processInstance = await env.PROCESS_WORKFLOW.create();
+      return new Response(JSON.stringify({
+        status: 'started',
+        collectInstanceId: collectInstance.id,
+        processInstanceId: processInstance.id,
+      }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -51,7 +56,8 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    const instance = await env.PIPELINE_WORKFLOW.create();
-    console.log(`Pipeline workflow started: ${instance.id}`);
+    const collectInstance = await env.COLLECT_WORKFLOW.create();
+    const processInstance = await env.PROCESS_WORKFLOW.create();
+    console.log(`Collect workflow started: ${collectInstance.id}, Process workflow started: ${processInstance.id}`);
   },
 };

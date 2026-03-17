@@ -20,6 +20,11 @@ enabled = true
 invocation_logs = true
 
 [[workflows]]
-name = "agenticaiaccounting-pipeline"
-binding = "PIPELINE_WORKFLOW"
-class_name = "PipelineWorkflow"
+name = "agenticaiaccounting-collect"
+binding = "COLLECT_WORKFLOW"
+class_name = "CollectWorkflow"
+
+[[workflows]]
+name = "agenticaiaccounting-process"
+binding = "PROCESS_WORKFLOW"
+class_name = "ProcessWorkflow"

@@ -83,34 +83,16 @@ export const SEED_SOURCES: SeedSource[] = [
 
   // --- Hacker News ---
   {
-    id: 'hn-ai-accounting',
+    id: 'hn-accounting-ai',
     source_type: 'hn',
-    name: 'HN: AI Accounting',
-    config: JSON.stringify({ query: 'accounting automation, accounting AI, accounting software' }),
+    name: 'HN: Accounting & AI',
+    config: JSON.stringify({ query: 'accounting AI, accounting automation, AI audit, AI bookkeeping, AI tax' }),
   },
   {
-    id: 'hn-agentic-finance',
+    id: 'hn-fintech-automation',
     source_type: 'hn',
-    name: 'HN: Agentic AI Finance',
-    config: JSON.stringify({ query: 'agentic accounting, AI finance, fintech automation' }),
-  },
-  {
-    id: 'hn-ai-audit',
-    source_type: 'hn',
-    name: 'HN: AI Audit',
-    config: JSON.stringify({ query: 'audit automation, AI audit, automated compliance' }),
-  },
-  {
-    id: 'hn-ai-bookkeeping',
-    source_type: 'hn',
-    name: 'HN: AI Bookkeeping',
-    config: JSON.stringify({ query: 'bookkeeping software, QuickBooks AI, Xero' }),
-  },
-  {
-    id: 'hn-ai-tax',
-    source_type: 'hn',
-    name: 'HN: AI Tax Automation',
-    config: JSON.stringify({ query: 'tax automation, tax software, CPA automation' }),
+    name: 'HN: Fintech & Automation',
+    config: JSON.stringify({ query: 'agentic accounting, fintech automation, CPA automation' }),
   },
 
   // --- Substack Newsletters ---
