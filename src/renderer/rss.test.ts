@@ -7,6 +7,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     id: 'test-id-1',
     url: 'https://example.com/article-1',
     title: 'Test Article',
+    headline: null,
     sourceType: 'rss',
     sourceName: 'Accounting Today',
     author: 'Jane Doe',

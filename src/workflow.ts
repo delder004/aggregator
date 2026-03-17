@@ -84,6 +84,7 @@ async function getRecentlyScoredArticles(db: D1Database, since: string): Promise
     relevanceScore: row.relevance_score as number,
     qualityScore: (row.quality_score as number) ?? 0,
     aiSummary: (row.ai_summary as string) ?? '',
+    headline: (row.headline as string) ?? '',
     tags: JSON.parse((row.tags as string) || '[]'),
     companyMentions: JSON.parse((row.company_mentions as string) || '[]'),
   }));

@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS articles (
     scored_at TEXT,
     social_score INTEGER,
     comment_count INTEGER,
-    company_mentions TEXT
+    company_mentions TEXT,
+    headline TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_published_at ON articles(published_at DESC);

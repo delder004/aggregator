@@ -89,6 +89,7 @@ interface ClassifierResponse {
   qualityScore: number;
   tags: string[];
   summary: string;
+  headline: string;
   companyMentions: string[];
 }
 
@@ -129,6 +130,7 @@ export async function scoreArticles(
           relevanceScore: 0,
           qualityScore: 0,
           aiSummary: '',
+          headline: '',
           tags: [],
           companyMentions: [],
         };
@@ -163,6 +165,7 @@ async function scoreOneArticle(
       relevanceScore: parsed.relevanceScore,
       qualityScore: parsed.qualityScore,
       aiSummary: parsed.summary,
+      headline: parsed.headline,
       tags: parsed.tags,
       companyMentions: parsed.companyMentions,
     };
@@ -185,6 +188,7 @@ async function scoreOneArticle(
     relevanceScore: parsed.relevanceScore,
     qualityScore: parsed.qualityScore,
     aiSummary: parsed.summary,
+    headline: parsed.headline,
     tags: parsed.tags,
     companyMentions: parsed.companyMentions,
   };
@@ -348,6 +352,15 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
     );
   }
 
+  // Validate headline
+  let headline = '';
+  if (typeof obj.headline === 'string' && obj.headline.trim().length > 0) {
+    headline = obj.headline.trim();
+    if (headline.length > 80) {
+      headline = headline.slice(0, 80);
+    }
+  }
+
   // Validate companyMentions
   let companyMentions: string[] = [];
   if (Array.isArray(obj.companyMentions)) {
@@ -356,5 +369,5 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
       .map((name) => name.trim());
   }
 
-  return { relevanceScore, qualityScore, tags, summary, companyMentions };
+  return { relevanceScore, qualityScore, tags, summary, headline, companyMentions };
 }

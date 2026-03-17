@@ -4,6 +4,7 @@ export interface Article {
   id: string;
   url: string;
   title: string;
+  headline: string | null;
   sourceType: SourceType;
   sourceName: string;
   author: string | null;
@@ -60,6 +61,7 @@ export interface ScoredArticle extends CollectedArticle {
   relevanceScore: number;
   qualityScore: number;
   aiSummary: string;
+  headline: string;
   tags: string[];
   companyMentions: string[];
 }

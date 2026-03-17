@@ -596,6 +596,7 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     id: row.id as string,
     url: row.url as string,
     title: row.title as string,
+    headline: (row.headline as string) || null,
     sourceType: row.source_type as SourceType,
     sourceName: row.source_name as string,
     author: (row.author as string) || null,

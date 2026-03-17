@@ -113,6 +113,7 @@ describe('matchArticleToCompanies', () => {
       relevanceScore: 80,
       qualityScore: 60,
       aiSummary: '',
+      headline: '',
       tags: [],
       companyMentions: [],
       ...overrides,
