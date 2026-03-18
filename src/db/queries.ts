@@ -304,13 +304,13 @@ export async function getRelatedArticles(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= ${MIN_PUBLISH_SCORE}
+       WHERE is_published = 1 AND relevance_score >= ?
          AND id != ?
          AND (${tagConditions})
        ORDER BY published_at DESC
        LIMIT ?`
     )
-    .bind(article.id, ...tagBindings, limit)
+    .bind(MIN_PUBLISH_SCORE, article.id, ...tagBindings, limit)
     .all();
   return results.results.map(mapRowToArticle);
 }

@@ -38,7 +38,7 @@ export default {
 
     // Dynamic search page
     if (path === '/search') {
-      const q = url.searchParams.get('q')?.trim() || '';
+      const q = (url.searchParams.get('q')?.trim() || '').slice(0, 200);
 
       let body = '';
       if (q) {

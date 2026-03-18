@@ -758,9 +758,9 @@ export function articleCard(article: Article): string {
       ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
-    <a href="/article/${escapeHtml(article.id)}" class="article-detail-link" style="font-size:0.75rem;color:var(--text-tertiary);">Details</a>
     ${tags}
     ${companyTags}
+    <a href="/article/${escapeHtml(article.id)}" class="article-detail-link" style="font-size:0.75rem;color:var(--text-tertiary);">Details</a>
   </div>
 </article>`;
 }
