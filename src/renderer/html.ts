@@ -520,6 +520,58 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   color:var(--text-tertiary);
   margin-top:0.15rem;
 }
+
+/* Search form */
+.search-form{
+  margin-top:0.6rem;
+}
+.search-form input{
+  width:100%;
+  max-width:320px;
+  padding:0.4rem 0.75rem;
+  border:1px solid var(--border);
+  border-radius:100px;
+  background:var(--bg-secondary);
+  color:var(--text);
+  font-size:0.82rem;
+  outline:none;
+}
+.search-form input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--accent-subtle);
+}
+
+/* Article detail */
+.article-detail{padding:1.5rem 0;}
+.article-detail h1{font-size:1.4rem;font-weight:700;line-height:1.3;margin-bottom:0.5rem;}
+.article-detail .article-meta{margin-bottom:1rem;}
+.article-detail .article-summary{font-size:0.95rem;-webkit-line-clamp:unset;margin-bottom:1rem;line-height:1.6;}
+.article-detail .article-tags{margin-bottom:1.5rem;}
+.article-detail .original-link{display:inline-block;padding:0.5rem 1.2rem;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:0.85rem;font-weight:500;}
+.article-detail .original-link:hover{background:var(--accent-hover);text-decoration:none;}
+.related-section{margin-top:2rem;border-top:1px solid var(--border);padding-top:1rem;}
+
+/* Most discussed */
+.discussed-list{list-style:none;counter-reset:discussed;padding:0;margin:0.5rem 0;}
+.discussed-item{
+  counter-increment:discussed;
+  padding:0.5rem 0;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  gap:0.15rem;
+}
+.discussed-item:last-child{border-bottom:none;}
+.discussed-item::before{
+  content:counter(discussed);
+  font-size:0.7rem;
+  font-weight:700;
+  color:var(--text-tertiary);
+  margin-bottom:0.1rem;
+}
+.discussed-item a{font-size:0.88rem;font-weight:500;color:var(--text);}
+.discussed-item a:hover{color:var(--accent);}
+.discussed-meta{font-size:0.73rem;color:var(--text-tertiary);}
 `;
 }
 
@@ -706,6 +758,7 @@ export function articleCard(article: Article): string {
       ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
+    <a href="/article/${escapeHtml(article.id)}" class="article-detail-link" style="font-size:0.75rem;color:var(--text-tertiary);">Details</a>
     ${tags}
     ${companyTags}
   </div>
@@ -1010,6 +1063,7 @@ export interface LayoutOptions {
   path?: string;
   activeTag?: string;
   stats?: { sources: number; articles: number; lastUpdated: string };
+  searchQuery?: string;
 }
 
 /**
@@ -1074,6 +1128,9 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           ${stats ? `<span class="last-updated">Updated ${escapeHtml(stats.lastUpdated)}</span>` : ''}
         </div>
       </div>
+      <form class="search-form" method="GET" action="/search">
+        <input type="search" name="q" placeholder="Search articles..." aria-label="Search"${options.searchQuery ? ` value="${escapeHtml(options.searchQuery)}"` : ''} />
+      </form>
     </div>
   </header>
 

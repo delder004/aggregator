@@ -254,6 +254,67 @@ export async function getAllCompanyArticles(
   return map;
 }
 
+export async function searchArticles(
+  db: D1Database,
+  query: string,
+  limit: number = 50
+): Promise<Article[]> {
+  const escaped = escapeLike(query);
+  const pattern = `%${escaped}%`;
+  const results = await db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE is_published = 1 AND relevance_score >= ?
+         AND (title LIKE ? OR ai_summary LIKE ? OR headline LIKE ?)
+       ORDER BY relevance_score DESC
+       LIMIT ?`
+    )
+    .bind(MIN_PUBLISH_SCORE, pattern, pattern, pattern, limit)
+    .all();
+  return results.results.map(mapRowToArticle);
+}
+
+export async function getArticleById(
+  db: D1Database,
+  id: string
+): Promise<Article | null> {
+  const row = await db
+    .prepare('SELECT * FROM articles WHERE id = ? AND is_published = 1')
+    .bind(id)
+    .first();
+  return row ? mapRowToArticle(row) : null;
+}
+
+export async function getRelatedArticles(
+  db: D1Database,
+  article: Article,
+  limit: number = 5
+): Promise<Article[]> {
+  // Find articles sharing the same tags
+  if (article.tags.length === 0) return [];
+
+  const tagConditions = article.tags
+    .slice(0, 3)  // Use up to 3 tags
+    .map(() => `tags LIKE ?`)
+    .join(' OR ');
+  const tagBindings = article.tags
+    .slice(0, 3)
+    .map(t => `%"${escapeLike(t)}"%`);
+
+  const results = await db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE is_published = 1 AND relevance_score >= ${MIN_PUBLISH_SCORE}
+         AND id != ?
+         AND (${tagConditions})
+       ORDER BY published_at DESC
+       LIMIT ?`
+    )
+    .bind(article.id, ...tagBindings, limit)
+    .all();
+  return results.results.map(mapRowToArticle);
+}
+
 function mapRowToArticle(row: Record<string, unknown>): Article {
   let tags: string[] = [];
   try {
