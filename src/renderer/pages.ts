@@ -33,6 +33,25 @@ const ARTICLES_PER_PAGE = 20;
 const SITE_URL = 'https://agenticaiaccounting.com';
 
 // ---------------------------------------------------------------------------
+// OG Image
+// ---------------------------------------------------------------------------
+
+/** Generate a branded 1200x630 SVG for og:image. */
+function generateOgImage(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f766e"/>
+  <g transform="translate(120,160) scale(6)">
+    <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
+    <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
+    <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
+  </g>
+  <text x="360" y="290" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="64" font-weight="700" fill="#fff">Agentic AI</text>
+  <text x="360" y="370" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="64" font-weight="700" fill="#fff">Accounting</text>
+  <text x="360" y="430" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" font-size="28" fill="#fff" opacity="0.8">AI + Accounting News — Updated Hourly</text>
+</svg>`;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers (general)
 // ---------------------------------------------------------------------------
 
@@ -577,6 +596,8 @@ export function generateAllPages(
     Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, layoutOpts));
   }
 
+  pages['/og.svg'] = generateOgImage();
+
   pages['/sitemap.xml'] = generateSitemap(
     articles,
     effectiveTags,
@@ -633,7 +654,10 @@ function generateCompaniesPage(
     }
   }
 
-  const body = `
+  const body = companies.length === 0
+    ? `<div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
+<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet. Check back soon.</p>`
+    : `
 <div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
 <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
   Tracking ${companies.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
