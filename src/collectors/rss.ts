@@ -291,6 +291,71 @@ function parseAtomEntry(
   };
 }
 
+/**
+ * Maximum number of podcast transcript fetches per RSS collection run.
+ * Keeps subrequest usage low.
+ */
+const MAX_PODCAST_TRANSCRIPT_FETCHES = 3;
+
+/**
+ * Maximum length for fetched podcast transcripts.
+ */
+const MAX_TRANSCRIPT_LENGTH = 10000;
+
+/**
+ * Extract a podcast transcript URL from an RSS item, if present.
+ * Only grabs transcripts with type="text/plain" (simplest to work with).
+ */
+function extractPodcastTranscriptUrl(itemXml: string): string | null {
+  // Look for <podcast:transcript> tag with type="text/plain"
+  // Match tags that have type="text/plain" attribute
+  const regex = /<podcast:transcript[^>]*type\s*=\s*["']text\/plain["'][^>]*>/gi;
+  const matches = itemXml.match(regex);
+  if (!matches) return null;
+
+  for (const tag of matches) {
+    const urlMatch = tag.match(/url\s*=\s*["']([^"']+)["']/i);
+    if (urlMatch?.[1]) {
+      return urlMatch[1];
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch a podcast transcript from a URL.
+ * Returns the transcript text truncated to MAX_TRANSCRIPT_LENGTH, or null on error.
+ */
+async function fetchPodcastTranscript(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'AgenticAIAccounting/1.0 (news aggregator)',
+        'Accept': 'text/plain, */*',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`[RSS] Podcast transcript fetch failed (${response.status}) for ${url}`);
+      return null;
+    }
+
+    let text = await response.text();
+    text = text.replace(/\s+/g, ' ').trim();
+
+    if (!text) return null;
+
+    if (text.length > MAX_TRANSCRIPT_LENGTH) {
+      return text.slice(0, MAX_TRANSCRIPT_LENGTH);
+    }
+
+    return text;
+  } catch (error) {
+    console.error(`[RSS] Error fetching podcast transcript from ${url}:`, error);
+    return null;
+  }
+}
+
 /** RSS/Atom feed collector implementing the Collector interface. */
 export const rssCollector: Collector = {
   async collect(config: SourceConfig): Promise<CollectedArticle[]> {
@@ -326,6 +391,8 @@ export const rssCollector: Collector = {
       }
 
       const articles: CollectedArticle[] = [];
+      // Track raw item XML for transcript extraction (RSS items only)
+      const itemXmlMap = new Map<number, string>();
 
       if (format === 'atom') {
         const entries = splitByTag(xml, 'entry');
@@ -342,7 +409,11 @@ export const rssCollector: Collector = {
         for (const item of items) {
           try {
             const article = parseRssItem(item, config.name, feedUrl);
-            if (article) articles.push(article);
+            if (article) {
+              const idx = articles.length;
+              articles.push(article);
+              itemXmlMap.set(idx, item);
+            }
           } catch (err) {
             console.error(`[RSS] Error parsing RSS item from ${feedUrl}:`, err);
           }
@@ -353,10 +424,34 @@ export const rssCollector: Collector = {
       // (some podcast feeds return 500+ episodes from their full back catalog)
       const capped = articles.slice(0, 50);
       if (articles.length > 50) {
-        console.log(`[RSS] Capped ${articles.length} → 50 articles from ${config.name} (${feedUrl})`);
+        console.log(`[RSS] Capped ${articles.length} -> 50 articles from ${config.name} (${feedUrl})`);
       } else {
         console.log(`[RSS] Collected ${articles.length} articles from ${config.name} (${feedUrl})`);
       }
+
+      // Fetch podcast transcripts for RSS items (capped articles only)
+      let transcriptsFetched = 0;
+      for (let i = 0; i < capped.length; i++) {
+        if (transcriptsFetched >= MAX_PODCAST_TRANSCRIPT_FETCHES) break;
+
+        const rawXml = itemXmlMap.get(i);
+        if (!rawXml) continue;
+
+        const transcriptUrl = extractPodcastTranscriptUrl(rawXml);
+        if (!transcriptUrl) continue;
+
+        try {
+          const transcript = await fetchPodcastTranscript(transcriptUrl);
+          if (transcript) {
+            capped[i].transcript = transcript;
+            transcriptsFetched++;
+            console.log(`[RSS] Fetched podcast transcript for "${capped[i].title}" (${transcript.length} chars)`);
+          }
+        } catch (err) {
+          console.error(`[RSS] Transcript fetch error for "${capped[i].title}":`, err);
+        }
+      }
+
       return capped;
     } catch (err) {
       console.error(`[RSS] Error collecting from ${config.name} (${feedUrl}):`, err);

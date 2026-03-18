@@ -1,4 +1,5 @@
 import type { Collector, CollectedArticle, SourceConfig } from '../types';
+import { fetchYouTubeTranscript } from './transcript';
 
 /**
  * YouTube Data API v3 response types (subset we use).
@@ -44,6 +45,12 @@ const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 const MAX_RESULTS_PER_SEARCH = 15;
 
 /**
+ * Maximum number of transcript fetches per collection run.
+ * Supadata free tier allows ~100/month; with hourly runs, cap at 5 per run.
+ */
+const MAX_TRANSCRIPT_FETCHES = 5;
+
+/**
  * Creates a YouTube collector that uses the YouTube Data API v3.
  *
  * The SourceConfig.config should contain either:
@@ -54,7 +61,7 @@ const MAX_RESULTS_PER_SEARCH = 15;
  * If only channelId is provided, it fetches recent uploads from that channel.
  * If only query is provided, it does a global search.
  */
-export function createYouTubeCollector(env: { YOUTUBE_API_KEY?: string }): Collector {
+export function createYouTubeCollector(env: { YOUTUBE_API_KEY?: string; SUPADATA_API_KEY?: string }): Collector {
   return {
     async collect(config: SourceConfig): Promise<CollectedArticle[]> {
       try {
@@ -72,6 +79,33 @@ export function createYouTubeCollector(env: { YOUTUBE_API_KEY?: string }): Colle
         }
 
         const results = await searchYouTube(apiKey, { query, channelId, sourceName: config.name });
+
+        // Fetch transcripts if Supadata API key is configured
+        if (env.SUPADATA_API_KEY) {
+          let transcriptsFetched = 0;
+          for (const article of results) {
+            if (transcriptsFetched >= MAX_TRANSCRIPT_FETCHES) break;
+
+            // Extract video ID from URL
+            const videoId = extractVideoId(article.url);
+            if (!videoId) continue;
+
+            try {
+              const transcript = await fetchYouTubeTranscript(videoId, env.SUPADATA_API_KEY);
+              if (transcript) {
+                article.transcript = transcript;
+                transcriptsFetched++;
+                console.log(`[YouTube] Fetched transcript for "${article.title}" (${transcript.length} chars)`);
+              }
+            } catch (err) {
+              console.error(`[YouTube] Transcript fetch failed for "${article.title}":`, err);
+            }
+          }
+          if (transcriptsFetched > 0) {
+            console.log(`[YouTube] Fetched ${transcriptsFetched} transcripts for source "${config.name}"`);
+          }
+        }
+
         return results;
       } catch (error) {
         console.error(`[YouTube] Error collecting from source "${config.name}":`, error);
@@ -79,6 +113,24 @@ export function createYouTubeCollector(env: { YOUTUBE_API_KEY?: string }): Colle
       }
     },
   };
+}
+
+/**
+ * Extract YouTube video ID from a YouTube URL.
+ */
+function extractVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'youtube.com' || parsed.hostname === 'www.youtube.com') {
+      return parsed.searchParams.get('v');
+    }
+    if (parsed.hostname === 'youtu.be') {
+      return parsed.pathname.slice(1) || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
