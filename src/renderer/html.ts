@@ -512,6 +512,14 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .insight-nav a{font-size:0.82rem;padding:0.3rem 0.8rem;border-radius:100px;border:1px solid var(--border);color:var(--text-secondary);font-weight:500;}
 .insight-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
 .insight-nav a.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* Last updated indicator */
+.last-updated{
+  display:inline-block;
+  font-size:0.7rem;
+  color:var(--text-tertiary);
+  margin-top:0.15rem;
+}
 `;
 }
 
@@ -620,6 +628,16 @@ function sourceBadge(type: string): { label: string; cls: string } {
 /** SVG logo — stylized "A" with circuit trace motif. */
 function logoSvg(): string {
   return `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
+  <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
+  <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
+</svg>`;
+}
+
+/** Favicon SVG — 32x32 with teal background and white "A" logo. */
+function faviconSvg(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
+  <rect width="20" height="20" rx="4" fill="#0f766e"/>
   <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
   <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
   <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
@@ -1023,6 +1041,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <meta name="description" content="${description}" />
   <link rel="canonical" href="${canonical}" />
   <link rel="alternate" type="application/rss+xml" title="${escapeHtml(SITE_TITLE)}" href="${SITE_URL}/feed.xml" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(faviconSvg())}" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -1032,9 +1051,15 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <meta property="og:site_name" content="${escapeHtml(SITE_TITLE)}" />
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${pageTitle}" />
   <meta name="twitter:description" content="${description}" />
+  <meta name="twitter:image" content="${SITE_URL}/og.svg" />
+
+  <!-- OG Image -->
+  <meta property="og:image" content="${SITE_URL}/og.svg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <style>${getCSS()}</style>
 </head>
@@ -1046,6 +1071,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
         <div>
           <div class="site-title"><a href="/">${escapeHtml(SITE_TITLE)}</a></div>
           <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>
+          ${stats ? `<span class="last-updated">Updated ${escapeHtml(stats.lastUpdated)}</span>` : ''}
         </div>
       </div>
     </div>
