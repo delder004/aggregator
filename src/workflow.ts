@@ -291,6 +291,15 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env> {
       `Collected: ${storeResult.collected}, New: ${storeResult.new}, ` +
       `Inserted: ${storeResult.inserted}, Sources: ${storeResult.sourceCount}`
     );
+
+    // Ping health check on success
+    if (this.env.HEALTHCHECK_URL) {
+      try {
+        await fetch(this.env.HEALTHCHECK_URL);
+      } catch (err) {
+        console.error('Health check ping failed:', err);
+      }
+    }
   }
 }
 
@@ -613,5 +622,14 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       `Company insights: ${companyInsightResult.generated}, Insights: ${insights.generated}, ` +
       `Pages: ${rendering.pagesWritten}`
     );
+
+    // Ping health check on success
+    if (this.env.HEALTHCHECK_URL) {
+      try {
+        await fetch(this.env.HEALTHCHECK_URL);
+      } catch (err) {
+        console.error('Health check ping failed:', err);
+      }
+    }
   }
 }

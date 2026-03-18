@@ -94,6 +94,7 @@ export interface Env {
   PRODUCTHUNT_API_TOKEN?: string;
   COLLECT_WORKFLOW: Workflow;
   PROCESS_WORKFLOW: Workflow;
+  HEALTHCHECK_URL?: string;
 }
 
 // -- Insights Summary types --
