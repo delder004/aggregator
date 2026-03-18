@@ -20,6 +20,7 @@ export interface Article {
   socialScore: number | null;
   commentCount: number | null;
   companyMentions: string[];
+  transcript: string | null;
 }
 
 export type SourceType =

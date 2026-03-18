@@ -96,6 +96,9 @@ export default {
       if (article.relevanceScore) {
         detailBody += ` <span class="meta-dot">&middot;</span> Relevance: ${article.relevanceScore}/100`;
       }
+      if (article.transcript) {
+        detailBody += ` <span class="meta-dot">&middot;</span> <span style="background:var(--accent,#10b981);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">Transcript available</span>`;
+      }
       detailBody += `</div>`;
 
       if (summary) {

@@ -90,6 +90,7 @@ async function getRecentlyScoredArticles(db: D1Database, since: string): Promise
     headline: (row.headline as string) ?? '',
     tags: JSON.parse((row.tags as string) || '[]'),
     companyMentions: JSON.parse((row.company_mentions as string) || '[]'),
+    transcript: (row.transcript as string) || undefined,
   }));
 }
 
@@ -242,8 +243,9 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env> {
                 `INSERT OR IGNORE INTO articles
                  (id, url, title, source_type, source_name, author, published_at, fetched_at,
                   content_snippet, image_url, relevance_score, quality_score, social_score,
-                  comment_count, company_mentions, ai_summary, tags, is_published, scored_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                  comment_count, company_mentions, ai_summary, tags, is_published, scored_at,
+                  transcript)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
               )
               .bind(
                 generateId(),
@@ -264,7 +266,8 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env> {
                 '', // no ai_summary
                 JSON.stringify([]),
                 0, // not published until scored
-                null // not scored yet
+                null, // not scored yet
+                article.transcript ?? null
               );
           });
           try {
@@ -337,6 +340,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             publishedAt: a.publishedAt,
             contentSnippet: a.contentSnippet,
             imageUrl: a.imageUrl,
+            transcript: a.transcript ?? undefined,
           }));
           const scored = await scoreArticles(scoreInput, this.env);
           const now = new Date().toISOString();

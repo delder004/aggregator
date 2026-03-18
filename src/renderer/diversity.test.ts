@@ -23,6 +23,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     socialScore: null,
     commentCount: null,
     companyMentions: [],
+    transcript: null,
     ...overrides,
   };
 }

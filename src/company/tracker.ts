@@ -613,5 +613,6 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     socialScore: row.social_score as number | null,
     commentCount: row.comment_count as number | null,
     companyMentions,
+    transcript: (row.transcript as string) || null,
   };
 }
