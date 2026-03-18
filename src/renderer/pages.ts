@@ -149,6 +149,29 @@ function generateHomepage(
   const tagCounts = countTags(allArticles);
   body += trendingTags(tagCounts);
 
+  // Most discussed section — articles with highest social engagement this week
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const discussed = [...allArticles]
+    .filter(a => a.socialScore && a.socialScore > 0 && a.publishedAt >= sevenDaysAgo)
+    .sort((a, b) => (b.socialScore || 0) - (a.socialScore || 0))
+    .slice(0, 5);
+
+  if (discussed.length > 0) {
+    body += `<div class="section-label">Most Discussed</div>\n`;
+    body += `<ol class="discussed-list">\n`;
+    for (const a of discussed) {
+      const href = escapeHtml(a.url);
+      const title = escapeHtml(a.headline || a.title);
+      const source = escapeHtml(a.sourceName);
+      const score = a.socialScore || 0;
+      body += `<li class="discussed-item">
+  <a href="${href}" rel="noopener" target="_blank">${title}</a>
+  <span class="discussed-meta">${source} &middot; <span class="social-score">&blacktriangle; ${score}</span></span>
+</li>\n`;
+    }
+    body += `</ol>\n`;
+  }
+
   // Insights section — show latest summaries
   if (summaries && summaries.length > 0) {
     const latestSummaries = sortSummaries(summaries).slice(0, 3);
