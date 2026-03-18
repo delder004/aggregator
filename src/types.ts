@@ -55,6 +55,7 @@ export interface CollectedArticle {
   imageUrl: string | null;
   socialScore?: number;
   commentCount?: number;
+  transcript?: string;
 }
 
 export interface ScoredArticle extends CollectedArticle {
@@ -92,6 +93,7 @@ export interface Env {
   CRON_SECRET?: string;
   YOUTUBE_API_KEY?: string;
   PRODUCTHUNT_API_TOKEN?: string;
+  SUPADATA_API_KEY?: string;
   COLLECT_WORKFLOW: Workflow;
   PROCESS_WORKFLOW: Workflow;
   HEALTHCHECK_URL?: string;
