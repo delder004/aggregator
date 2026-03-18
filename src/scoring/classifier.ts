@@ -59,8 +59,8 @@ Score this article on TWO dimensions:
 - 0-29: Spam, clickbait, ads, very low effort
 
 ## Format Penalties (apply to quality score):
-- Podcast episodes: cap quality at 60 max (audio-only, not scannable, often rambling)
-- YouTube videos: cap quality at 60 max (video format, not scannable text content)
+- Podcast episodes: cap quality at 60 max UNLESS a transcript is provided, in which case score based on actual content quality
+- YouTube videos: cap quality at 60 max UNLESS a transcript is provided, in which case score based on actual content quality
 - Podcast/video content that is a deep expert interview specifically about AI in accounting may score up to 75
 
 ## Recency & Freshness
@@ -228,6 +228,14 @@ export function buildUserMessage(
     parts.push(`Social: ${signalParts.join(', ')}`);
   }
 
+  if (article.transcript) {
+    // Include truncated transcript (first 3000 chars) for better scoring
+    const truncatedTranscript = article.transcript.length > 3000
+      ? article.transcript.slice(0, 3000) + '...'
+      : article.transcript;
+    parts.push(`Transcript: ${truncatedTranscript}`);
+  }
+
   parts.push(`Published: ${article.publishedAt}`);
 
   return parts.join('\n');
@@ -239,7 +247,7 @@ export function buildUserMessage(
 async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
   const body = {
     model: MODEL,
-    max_tokens: 768,
+    max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [
       {
