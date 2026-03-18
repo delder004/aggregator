@@ -16,6 +16,7 @@ export { sanitizeTitle } from './utils';
  */
 
 const MAX_ARTICLES_PER_SOURCE = 20;
+const SNIPPET_FETCH_TIMEOUT_MS = 3000;
 
 // Match <a> tags, capturing href and inner text
 const LINK_REGEX = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
@@ -34,6 +35,58 @@ function resolveUrl(href: string, baseUrl: string): string {
     return new URL(href, baseUrl).href;
   } catch {
     return '';
+  }
+}
+
+/**
+ * Fetch a URL and extract a short content snippet for classifier enrichment.
+ * Returns up to 500 characters of cleaned text, or null on any error.
+ */
+async function extractSnippet(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SNIPPET_FETCH_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'AgenticAIAccounting/1.0 (blog-scraper)',
+          'Accept': 'text/html',
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const html = await response.text();
+    if (!html) return null;
+
+    let text = html;
+
+    // Remove script, style, nav, header, footer tags and their content
+    text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
+    text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ');
+    text = text.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, ' ');
+    text = text.replace(/<header\b[^>]*>[\s\S]*?<\/header>/gi, ' ');
+    text = text.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, ' ');
+
+    // Strip remaining HTML tags
+    text = text.replace(/<[^>]+>/g, ' ');
+
+    // Collapse whitespace
+    text = text.replace(/\s+/g, ' ').trim();
+
+    if (!text || text.length === 0) return null;
+
+    return text.slice(0, 500);
+  } catch {
+    return null;
   }
 }
 
@@ -126,6 +179,20 @@ export const blogScraperCollector: Collector = {
 
         if (articles.length >= MAX_ARTICLES_PER_SOURCE) break;
       }
+
+      // Extract content snippets for the first 5 articles (subrequest budget)
+      const snippetLimit = Math.min(articles.length, 5);
+      const snippetPromises = articles.slice(0, snippetLimit).map(async (article) => {
+        try {
+          const snippet = await extractSnippet(article.url);
+          if (snippet) {
+            article.contentSnippet = snippet;
+          }
+        } catch {
+          // Skip on error
+        }
+      });
+      await Promise.all(snippetPromises);
 
       console.log(
         `[BlogScraper] Collected ${articles.length} articles from ${company} blog`
