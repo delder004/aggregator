@@ -179,24 +179,32 @@ function generateHomepage(
     body += `<div class="section-label">Most Discussed</div>\n`;
     body += `<ol class="discussed-list">\n`;
     for (const a of discussed) {
-      const href = escapeHtml(a.url);
+      const href = `/article/${escapeHtml(a.id)}`;
       const title = escapeHtml(a.headline || a.title);
       const source = escapeHtml(a.sourceName);
       const score = a.socialScore || 0;
       body += `<li class="discussed-item">
-  <a href="${href}" rel="noopener" target="_blank">${title}</a>
+  <a href="${href}">${title}</a>
   <span class="discussed-meta">${source} &middot; <span class="social-score">&blacktriangle; ${score}</span></span>
 </li>\n`;
     }
     body += `</ol>\n`;
   }
 
-  // Insights section — show latest summaries
+  // Insights section — show latest summary of each period type
   if (summaries && summaries.length > 0) {
-    const latestSummaries = sortSummaries(summaries).slice(0, 3);
+    const sorted = sortSummaries(summaries);
+    const seen = new Set<string>();
+    const latestByType: InsightSummary[] = [];
+    for (const s of sorted) {
+      if (!seen.has(s.periodType)) {
+        seen.add(s.periodType);
+        latestByType.push(s);
+      }
+    }
     body += `<div class="section-label">Insights <a href="/insights" style="font-size:0.75rem;font-weight:400;color:var(--accent);margin-left:0.5rem;">View all &rarr;</a></div>\n`;
     body += `<div class="insights-grid">\n`;
-    body += latestSummaries.map((s) => insightCard(s)).join('\n');
+    body += latestByType.map((s) => insightCard(s)).join('\n');
     body += `\n</div>\n`;
   }
 

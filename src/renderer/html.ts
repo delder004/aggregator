@@ -122,6 +122,7 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   align-items:center;
   gap:0.75rem;
 }
+a.logo{text-decoration:none;}
 .logo{
   display:flex;
   align-items:center;
@@ -750,7 +751,7 @@ export function articleCard(article: Article): string {
   return `<article class="article-card">
   ${thumb}
   <div class="article-body">
-    <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
+    <h3 class="article-title"><a href="/article/${escapeHtml(article.id)}">${title}</a></h3>
     <div class="article-meta">
       <span class="${sClass} score-dot"></span>${qualityBadge}
       <span class="source-name">${escapeHtml(article.sourceName)}</span>
@@ -760,7 +761,6 @@ export function articleCard(article: Article): string {
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
     ${tags}
     ${companyTags}
-    <a href="/article/${escapeHtml(article.id)}" class="article-detail-link" style="font-size:0.75rem;color:var(--text-tertiary);">Details</a>
   </div>
 </article>`;
 }
@@ -780,7 +780,7 @@ export function featuredCard(article: Article): string {
 
   return `<div class="featured-card">
   <div class="featured-label">Featured</div>
-  <h3 class="article-title"><a href="${escapeHtml(article.url)}" rel="noopener" target="_blank">${title}</a></h3>
+  <h3 class="article-title"><a href="/article/${escapeHtml(article.id)}">${title}</a></h3>
   <div class="article-meta">
     <span class="source-name">${escapeHtml(article.sourceName)}</span>
     <span class="source-badge ${badge.cls}">${badge.label}</span>
@@ -1121,7 +1121,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <header class="site-header">
     <div class="container">
       <div class="header-row">
-        <div class="logo">${logoSvg()}</div>
+        <a href="/" class="logo">${logoSvg()}</a>
         <div>
           <div class="site-title"><a href="/">${escapeHtml(SITE_TITLE)}</a></div>
           <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>

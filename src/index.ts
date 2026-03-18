@@ -97,7 +97,7 @@ export default {
         detailBody += ` <span class="meta-dot">&middot;</span> Relevance: ${article.relevanceScore}/100`;
       }
       if (article.transcript) {
-        detailBody += ` <span class="meta-dot">&middot;</span> <span style="background:var(--accent,#10b981);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">Transcript available</span>`;
+        detailBody += ` <span class="meta-dot">&middot;</span> <a href="#transcript" style="background:var(--accent,#10b981);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;text-decoration:none;">Transcript available</a>`;
       }
       detailBody += `</div>`;
 
@@ -114,6 +114,16 @@ export default {
       }
 
       detailBody += `<a class="original-link" href="${escapeHtml(article.url)}" rel="noopener" target="_blank">Read original article &rarr;</a>`;
+
+      if (article.transcript) {
+        detailBody += `<div id="transcript" style="margin-top:1.5rem;border-top:1px solid var(--border,#e5e7eb);padding-top:1.5rem;">`;
+        detailBody += `<details>`;
+        detailBody += `<summary style="cursor:pointer;font-weight:600;font-size:0.95rem;color:var(--text-secondary,#6b7280);">View Transcript</summary>`;
+        detailBody += `<div style="margin-top:0.75rem;padding:1rem;background:var(--card-bg,#f9fafb);border-radius:8px;font-size:0.85rem;line-height:1.7;color:var(--text-secondary,#6b7280);white-space:pre-wrap;max-height:500px;overflow-y:auto;">${escapeHtml(article.transcript)}</div>`;
+        detailBody += `</details>`;
+        detailBody += `</div>`;
+      }
+
       detailBody += `</div>`;
 
       // Related articles
