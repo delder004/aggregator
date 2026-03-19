@@ -153,9 +153,7 @@ a.logo{text-decoration:none;}
   display:flex;
   flex-wrap:wrap;
   gap:0.4rem;
-  padding:0.7rem 0;
-  border-bottom:1px solid var(--border);
-  background:var(--bg-card);
+  align-items:center;
 }
 .tag-nav a{
   font-size:0.78rem;
@@ -180,6 +178,20 @@ a.logo{text-decoration:none;}
   margin:1.75rem 0 0.5rem;
   padding-bottom:0.4rem;
   border-bottom:1px solid var(--border);
+}
+.section-label-row{
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  margin:1.75rem 0 0.5rem;
+  padding-bottom:0.4rem;
+  border-bottom:1px solid var(--border);
+}
+.section-label-row .section-label{
+  margin:0;
+  padding:0;
+  border:none;
+  flex-shrink:0;
 }
 
 /* Article cards */
@@ -393,6 +405,11 @@ a.source-name:hover{text-decoration:underline;}
   gap:1.2rem;
   flex-wrap:wrap;
   margin-bottom:0.6rem;
+}
+.footer-copyright{
+  font-size:0.76rem;
+  color:var(--text-tertiary);
+  margin-top:0.3rem;
 }
 .footer-stats{
   font-size:0.7rem;
@@ -739,7 +756,7 @@ export function tagNav(activeTag: string): string {
     return `<a href="${href}"${cls}>${escapeHtml(t.label)}</a>`;
   }).join('\n    ');
 
-  return `<nav class="tag-nav container">
+  return `<nav class="tag-nav">
     ${links}
   </nav>`;
 }
@@ -1045,8 +1062,6 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     </div>
   </header>
 
-  ${tagNav(activeTag)}
-
   <main class="container">
     ${body}
   </main>
@@ -1054,10 +1069,11 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-links">
-        <a href="/feed.xml">RSS Feed</a>
-        <span class="meta-dot">&middot;</span>
         <a href="/about">About</a>
+        <span class="meta-dot">&middot;</span>
+        <a href="/feed.xml">RSS Feed</a>
       </div>
+      <div class="footer-copyright">&copy; ${new Date().getFullYear()} ${escapeHtml(SITE_TITLE)}</div>
       ${statsLine}
     </div>
   </footer>

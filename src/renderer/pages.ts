@@ -12,6 +12,7 @@ import {
   articleCard,
   featuredCard,
   pagination,
+  tagNav,
   timeGroup,
   escapeHtml,
   renderSourceClusters,
@@ -175,8 +176,8 @@ function generateHomepage(
     body += `</ol>\n`;
   }
 
-  // Latest section — time-grouped
-  body += `<div class="section-label">Latest</div>\n`;
+  // Latest section — time-grouped with inline tag filter
+  body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav('')}</div>\n`;
   if (latestPages.length > 0) {
     body += renderTimeGrouped(latestPages[0]);
   } else {
@@ -194,7 +195,7 @@ function generateHomepage(
   // Subsequent pages: /page/2, /page/3 ...
   for (let i = 1; i < latestPages.length; i++) {
     const pageNum = i + 1;
-    let pageBody = `<div class="section-label">Latest &mdash; Page ${pageNum}</div>\n`;
+    let pageBody = `<div class="section-label-row"><div class="section-label">Latest &mdash; Page ${pageNum}</div>${tagNav('')}</div>\n`;
     pageBody += renderTimeGrouped(latestPages[i]);
     pageBody += pagination(pageNum, totalPages);
 
@@ -239,7 +240,7 @@ function generateTagPages(
     const basePath = `/tag/${tag}`;
 
     // Page 1
-    let body = `<div class="section-label">${escapeHtml(tagLabel)}</div>\n`;
+    let body = `<div class="section-label-row"><div class="section-label">${escapeHtml(tagLabel)}</div>${tagNav(tag)}</div>\n`;
     if (tagPages.length > 0) {
       body += renderTimeGrouped(tagPages[0]);
     } else {
@@ -259,7 +260,7 @@ function generateTagPages(
     for (let i = 1; i < tagPages.length; i++) {
       const pageNum = i + 1;
       const path = `${basePath}/page/${pageNum}`;
-      let pageBody = `<div class="section-label">${escapeHtml(tagLabel)} &mdash; Page ${pageNum}</div>\n`;
+      let pageBody = `<div class="section-label-row"><div class="section-label">${escapeHtml(tagLabel)} &mdash; Page ${pageNum}</div>${tagNav(tag)}</div>\n`;
       pageBody += renderTimeGrouped(tagPages[i]);
       pageBody += pagination(pageNum, totalPages, basePath);
 
