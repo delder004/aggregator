@@ -23,22 +23,12 @@ CREATE INDEX IF NOT EXISTS idx_company_jobs_company ON company_jobs(company_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_company_jobs_url ON company_jobs(url);
 
 -- Populate job board info for companies with known ATS platforms
--- Greenhouse companies
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'tipaltisolutions' WHERE id = 'tipalti';
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'hostanalytics' WHERE id = 'planful';
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'brex' WHERE id = 'brex';
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'pilothq' WHERE id = 'pilot';
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'inkind' WHERE id = 'inkind';
-UPDATE companies SET jobs_board_type = 'greenhouse', jobs_board_token = 'karbon' WHERE id = 'karbon';
-
--- Lever companies
-UPDATE companies SET jobs_board_type = 'lever', jobs_board_token = 'floqast' WHERE id = 'floqast';
-
--- Ashby companies
-UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'xero' WHERE id = 'xero';
+-- All Ashby
 UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'puzzle.io' WHERE id = 'puzzle';
 UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'rillet' WHERE id = 'rillet';
 UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'campfire' WHERE id = 'campfire';
 UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'dualentry' WHERE id = 'dualentry';
-UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'layerfi' WHERE id = 'layer';
-UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'ramp' WHERE id = 'ramp';
+UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'numeric' WHERE id = 'numeric';
+UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'collective' WHERE id = 'collective';
+UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'stacks' WHERE id = 'stacks';
+UPDATE companies SET jobs_board_type = 'ashby', jobs_board_token = 'every-io' WHERE id = 'every';
