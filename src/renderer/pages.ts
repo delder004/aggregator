@@ -250,7 +250,7 @@ function generateTagPages(
     const basePath = `/tag/${tag}`;
 
     // Page 1
-    let body = `<div class="section-label-row"><div class="section-label">${escapeHtml(tagLabel)}</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+    let body = `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
     if (tagPages.length > 0) {
       body += renderTimeGrouped(tagPages[0]);
     } else {
@@ -270,7 +270,7 @@ function generateTagPages(
     for (let i = 1; i < tagPages.length; i++) {
       const pageNum = i + 1;
       const path = `${basePath}/page/${pageNum}`;
-      let pageBody = `<div class="section-label-row"><div class="section-label">${escapeHtml(tagLabel)} &mdash; Page ${pageNum}</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+      let pageBody = `<div class="section-label-row"><div class="section-label">Latest &mdash; Page ${pageNum}</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
       pageBody += renderTimeGrouped(tagPages[i]);
       pageBody += pagination(pageNum, totalPages, basePath);
 
