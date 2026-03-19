@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article, Company, CompanyInsight } from '../types';
+import type { Article, Company, CompanyInsight, CompanyJob } from '../types';
 import {
   layout,
   articleCard,
@@ -435,7 +435,8 @@ export function generateAllPages(
   stats?: { sources: number; crawled: number; articles: number; lastUpdated: string },
   companies?: Company[],
   companyArticles?: Map<string, Article[]>,
-  companyInsights?: Map<string, CompanyInsight>
+  companyInsights?: Map<string, CompanyInsight>,
+  companyJobs?: Map<string, CompanyJob[]>
 ): Record<string, string> {
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
@@ -471,8 +472,9 @@ export function generateAllPages(
   if (companies && companies.length > 0) {
     const articleMap = companyArticles ?? new Map<string, Article[]>();
     const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
+    const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
     Object.assign(pages, generateCompaniesPage(companies, articleMap, layoutOpts));
-    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, layoutOpts));
+    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
   }
 
   pages['/og.svg'] = generateOgImage();
@@ -555,10 +557,53 @@ ${companyRows}`;
 // Company detail pages
 // ---------------------------------------------------------------------------
 
+function renderJobsSection(jobs: CompanyJob[], companyName: string): string {
+  if (jobs.length === 0) return '';
+
+  // Group by department
+  const departments = new Map<string, CompanyJob[]>();
+  for (const job of jobs) {
+    const dept = job.department || 'Other';
+    const existing = departments.get(dept) ?? [];
+    existing.push(job);
+    departments.set(dept, existing);
+  }
+
+  // Sort departments alphabetically, but put "Other" last
+  const sortedDepts = [...departments.keys()].sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    return a.localeCompare(b);
+  });
+
+  let html = `<div class="section-label">Open Roles (${jobs.length})</div>\n`;
+  html += `<div style="margin-bottom:1.5rem;">\n`;
+
+  for (const dept of sortedDepts) {
+    const deptJobs = departments.get(dept)!;
+    html += `<div class="time-group">${escapeHtml(dept)}</div>\n`;
+    for (const job of deptJobs) {
+      const location = job.location
+        ? `<span style="color:var(--text-tertiary);font-size:0.8rem;">${escapeHtml(job.location)}</span>`
+        : '';
+      html += `<div class="article-card" style="align-items:center;padding:0.6rem 0;">
+  <div class="article-body">
+    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
+    ${location ? `<div class="article-meta">${location}</div>` : ''}
+  </div>
+</div>\n`;
+    }
+  }
+
+  html += `</div>\n`;
+  return html;
+}
+
 function generateCompanyDetailPages(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
   companyInsights: Map<string, CompanyInsight>,
+  companyJobs: Map<string, CompanyJob[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
@@ -566,6 +611,7 @@ function generateCompanyDetailPages(
   for (const company of companies) {
     const articles = companyArticles.get(company.id) ?? [];
     const insight = companyInsights.get(company.id);
+    const jobs = companyJobs.get(company.id) ?? [];
     const path = `/company/${company.id}`;
     const name = escapeHtml(company.name);
 
@@ -585,6 +631,9 @@ function generateCompanyDetailPages(
       body += `<a href="${escapeHtml(company.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(company.website))}</a>`;
     }
     body += `<span>${articles.length} article${articles.length !== 1 ? 's' : ''}</span>`;
+    if (jobs.length > 0) {
+      body += `<span class="meta-dot">&middot;</span> <a href="#jobs" style="color:var(--accent);">${jobs.length} open role${jobs.length !== 1 ? 's' : ''}</a>`;
+    }
     body += `</div>`;
     body += `</div>\n`;
 
@@ -596,6 +645,13 @@ function generateCompanyDetailPages(
       body += `<span style="font-size:0.72rem;color:var(--text-tertiary);">Updated ${new Date(insight.generatedAt).toLocaleDateString()}</span>`;
       body += `</div>`;
       body += `<div class="insight-content" style="padding:0;">\n${insight.contentHtml}\n</div>`;
+      body += `</div>\n`;
+    }
+
+    // Open roles section
+    if (jobs.length > 0) {
+      body += `<div id="jobs">\n`;
+      body += renderJobsSection(jobs, company.name);
       body += `</div>\n`;
     }
 

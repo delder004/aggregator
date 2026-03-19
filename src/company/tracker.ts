@@ -235,6 +235,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'xero',
@@ -248,6 +250,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'sage',
@@ -261,6 +265,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'blackline',
@@ -274,6 +280,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'vic-ai',
@@ -287,6 +295,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'truewind',
@@ -300,6 +310,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'docyt',
@@ -313,6 +325,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'botkeeper',
@@ -326,6 +340,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'bench',
@@ -339,6 +355,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'stampli',
@@ -352,6 +370,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'tipalti',
@@ -365,6 +385,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'floqast',
@@ -378,6 +400,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'prophix',
@@ -391,6 +415,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'planful',
@@ -404,6 +430,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'digits',
@@ -417,6 +445,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'puzzle',
@@ -430,6 +460,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'rillet',
@@ -443,6 +475,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'campfire',
@@ -456,6 +490,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'dualentry',
@@ -469,6 +505,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'layer',
@@ -482,6 +520,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'ramp',
@@ -495,6 +535,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'brex',
@@ -508,6 +550,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'pilot',
@@ -521,6 +565,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'finoptimal',
@@ -534,6 +580,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'balanced',
@@ -547,6 +595,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'inkind',
@@ -560,6 +610,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'karbon',
@@ -573,6 +625,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'inscope',
@@ -586,6 +640,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
       isActive: true,
       addedAt: new Date().toISOString(),
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
   ];
 
@@ -638,6 +694,8 @@ function mapRowToCompany(row: Record<string, unknown>): Company {
     addedAt: (row.added_at as string) || new Date().toISOString(),
     articleCount: (row.article_count as number) || 0,
     lastMentionedAt: (row.last_mentioned_at as string) || null,
+    jobsBoardType: (row.jobs_board_type as string) || null,
+    jobsBoardToken: (row.jobs_board_token as string) || null,
   };
 }
 

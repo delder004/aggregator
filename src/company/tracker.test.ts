@@ -55,6 +55,8 @@ describe('matchArticleToCompanies', () => {
       addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'xero',
@@ -69,6 +71,8 @@ describe('matchArticleToCompanies', () => {
       addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'vic-ai',
@@ -83,6 +87,8 @@ describe('matchArticleToCompanies', () => {
       addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
     {
       id: 'sage',
@@ -97,6 +103,8 @@ describe('matchArticleToCompanies', () => {
       addedAt: '2026-01-01T00:00:00Z',
       articleCount: 0,
       lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
     },
   ];
 

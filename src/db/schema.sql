@@ -51,7 +51,9 @@ CREATE TABLE IF NOT EXISTS companies (
     is_active INTEGER DEFAULT 1,
     added_at TEXT NOT NULL,
     last_mentioned_at TEXT,
-    article_count INTEGER DEFAULT 0
+    article_count INTEGER DEFAULT 0,
+    jobs_board_type TEXT,
+    jobs_board_token TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
@@ -94,3 +96,18 @@ CREATE TABLE IF NOT EXISTS company_insights (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_company_insights_company_unique ON company_insights(company_id);
 CREATE INDEX IF NOT EXISTS idx_company_insights_generated ON company_insights(generated_at DESC);
+
+CREATE TABLE IF NOT EXISTS company_jobs (
+    id TEXT PRIMARY KEY,
+    company_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    department TEXT,
+    location TEXT,
+    url TEXT NOT NULL,
+    posted_at TEXT,
+    last_seen_at TEXT NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_company_jobs_company ON company_jobs(company_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_company_jobs_url ON company_jobs(url);

@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from 'cloudflare:workers';
-import type { Env, Article, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, CompanyInsight, SourceType } from './types';
+import type { Env, Article, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, CompanyInsight, CompanyJob, SourceType } from './types';
 import { rssCollector } from './collectors/rss';
 import { hackerNewsCollector } from './collectors/hackernews';
 import { createYouTubeCollector } from './collectors/youtube';
@@ -22,6 +22,7 @@ import {
   getAllCompanyInsights,
   getTotalArticleCount,
 } from './db/queries';
+import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
 
@@ -448,9 +449,36 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
+    await step.sleep('pre-jobs-pause', '1 second');
+
+    // Step 3: Collect job listings (daily cadence)
+    const jobCollection = await step.do(
+      'collect-jobs',
+      {
+        retries: { limit: 1, delay: '5 seconds' },
+      },
+      async () => {
+        try {
+          const shouldFetch = await shouldFetchJobs(this.env.KV);
+          if (!shouldFetch) {
+            console.log('Jobs: skipping, last fetch was < 23 hours ago');
+            return { fetched: 0, companies: 0, skipped: true };
+          }
+
+          const companies = await getTrackedCompanies(this.env.DB);
+          const result = await collectAllJobs(this.env.DB, companies);
+          await markJobsFetched(this.env.KV);
+          return { ...result, skipped: false };
+        } catch (err) {
+          console.error('Job collection failed:', err);
+          return { fetched: 0, companies: 0, skipped: false };
+        }
+      }
+    );
+
     await step.sleep('pre-render-pause', '1 second');
 
-    // Step 3: Render pages
+    // Step 4: Render pages
     const rendering = await step.do(
       'render-pages',
       {
@@ -511,12 +539,19 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             console.error('Failed to fetch company insights:', err);
           }
 
+          let companyJobs = new Map<string, CompanyJob[]>();
+          try {
+            companyJobs = await getAllCompanyJobs(this.env.DB);
+          } catch (err) {
+            console.error('Failed to fetch company jobs:', err);
+          }
+
           const pages = generateAllPages(recentArticles, featuredArticles, tags, {
             sources: sourceCount,
             crawled: crawledArticles,
             articles: publishedCount,
             lastUpdated,
-          }, companies, companyArticles, companyInsights);
+          }, companies, companyArticles, companyInsights, companyJobs);
 
           const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
           pages['/feed.xml'] = rssFeed;
@@ -579,6 +614,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       `Process workflow completed in ${elapsed}ms. ` +
       `Scored: ${scoring.scored}, ` +
       `Companies matched: ${companyTracking.matched}, ` +
+      `Jobs: ${jobCollection.fetched} from ${jobCollection.companies} companies${jobCollection.skipped ? ' (skipped)' : ''}, ` +
       `Pages: ${rendering.pagesWritten}`
     );
 

@@ -83,6 +83,21 @@ export interface Company {
   addedAt: string;
   lastMentionedAt: string | null;
   articleCount: number;
+  jobsBoardType: string | null;
+  jobsBoardToken: string | null;
+}
+
+export type JobsBoardType = 'greenhouse' | 'lever' | 'ashby';
+
+export interface CompanyJob {
+  id: string;
+  companyId: string;
+  title: string;
+  department: string | null;
+  location: string | null;
+  url: string;
+  postedAt: string | null;
+  lastSeenAt: string;
 }
 
 export interface Collector {
