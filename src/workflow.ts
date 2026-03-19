@@ -552,11 +552,18 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             await Promise.all(batch.map(([path, html]) => this.env.KV.put(path, html)));
           }
 
+          // Delete stale KV keys for pages no longer generated
+          const staleKeys = Object.keys(oldHashes).filter(k => !(k in newHashes));
+          for (let i = 0; i < staleKeys.length; i += 25) {
+            const batch = staleKeys.slice(i, i + 25);
+            await Promise.all(batch.map(key => this.env.KV.delete(key)));
+          }
+
           // Persist updated hashes (1 write)
           await this.env.KV.put(HASH_KEY, JSON.stringify(newHashes));
 
           console.log(
-            `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys (${entries.length - changed.length} skipped)`
+            `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys, deleted ${staleKeys.length} stale keys (${entries.length - changed.length} skipped)`
           );
 
           return { pagesWritten: changed.length };
