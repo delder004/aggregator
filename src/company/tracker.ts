@@ -614,5 +614,6 @@ function mapRowToArticle(row: Record<string, unknown>): Article {
     commentCount: row.comment_count as number | null,
     companyMentions,
     transcript: (row.transcript as string) || null,
+    transcriptSummary: (row.transcript_summary as string) || null,
   };
 }

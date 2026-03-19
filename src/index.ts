@@ -101,7 +101,29 @@ export default {
       }
       detailBody += `</div>`;
 
-      if (summary) {
+      if (article.transcriptSummary) {
+        // Render structured TLDW + key points from transcript
+        const lines = article.transcriptSummary.split('\n').filter(l => l.trim());
+        let summaryHtml = '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('TLDW:') || trimmed.startsWith('**TLDW')) {
+            const text = escapeHtml(trimmed.replace(/^\*?\*?TLDW:?\*?\*?\s*/i, ''));
+            summaryHtml += `<p style="margin:0 0 0.75rem 0;"><strong>TLDW:</strong> ${text}</p>`;
+          } else if (trimmed.startsWith('Key points:') || trimmed.startsWith('**Key points')) {
+            summaryHtml += `<p style="margin:0.75rem 0 0.25rem 0;font-weight:600;">Key points:</p><ul style="margin:0;padding-left:1.25rem;">`;
+          } else if (trimmed.startsWith('- ')) {
+            summaryHtml += `<li style="margin-bottom:0.35rem;">${escapeHtml(trimmed.slice(2))}</li>`;
+          } else {
+            summaryHtml += `<p style="margin:0 0 0.5rem 0;">${escapeHtml(trimmed)}</p>`;
+          }
+        }
+        // Close any open <ul>
+        if (summaryHtml.includes('<ul') && !summaryHtml.includes('</ul>')) {
+          summaryHtml += '</ul>';
+        }
+        detailBody += `<div class="article-summary" style="line-height:1.6;">${summaryHtml}</div>`;
+      } else if (summary) {
         detailBody += `<p class="article-summary">${summary}</p>`;
       }
 
@@ -119,7 +141,13 @@ export default {
         detailBody += `<div id="transcript" style="margin-top:1.5rem;border-top:1px solid var(--border,#e5e7eb);padding-top:1.5rem;">`;
         detailBody += `<details>`;
         detailBody += `<summary style="cursor:pointer;font-weight:600;font-size:0.95rem;color:var(--text-secondary,#6b7280);">View Transcript</summary>`;
-        detailBody += `<div style="margin-top:0.75rem;padding:1rem;background:var(--card-bg,#f9fafb);border-radius:8px;font-size:0.85rem;line-height:1.7;color:var(--text-secondary,#6b7280);white-space:pre-wrap;max-height:500px;overflow-y:auto;">${escapeHtml(article.transcript)}</div>`;
+        // Format transcript: split on >> speaker markers into paragraphs
+        const formattedTranscript = escapeHtml(article.transcript)
+          .split(/\s*&gt;&gt;\s*/)
+          .filter(s => s.trim())
+          .map(s => `<p style="margin:0 0 0.75rem 0;">${s.trim()}</p>`)
+          .join('');
+        detailBody += `<div style="margin-top:0.75rem;padding:1rem;background:var(--card-bg,#f9fafb);border-radius:8px;font-size:0.85rem;line-height:1.7;color:var(--text-secondary,#6b7280);max-height:500px;overflow-y:auto;">${formattedTranscript}</div>`;
         detailBody += `</details>`;
         detailBody += `</div>`;
       }

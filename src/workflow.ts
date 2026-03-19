@@ -349,7 +349,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             this.env.DB.prepare(
               `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
                quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions),
-               headline = COALESCE(?, headline)
+               headline = COALESCE(?, headline), transcript_summary = COALESCE(?, transcript_summary)
                WHERE url = ?`
             ).bind(
               s.relevanceScore,
@@ -360,6 +360,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
               s.qualityScore ?? null,
               s.companyMentions ? JSON.stringify(s.companyMentions) : null,
               s.headline || null,
+              s.transcriptSummary || null,
               s.url
             )
           );

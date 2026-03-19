@@ -24,6 +24,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     commentCount: null,
     companyMentions: [],
     transcript: null,
+    transcriptSummary: null,
     ...overrides,
   };
 }

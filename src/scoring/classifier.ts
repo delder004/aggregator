@@ -75,6 +75,7 @@ Also provide:
 - headline: Write a concise, journalist-style headline under 80 characters. Remove dates, author names, site names, and the word "Article". Use active voice, present tense where possible.
 - summary: A punchy 1-sentence TLDR that tells the reader "so what" — the key takeaway or news, not a description. Under 200 characters. Use specifics (numbers, names, outcomes) over vague descriptions. Bad: "Overview of AI benefits for accounting teams." Good: "GPT-5.4 tops DualEntry's accounting benchmark at 77% but still fails 1 in 3 tasks."
 - companyMentions: array of company names mentioned in the article (e.g., ["Deloitte", "Intuit", "OpenAI"]). Empty array if none.
+- transcriptSummary: ONLY include this field when a Transcript is provided. Write a structured summary with: (1) a "TLDW:" line — a single-sentence takeaway, (2) followed by "Key points:" with 3-5 bullet points capturing the most important insights from the transcript. Each bullet should be a concrete, specific fact or insight (not vague). Use "- " for bullets. Omit this field entirely if no transcript is provided.
 
 Respond with valid JSON only, no other text. Use this exact schema:
 {
@@ -83,7 +84,8 @@ Respond with valid JSON only, no other text. Use this exact schema:
   "tags": [<string>, ...],
   "headline": "<string>",
   "summary": "<string>",
-  "companyMentions": [<string>, ...]
+  "companyMentions": [<string>, ...],
+  "transcriptSummary": "<string> (only when transcript provided)"
 }`;
 
 interface ClassifierResponse {
@@ -93,6 +95,7 @@ interface ClassifierResponse {
   summary: string;
   headline: string;
   companyMentions: string[];
+  transcriptSummary?: string;
 }
 
 const CONCURRENCY = 10;
@@ -170,6 +173,7 @@ async function scoreOneArticle(
       headline: parsed.headline,
       tags: parsed.tags,
       companyMentions: parsed.companyMentions,
+      transcriptSummary: parsed.transcriptSummary,
     };
   } catch (firstError) {
     // Don't retry on subrequest limit — it will always fail again
@@ -193,6 +197,7 @@ async function scoreOneArticle(
     headline: parsed.headline,
     tags: parsed.tags,
     companyMentions: parsed.companyMentions,
+    transcriptSummary: parsed.transcriptSummary,
   };
 }
 
@@ -379,5 +384,14 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
       .map((name) => name.trim());
   }
 
-  return { relevanceScore, qualityScore, tags, summary, headline, companyMentions };
+  // Validate optional transcriptSummary
+  let transcriptSummary: string | undefined;
+  if (typeof obj.transcriptSummary === 'string' && obj.transcriptSummary.trim().length > 0) {
+    transcriptSummary = obj.transcriptSummary.trim();
+    if (transcriptSummary.length > 2000) {
+      transcriptSummary = transcriptSummary.slice(0, 2000);
+    }
+  }
+
+  return { relevanceScore, qualityScore, tags, summary, headline, companyMentions, transcriptSummary };
 }

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**agenticaiaccounting.com** — a fully automated news aggregator for agentic AI in accounting. Cloudflare Worker collects content hourly from RSS, Reddit, HN, YouTube, and arXiv, scores relevance with Claude Haiku, and serves pre-rendered static HTML.
+**agenticaiccounting.com** — a fully automated news aggregator for agentic AI in accounting. Cloudflare Worker collects content hourly from RSS, Reddit, HN, YouTube, and arXiv, scores relevance with Claude Haiku, and serves pre-rendered static HTML.
 
 ## Stack
 
@@ -78,12 +78,11 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 
 ## Production
 
-- **Workers.dev URL:** `https://agenticaiaccounting.dmelder.workers.dev/`
-- **Custom domain:** `agenticaiaccounting.com` (DNS not yet connected to Cloudflare — still on GoDaddy nameservers)
+- **Custom domain:** `agenticaiccounting.com` (live, DNS via Cloudflare)
 - **Logs:** Cloudflare dashboard → Workers → agenticaiaccounting → Logs, or `npx wrangler tail`
 - **Manual cron trigger:**
   ```bash
-  curl -H "X-Cron-Key: $CRON_SECRET" https://agenticaiaccounting.dmelder.workers.dev/cron
+  curl -H "X-Cron-Key: $CRON_SECRET" https://agenticaiccounting.com/cron
   ```
 
 ## Workflow

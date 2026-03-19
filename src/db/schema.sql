@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS articles (
     comment_count INTEGER,
     company_mentions TEXT,
     headline TEXT,
-    transcript TEXT
+    transcript TEXT,
+    transcript_summary TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_published_at ON articles(published_at DESC);

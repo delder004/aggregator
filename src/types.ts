@@ -21,6 +21,7 @@ export interface Article {
   commentCount: number | null;
   companyMentions: string[];
   transcript: string | null;
+  transcriptSummary: string | null;
 }
 
 export type SourceType =
@@ -66,6 +67,7 @@ export interface ScoredArticle extends CollectedArticle {
   headline: string;
   tags: string[];
   companyMentions: string[];
+  transcriptSummary?: string;
 }
 
 export interface Company {
