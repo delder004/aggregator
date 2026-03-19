@@ -263,25 +263,6 @@ export async function getAllCompanyArticles(
   return map;
 }
 
-export async function searchArticles(
-  db: D1Database,
-  query: string,
-  limit: number = 50
-): Promise<Article[]> {
-  const escaped = escapeLike(query);
-  const pattern = `%${escaped}%`;
-  const results = await db
-    .prepare(
-      `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= ?
-         AND (title LIKE ? OR ai_summary LIKE ? OR headline LIKE ?)
-       ORDER BY relevance_score DESC
-       LIMIT ?`
-    )
-    .bind(MIN_PUBLISH_SCORE, pattern, pattern, pattern, limit)
-    .all();
-  return results.results.map(mapRowToArticle);
-}
 
 export async function getArticleById(
   db: D1Database,

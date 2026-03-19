@@ -1,0 +1,1694 @@
+{
+  "version": "2.9",
+  "children": [
+    {
+      "type": "frame",
+      "id": "OFVa7",
+      "x": 0,
+      "y": 0,
+      "name": "Homepage",
+      "width": 1280,
+      "fill": "#fafafa",
+      "layout": "vertical",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "tWf1N",
+          "name": "Header",
+          "width": "fill_container",
+          "fill": "#ffffff",
+          "layout": "vertical",
+          "padding": [
+            20,
+            0,
+            0,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "KKsaB",
+              "name": "Header Inner",
+              "width": 780,
+              "gap": 12,
+              "padding": [
+                0,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JNFwu",
+                  "name": "Logo",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "#0f766e",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "3FTTH",
+                      "name": "logoA",
+                      "fill": "#ffffff",
+                      "content": "A",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fhZjO",
+                  "name": "Title Block",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jR92t",
+                      "name": "siteTitle",
+                      "fill": "#18181b",
+                      "content": "Agentic AI Accounting",
+                      "fontFamily": "Inter",
+                      "fontSize": 21,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.5
+                    },
+                    {
+                      "type": "text",
+                      "id": "hncxh",
+                      "name": "tagline",
+                      "fill": "#52525b",
+                      "content": "The latest on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MQHV0",
+              "name": "headerBorder",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#e4e4e7"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "D9x7t",
+          "name": "Nav Bar",
+          "width": "fill_container",
+          "fill": "#ffffff",
+          "layout": "vertical",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ul7tr",
+              "name": "Nav Inner",
+              "width": 780,
+              "gap": 6,
+              "padding": [
+                12,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zIkfW",
+                  "name": "tagAll",
+                  "fill": "#0f766e",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "6ubjm",
+                      "name": "tagAllText",
+                      "fill": "#ffffff",
+                      "content": "All",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "FiTdd",
+                  "name": "tagAudit",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NOigR",
+                      "name": "tagAuditText",
+                      "fill": "#52525b",
+                      "content": "Audit",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "3qehS",
+                  "name": "tagTax",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gI2sd",
+                      "name": "tagTaxText",
+                      "fill": "#52525b",
+                      "content": "Tax",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "90HQA",
+                  "name": "tagAuto",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "t00Hs",
+                      "name": "tagAutoText",
+                      "fill": "#52525b",
+                      "content": "Automation",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zP6nr",
+                  "name": "tagAI",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RY4U9",
+                      "name": "tagAIText",
+                      "fill": "#52525b",
+                      "content": "Agentic AI",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XKbNB",
+                  "name": "tagStartup",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "2yZqR",
+                      "name": "tagStartupText",
+                      "fill": "#52525b",
+                      "content": "Startups",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VFzkq",
+                  "name": "tagBig4",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "J7eO3",
+                      "name": "tagBig4Text",
+                      "fill": "#52525b",
+                      "content": "Big 4",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vGrfQ",
+                  "name": "tagResearch",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "QPcbY",
+                      "name": "tagResearchText",
+                      "fill": "#52525b",
+                      "content": "Research",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CnwfC",
+                  "name": "tagCompanies",
+                  "fill": "#f0f0f2",
+                  "cornerRadius": 100,
+                  "padding": [
+                    4,
+                    12
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wbAkt",
+                      "name": "tagCompaniesText",
+                      "fill": "#52525b",
+                      "content": "Companies",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "m1Mhc",
+              "name": "navBorder",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#e4e4e7"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LExuI",
+          "name": "Content",
+          "width": 780,
+          "layout": "vertical",
+          "padding": [
+            0,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "0CDpR",
+              "name": "Featured Section Label",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                28,
+                0,
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lm3Hi",
+                  "name": "Label Border Bottom",
+                  "width": "fill_container",
+                  "padding": [
+                    0,
+                    0,
+                    6,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mikpl",
+                      "name": "featLabelText",
+                      "fill": "#a1a1aa",
+                      "content": "FEATURED",
+                      "fontFamily": "Inter",
+                      "fontSize": 11.5,
+                      "fontWeight": "600",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "5Fq0a",
+                  "name": "featLabelLine",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vXsdy",
+              "name": "Featured Grid",
+              "width": "fill_container",
+              "gap": 12,
+              "padding": [
+                12,
+                0,
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "chaYT",
+                  "name": "Featured Card 1",
+                  "width": "fill_container",
+                  "fill": "#fefff8",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#d4d97a"
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "x4YX1",
+                      "name": "card1Label",
+                      "fill": "#65a30d",
+                      "content": "FEATURED",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "uAwDr",
+                      "name": "card1Title",
+                      "fill": "#18181b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "How AI Agents Are Transforming Month-End Close Processes",
+                      "lineHeight": 1.35,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "swIQk",
+                      "name": "card1Meta",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "J4OCj",
+                          "name": "card1Source",
+                          "fill": "#52525b",
+                          "content": "Accounting Today",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "O6IOx",
+                          "name": "card1Badge",
+                          "fill": "#ee802015",
+                          "cornerRadius": 3,
+                          "padding": [
+                            2,
+                            6
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kPzpW",
+                              "name": "card1BadgeText",
+                              "fill": "#c06010",
+                              "content": "RSS",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "PnbHX",
+                          "name": "card1Dot",
+                          "fill": "#a1a1aa",
+                          "content": "·",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "aUscA",
+                          "name": "card1Time",
+                          "fill": "#a1a1aa",
+                          "content": "3h ago",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "faFfO",
+                      "name": "card1Summary",
+                      "fill": "#52525b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "AI-powered agents are now capable of automating reconciliations, journal entries, and variance analysis — reducing month-end close from days to hours for mid-market firms.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hH42U",
+                  "name": "Featured Card 2",
+                  "width": "fill_container",
+                  "fill": "#fefff8",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#d4d97a"
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iKq0m",
+                      "name": "card2Label",
+                      "fill": "#65a30d",
+                      "content": "FEATURED",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700",
+                      "letterSpacing": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "xJlOf",
+                      "name": "card2Title",
+                      "fill": "#18181b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Deloitte Launches Autonomous Audit Platform for Enterprise Clients",
+                      "lineHeight": 1.35,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qTDBD",
+                      "name": "card2Meta",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TqUlv",
+                          "name": "card2Source",
+                          "fill": "#52525b",
+                          "content": "Reuters",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vp7J4",
+                          "name": "card2Badge",
+                          "fill": "#ff660015",
+                          "cornerRadius": 3,
+                          "padding": [
+                            2,
+                            6
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "weS8B",
+                              "name": "card2BadgeText",
+                              "fill": "#ff6600",
+                              "content": "HN",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "wpWXr",
+                          "name": "card2Dot",
+                          "fill": "#a1a1aa",
+                          "content": "·",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "2RZTj",
+                          "name": "card2Time",
+                          "fill": "#a1a1aa",
+                          "content": "5h ago",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "NnHk3",
+                      "name": "card2Summary",
+                      "fill": "#52525b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "The Big Four firm unveils an AI-driven audit tool that can autonomously test transactions, flag anomalies, and draft preliminary audit opinions with minimal human oversight.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "PHm7h",
+              "name": "Discussed Section Label",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                20,
+                0,
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "4uAWR",
+                  "name": "discussLabelInner",
+                  "width": "fill_container",
+                  "padding": [
+                    0,
+                    0,
+                    6,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "F6DcV",
+                      "name": "discussLabelText",
+                      "fill": "#a1a1aa",
+                      "content": "MOST DISCUSSED",
+                      "fontFamily": "Inter",
+                      "fontSize": 11.5,
+                      "fontWeight": "600",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jP9v5",
+                  "name": "discussLabelLine",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mOcnr",
+              "name": "Discussed List",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ElOyP",
+                  "name": "d1",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    8,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SROLu",
+                      "name": "d1num",
+                      "fill": "#a1a1aa",
+                      "content": "1",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dKyaK",
+                      "name": "d1title",
+                      "fill": "#18181b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "OpenAI announces GPT-5 with native accounting workflow capabilities",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UyDBi",
+                      "name": "d1meta",
+                      "fill": "#a1a1aa",
+                      "content": "TechCrunch · ▲ 342",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yJ7kz",
+                  "name": "d1border",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                },
+                {
+                  "type": "frame",
+                  "id": "WB4R1",
+                  "name": "d2",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    8,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gTFLy",
+                      "name": "d2num",
+                      "fill": "#a1a1aa",
+                      "content": "2",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IoBdM",
+                      "name": "d2title",
+                      "fill": "#18181b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Why accountants should learn prompt engineering in 2026",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "z2ba1",
+                      "name": "d2meta",
+                      "fill": "#a1a1aa",
+                      "content": "Hacker News · ▲ 218",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cTNtl",
+                  "name": "d2border",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                },
+                {
+                  "type": "frame",
+                  "id": "97WuM",
+                  "name": "d3",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    8,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "PkSH2",
+                      "name": "d3num",
+                      "fill": "#a1a1aa",
+                      "content": "3",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NY6In",
+                      "name": "d3title",
+                      "fill": "#18181b",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "KPMG partners with Anthropic for AI-powered tax compliance",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "y5pak",
+                      "name": "d3meta",
+                      "fill": "#a1a1aa",
+                      "content": "Bloomberg · ▲ 156",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U5TbM",
+              "name": "Latest Section Label",
+              "width": "fill_container",
+              "layout": "vertical",
+              "padding": [
+                20,
+                0,
+                8,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LJHW0",
+                  "name": "latestLabelInner",
+                  "width": "fill_container",
+                  "padding": [
+                    0,
+                    0,
+                    6,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "7efK8",
+                      "name": "latestLabelText",
+                      "fill": "#a1a1aa",
+                      "content": "LATEST",
+                      "fontFamily": "Inter",
+                      "fontSize": 11.5,
+                      "fontWeight": "600",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "0lBaZ",
+                  "name": "latestLabelLine",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nAMIh",
+              "name": "timeLabelWrap",
+              "width": "fill_container",
+              "padding": [
+                12,
+                0,
+                4,
+                0
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "vIPQg",
+                  "name": "timeLabelText",
+                  "fill": "#a1a1aa",
+                  "content": "Today",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hXYyd",
+              "name": "Article List",
+              "width": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JbGnv",
+                  "name": "Article Card 1",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "padding": [
+                    12,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "VoQOF",
+                      "name": "a1body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N3mY1",
+                          "name": "a1title",
+                          "fill": "#18181b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Intuit QuickBooks integrates agentic AI for automated bank reconciliation",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vHLbe",
+                          "name": "a1meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "7mS9w",
+                              "name": "a1dot",
+                              "fill": "#16a34a",
+                              "width": 6,
+                              "height": 6
+                            },
+                            {
+                              "type": "text",
+                              "id": "9H1Jx",
+                              "name": "a1source",
+                              "fill": "#52525b",
+                              "content": "Intuit Blog",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "DN1ew",
+                              "name": "a1badge",
+                              "fill": "#ee802015",
+                              "cornerRadius": 3,
+                              "padding": [
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "TGZ0i",
+                                  "name": "a1badgeT",
+                                  "fill": "#c06010",
+                                  "content": "RSS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "9K3nj",
+                              "name": "a1metaDot",
+                              "fill": "#a1a1aa",
+                              "content": "·",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "u18AO",
+                              "name": "a1time",
+                              "fill": "#a1a1aa",
+                              "content": "2h ago",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "SnyuT",
+                          "name": "a1summary",
+                          "fill": "#52525b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "QuickBooks now uses AI agents to automatically match and categorize bank transactions, reducing manual reconciliation time by up to 80%.",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "0DTTo",
+                  "name": "a1border",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                },
+                {
+                  "type": "frame",
+                  "id": "srzeV",
+                  "name": "Article Card 2",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "padding": [
+                    12,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MIcbd",
+                      "name": "a2body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VeEDp",
+                          "name": "a2title",
+                          "fill": "#18181b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "arXiv: Multi-agent systems for financial statement analysis show 94% accuracy",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "80lRo",
+                          "name": "a2meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "CWRQv",
+                              "name": "a2dot",
+                              "fill": "#16a34a",
+                              "width": 6,
+                              "height": 6
+                            },
+                            {
+                              "type": "text",
+                              "id": "71NaL",
+                              "name": "a2source",
+                              "fill": "#52525b",
+                              "content": "arXiv",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "8dlAd",
+                              "name": "a2badge",
+                              "fill": "#b3131315",
+                              "cornerRadius": 3,
+                              "padding": [
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "OXtcm",
+                                  "name": "a2badgeT",
+                                  "fill": "#b31313",
+                                  "content": "arXiv",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Dqx3L",
+                              "name": "a2metaDot",
+                              "fill": "#a1a1aa",
+                              "content": "·",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JB8pM",
+                              "name": "a2time",
+                              "fill": "#a1a1aa",
+                              "content": "4h ago",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "seEi1",
+                          "name": "a2summary",
+                          "fill": "#52525b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Researchers demonstrate a novel multi-agent architecture where specialized LLMs collaborate to analyze balance sheets, income statements, and cash flow with near-human accuracy.",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "37qSP",
+                  "name": "a2border",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                },
+                {
+                  "type": "frame",
+                  "id": "X7hKY",
+                  "name": "Article Card 3",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "padding": [
+                    12,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Dfgl1",
+                      "name": "a3body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "DQNwO",
+                          "name": "a3title",
+                          "fill": "#18181b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Xero acquires AI startup to build autonomous bookkeeping agents",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "l2Bop",
+                          "name": "a3meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "xJalU",
+                              "name": "a3dot",
+                              "fill": "#ca8a04",
+                              "width": 6,
+                              "height": 6
+                            },
+                            {
+                              "type": "text",
+                              "id": "910Oq",
+                              "name": "a3source",
+                              "fill": "#52525b",
+                              "content": "Xero Blog",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "lnN7f",
+                              "name": "a3badge",
+                              "fill": "#ee802015",
+                              "cornerRadius": 3,
+                              "padding": [
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "XCGO3",
+                                  "name": "a3badgeT",
+                                  "fill": "#c06010",
+                                  "content": "RSS",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "TAGEV",
+                              "name": "a3metaDot",
+                              "fill": "#a1a1aa",
+                              "content": "·",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "zcAqY",
+                              "name": "a3time",
+                              "fill": "#a1a1aa",
+                              "content": "6h ago",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "YTODx",
+                          "name": "a3summary",
+                          "fill": "#52525b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "The cloud accounting giant acquires a stealth-mode startup specializing in autonomous bookkeeping workflows that handle invoice processing and expense categorization.",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "FUFzk",
+                  "name": "a3border",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#e4e4e7"
+                },
+                {
+                  "type": "frame",
+                  "id": "AECXR",
+                  "name": "Article Card 4",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "padding": [
+                    12,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "9lLNG",
+                      "name": "a4body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "RMtOb",
+                          "name": "a4title",
+                          "fill": "#18181b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "YouTube: Building an AI tax assistant with Claude and LangGraph",
+                          "lineHeight": 1.35,
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JCWLN",
+                          "name": "a4meta",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "3DXvu",
+                              "name": "a4dot",
+                              "fill": "#16a34a",
+                              "width": 6,
+                              "height": 6
+                            },
+                            {
+                              "type": "text",
+                              "id": "E5YFR",
+                              "name": "a4source",
+                              "fill": "#52525b",
+                              "content": "AI Jason",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "d4qtY",
+                              "name": "a4badge",
+                              "fill": "#ff000012",
+                              "cornerRadius": 3,
+                              "padding": [
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Y5n9Y",
+                                  "name": "a4badgeT",
+                                  "fill": "#cc0000",
+                                  "content": "YouTube",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "qoUmL",
+                              "name": "a4metaDot",
+                              "fill": "#a1a1aa",
+                              "content": "·",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "3ZL9o",
+                              "name": "a4time",
+                              "fill": "#a1a1aa",
+                              "content": "8h ago",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "vXoJI",
+                          "name": "a4summary",
+                          "fill": "#52525b",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "A step-by-step tutorial on building an autonomous tax preparation assistant using Claude as the reasoning engine and LangGraph for multi-step workflow orchestration.",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "L5dJG",
+              "name": "Pagination",
+              "width": "fill_container",
+              "gap": 6,
+              "padding": [
+                24,
+                0
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "9xjbs",
+                  "name": "pg1",
+                  "fill": "#0f766e",
+                  "cornerRadius": 8,
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zJmGQ",
+                      "name": "pg1text",
+                      "fill": "#ffffff",
+                      "content": "1",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "shDWW",
+                  "name": "pg2",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#e4e4e7"
+                  },
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SIdTa",
+                      "name": "pg2text",
+                      "fill": "#52525b",
+                      "content": "2",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lspw7",
+                  "name": "pg3",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#e4e4e7"
+                  },
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Tm1vj",
+                      "name": "pg3text",
+                      "fill": "#52525b",
+                      "content": "3",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "HRzIS",
+                  "name": "pgNext",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#e4e4e7"
+                  },
+                  "padding": [
+                    6,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ERgPz",
+                      "name": "pgNextText",
+                      "fill": "#52525b",
+                      "content": "Next →",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "pAAEU",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#ffffff",
+          "layout": "vertical",
+          "padding": [
+            24,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "vqrJe",
+              "name": "footerBorder",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#e4e4e7"
+            },
+            {
+              "type": "frame",
+              "id": "oXziy",
+              "name": "footerInner",
+              "width": 780,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                24,
+                20
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "pZip9",
+                  "name": "footerLinks",
+                  "gap": 20,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VvG5G",
+                      "name": "fl1",
+                      "fill": "#a1a1aa",
+                      "content": "About",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UBN50",
+                      "name": "fl2",
+                      "fill": "#a1a1aa",
+                      "content": "RSS Feed",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "m1KZS",
+                      "name": "fl3",
+                      "fill": "#a1a1aa",
+                      "content": "Companies",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "MDWfA",
+                  "name": "footerCopy",
+                  "fill": "#a1a1aa",
+                  "content": "© 2026 Agentic AI Accounting",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "yoEpc",
+                  "name": "footerStats",
+                  "opacity": 0.7,
+                  "fill": "#a1a1aa",
+                  "content": "Tracking 24 sources · 1,247 articles indexed",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

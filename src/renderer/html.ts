@@ -60,9 +60,9 @@ function getCSS(): string {
   --accent: #0f766e;
   --accent-hover: #0d9488;
   --accent-subtle: #0f766e12;
-  --featured-bg: #fefff8;
-  --featured-border: #d4d97a;
-  --featured-accent: #65a30d;
+  --featured-bg: #f0fdfa;
+  --featured-border: #99f6e4;
+  --featured-accent: #0f766e;
   --tag-bg: #f0f0f2;
   --tag-text: #52525b;
   --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04);
@@ -83,9 +83,9 @@ function getCSS(): string {
     --accent: #2dd4bf;
     --accent-hover: #5eead4;
     --accent-subtle: #2dd4bf15;
-    --featured-bg: #1a1c12;
-    --featured-border: #4d5a1a;
-    --featured-accent: #a3e635;
+    --featured-bg: #042f2e;
+    --featured-border: #115e59;
+    --featured-accent: #2dd4bf;
     --tag-bg: #27272a;
     --tag-text: #a1a1aa;
     --shadow: 0 1px 3px rgba(0,0,0,0.4);
@@ -232,13 +232,13 @@ a.source-name:hover{text-decoration:underline;}
   border-radius:3px;
   letter-spacing:0.02em;
 }
-.source-badge.hn{background:var(--hn-bg,#ff660015);color:var(--hn-text,#ff6600);}
-.source-badge.youtube{background:var(--yt-bg,#ff000012);color:var(--yt-text,#cc0000);}
-.source-badge.arxiv{background:var(--arxiv-bg,#b3131315);color:var(--arxiv-text,#b31313);}
-.source-badge.rss{background:var(--rss-bg,#ee802015);color:var(--rss-text,#c06010);}
-.source-badge.substack{background:var(--substack-bg,#ff681515);color:var(--substack-text,#ff6815);}
-.source-badge.producthunt{background:var(--ph-bg,#da552f15);color:var(--ph-text,#da552f);}
-.source-badge.ycombinator{background:var(--yc-bg,#f2652215);color:var(--yc-text,#f26522);}
+.source-badge.hn{background:var(--hn-bg,#ff660030);color:var(--hn-text,#ff6600);}
+.source-badge.youtube{background:var(--yt-bg,#ff000030);color:var(--yt-text,#cc0000);}
+.source-badge.arxiv{background:var(--arxiv-bg,#b3131330);color:var(--arxiv-text,#b31313);}
+.source-badge.rss{background:var(--rss-bg,#ee802030);color:var(--rss-text,#c06010);}
+.source-badge.substack{background:var(--substack-bg,#ff681530);color:var(--substack-text,#ff6815);}
+.source-badge.producthunt{background:var(--ph-bg,#da552f30);color:var(--ph-text,#da552f);}
+.source-badge.ycombinator{background:var(--yc-bg,#f2652230);color:var(--yc-text,#f26522);}
 .quality-badge{
   display:inline-block;
   font-size:0.6rem;
@@ -329,33 +329,22 @@ a.source-name:hover{text-decoration:underline;}
   letter-spacing:0.06em;
   color:var(--featured-accent);
   margin-bottom:0.35rem;
-}
-
-/* Trending sidebar */
-.trending-bar{
-  display:flex;
-  flex-wrap:wrap;
-  gap:0.4rem;
-  padding:0.65rem 0;
-  margin-bottom:0.25rem;
-}
-.trending-tag{
-  font-size:0.75rem;
-  padding:0.2rem 0.6rem;
-  border-radius:100px;
-  border:1px solid var(--border);
-  color:var(--text-secondary);
-  font-weight:500;
   display:inline-flex;
   align-items:center;
-  gap:0.3rem;
+  gap:0.35rem;
 }
-.trending-tag:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
-.trending-count{
-  font-size:0.65rem;
-  color:var(--text-tertiary);
-  font-weight:400;
+.status-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--featured-accent);
+  animation:pulse 2s ease-in-out infinite;
 }
+@keyframes pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.4;}
+}
+
 
 /* Pagination */
 .pagination{
@@ -506,25 +495,6 @@ a.source-name:hover{text-decoration:underline;}
   margin-top:0.15rem;
 }
 
-/* Search form */
-.search-form{
-  margin-top:0.6rem;
-}
-.search-form input{
-  width:100%;
-  max-width:320px;
-  padding:0.4rem 0.75rem;
-  border:1px solid var(--border);
-  border-radius:100px;
-  background:var(--bg-secondary);
-  color:var(--text);
-  font-size:0.82rem;
-  outline:none;
-}
-.search-form input:focus{
-  border-color:var(--accent);
-  box-shadow:0 0 0 2px var(--accent-subtle);
-}
 
 /* Article detail */
 .article-detail{padding:1.5rem 0;}
@@ -743,7 +713,7 @@ export function featuredCard(article: Article): string {
   try { sourceSiteUrl = new URL(article.url).origin; } catch {}
 
   return `<div class="featured-card">
-  <div class="featured-label">Featured</div>
+  <div class="featured-label"><span class="status-dot"></span> Featured</div>
   <h3 class="article-title"><a href="${detailHref}">${title}</a></h3>
   <div class="article-meta">
     ${sourceSiteUrl ? `<a href="${escapeHtml(sourceSiteUrl)}" class="source-name" target="_blank" rel="noopener">${escapeHtml(article.sourceName)}</a>` : `<span class="source-name">${escapeHtml(article.sourceName)}</span>`}
@@ -774,24 +744,6 @@ export function tagNav(activeTag: string): string {
   </nav>`;
 }
 
-/** Render trending tags bar with article counts. */
-export function trendingTags(tagCounts: { tag: string; count: number }[]): string {
-  if (tagCounts.length === 0) return '';
-
-  const sorted = [...tagCounts].sort((a, b) => b.count - a.count).slice(0, 10);
-
-  const items = sorted
-    .map(
-      (tc) =>
-        `<a class="trending-tag" href="/tag/${escapeHtml(tc.tag)}">${escapeHtml(tc.tag.replace(/-/g, ' '))} <span class="trending-count">${tc.count}</span></a>`
-    )
-    .join('\n    ');
-
-  return `<div class="section-label">Trending This Week</div>
-  <div class="trending-bar">
-    ${items}
-  </div>`;
-}
 
 /**
  * Render articles with source clustering.
@@ -1026,7 +978,6 @@ export interface LayoutOptions {
   path?: string;
   activeTag?: string;
   stats?: { sources: number; crawled: number; articles: number; lastUpdated: string };
-  searchQuery?: string;
 }
 
 /**
@@ -1091,9 +1042,6 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           ${stats ? `<span class="last-updated">Updated ${escapeHtml(stats.lastUpdated)}</span>` : ''}
         </div>
       </div>
-      <form class="search-form" method="GET" action="/search">
-        <input type="search" name="q" placeholder="Search articles..." aria-label="Search"${options.searchQuery ? ` value="${escapeHtml(options.searchQuery)}"` : ''} />
-      </form>
     </div>
   </header>
 
@@ -1107,6 +1055,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="container footer-inner">
       <div class="footer-links">
         <a href="/feed.xml">RSS Feed</a>
+        <span class="meta-dot">&middot;</span>
         <a href="/about">About</a>
       </div>
       ${statsLine}

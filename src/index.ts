@@ -1,5 +1,5 @@
 import type { Env } from './types';
-import { searchArticles, getArticleById, getRelatedArticles } from './db/queries';
+import { getArticleById, getRelatedArticles } from './db/queries';
 import { layout, articleCard, escapeHtml } from './renderer/html';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
@@ -36,38 +36,6 @@ export default {
       });
     }
 
-    // Dynamic search page
-    if (path === '/search') {
-      const q = (url.searchParams.get('q')?.trim() || '').slice(0, 200);
-
-      let body = '';
-      if (q) {
-        const results = await searchArticles(env.DB, q);
-        body += `<div class="section-label">Search results for "${escapeHtml(q)}"</div>\n`;
-        if (results.length > 0) {
-          body += results.map(a => articleCard(a)).join('\n');
-        } else {
-          body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles found for "${escapeHtml(q)}". Try a different search.</p>`;
-        }
-      } else {
-        body += `<div class="section-label">Search</div>\n`;
-        body += `<p style="color:var(--text-secondary);padding:1rem 0;">Enter a search term above to find articles.</p>`;
-      }
-
-      const html = layout(body, {
-        title: q ? `Search: ${q}` : 'Search',
-        description: 'Search articles about AI in accounting.',
-        path: '/search',
-        searchQuery: q,
-      });
-
-      return new Response(html, {
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=60',
-        },
-      });
-    }
 
     // Dynamic article detail page
     const articleMatch = path.match(/^\/article\/([a-f0-9-]+)$/);

@@ -12,7 +12,6 @@ import {
   articleCard,
   featuredCard,
   pagination,
-  trendingTags,
   timeGroup,
   escapeHtml,
   renderSourceClusters,
@@ -93,17 +92,6 @@ function collectTags(articles: Article[]): string[] {
   return [...set].sort();
 }
 
-/** Count articles per tag (for trending). */
-function countTags(articles: Article[]): { tag: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const a of articles) {
-    for (const t of a.tags) {
-      counts.set(t, (counts.get(t) || 0) + 1);
-    }
-  }
-  return Array.from(counts.entries()).map(([tag, count]) => ({ tag, count }));
-}
-
 /** Render articles grouped by time period ("Today", "Yesterday", etc.). */
 function renderTimeGrouped(articles: Article[]): string {
   if (articles.length === 0) return '';
@@ -163,10 +151,6 @@ function generateHomepage(
   const filteredLatest = sortedLatest.filter((a) => !featuredIds.has(a.id));
   const latestPages = paginate(filteredLatest, ARTICLES_PER_PAGE);
   const totalPages = Math.max(latestPages.length, 1);
-
-  // Trending tags
-  const tagCounts = countTags(allArticles);
-  body += trendingTags(tagCounts);
 
   // Most discussed section — articles with highest social engagement this week
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
