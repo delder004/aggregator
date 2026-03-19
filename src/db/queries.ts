@@ -138,6 +138,15 @@ export async function getArticleCount(
   return row?.count ?? 0;
 }
 
+export async function getTotalArticleCount(
+  db: D1Database
+): Promise<number> {
+  const row = await db
+    .prepare('SELECT COUNT(*) as count FROM articles')
+    .first<{ count: number }>();
+  return row?.count ?? 0;
+}
+
 export async function getArticleCountByTag(
   db: D1Database,
   tag: string

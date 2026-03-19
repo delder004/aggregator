@@ -144,20 +144,25 @@ function generateHomepage(
   const sortedFeatured = sortByDate(featured);
   const sortedLatest = sortByDate(latest);
 
-  const latestPages = paginate(sortedLatest, ARTICLES_PER_PAGE);
-  const totalPages = Math.max(latestPages.length, 1);
-
   // Build homepage (page 1)
   let body = '';
 
   // Featured section — 2-column grid on desktop
-  if (sortedFeatured.length > 0) {
+  const topFeatured = sortedFeatured.length > 0
+    ? diversifyFeatured(sortedFeatured, 1, 6)
+    : [];
+  if (topFeatured.length > 0) {
     body += `<div class="section-label">Featured</div>\n`;
-    const topFeatured = diversifyFeatured(sortedFeatured, 1, 6);
     body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
     body += `\n</div>\n`;
   }
+
+  // Exclude featured articles from the chronological feed
+  const featuredIds = new Set(topFeatured.map((a) => a.id));
+  const filteredLatest = sortedLatest.filter((a) => !featuredIds.has(a.id));
+  const latestPages = paginate(filteredLatest, ARTICLES_PER_PAGE);
+  const totalPages = Math.max(latestPages.length, 1);
 
   // Trending tags
   const tagCounts = countTags(allArticles);
@@ -432,7 +437,7 @@ export function generateAllPages(
   articles: Article[],
   featuredArticles: Article[],
   tags: string[],
-  stats?: { sources: number; articles: number; lastUpdated: string },
+  stats?: { sources: number; crawled: number; articles: number; lastUpdated: string },
   companies?: Company[],
   companyArticles?: Map<string, Article[]>,
   companyInsights?: Map<string, CompanyInsight>

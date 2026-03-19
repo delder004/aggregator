@@ -20,6 +20,7 @@ import {
   getUnscoredArticles,
   getAllCompanyArticles,
   getAllCompanyInsights,
+  getTotalArticleCount,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
@@ -470,7 +471,8 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
           const featuredArticles = await getFeaturedArticles(this.env.DB, 10);
           const tags = await getAllUniqueTags(this.env.DB);
 
-          const totalArticles = recentArticles.length;
+          const publishedCount = recentArticles.length;
+          const crawledArticles = await getTotalArticleCount(this.env.DB);
           const latestPublished = recentArticles.reduce(
             (max, a) => (a.publishedAt > max ? a.publishedAt : max),
             ''
@@ -511,7 +513,8 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
 
           const pages = generateAllPages(recentArticles, featuredArticles, tags, {
             sources: sourceCount,
-            articles: totalArticles,
+            crawled: crawledArticles,
+            articles: publishedCount,
             lastUpdated,
           }, companies, companyArticles, companyInsights);
 

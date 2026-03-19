@@ -182,26 +182,6 @@ a.logo{text-decoration:none;}
   border-bottom:1px solid var(--border);
 }
 
-/* Time group headers */
-.time-group{
-  font-size:0.72rem;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.08em;
-  color:var(--accent);
-  margin:1.5rem 0 0.4rem;
-  padding:0.35rem 0;
-  display:flex;
-  align-items:center;
-  gap:0.5rem;
-}
-.time-group::after{
-  content:'';
-  flex:1;
-  height:1px;
-  background:var(--border);
-}
-
 /* Article cards */
 .article-card{
   display:flex;
@@ -1062,7 +1042,7 @@ export interface LayoutOptions {
   description?: string;
   path?: string;
   activeTag?: string;
-  stats?: { sources: number; articles: number; lastUpdated: string };
+  stats?: { sources: number; crawled: number; articles: number; lastUpdated: string };
   searchQuery?: string;
 }
 
@@ -1083,7 +1063,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const stats = options.stats;
 
   const statsLine = stats
-    ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.articles.toLocaleString()} articles scored &middot; Updated ${stats.lastUpdated}</div>`
+    ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.crawled.toLocaleString()} articles crawled &middot; ${stats.articles.toLocaleString()} articles published &middot; Updated ${stats.lastUpdated}</div>`
     : '';
 
   return `<!DOCTYPE html>
