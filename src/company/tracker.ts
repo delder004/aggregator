@@ -459,8 +459,8 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
     },
     {
       id: 'dualentry',
-      name: 'Dual Entry',
-      aliases: ['DualEntry', 'Dual Entry AI'],
+      name: 'DualEntry',
+      aliases: ['Dual Entry', 'Dual Entry AI'],
       website: 'https://dualentry.com',
       description: 'AI-powered general ledger and accounting platform',
       category: null,

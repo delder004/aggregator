@@ -246,7 +246,6 @@ export async function getAllCompanyArticles(
     .prepare(
       `SELECT ac.company_id, a.* FROM article_companies ac
        JOIN articles a ON a.id = ac.article_id
-       WHERE a.is_published = 1 AND a.relevance_score >= 50
        ORDER BY a.published_at DESC
        LIMIT 2500`
     )

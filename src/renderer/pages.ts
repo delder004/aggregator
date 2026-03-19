@@ -501,9 +501,7 @@ function generateCompaniesPage(
     for (const c of cos) {
       const name = escapeHtml(c.name);
       const desc = c.description ? escapeHtml(c.description) : '';
-      const count = c.articleCount;
-      const companyArticleCount = companyArticles.get(c.id)?.length ?? 0;
-      const articleCount = Math.max(count, companyArticleCount);
+      const articleCount = companyArticles.get(c.id)?.length ?? 0;
       const lastMention = c.lastMentionedAt
         ? `Last mentioned ${new Date(c.lastMentionedAt).toLocaleDateString()}`
         : '';
