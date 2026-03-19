@@ -219,7 +219,9 @@ a.logo{text-decoration:none;}
 .source-name{
   color:var(--text-secondary);
   font-weight:500;
+  text-decoration:none;
 }
+a.source-name:hover{text-decoration:underline;}
 .source-badge{
   display:inline-flex;
   align-items:center;
@@ -318,6 +320,8 @@ a.logo{text-decoration:none;}
 .featured-card .article-summary{
   -webkit-line-clamp:3;
 }
+.article-summary-link{color:inherit;text-decoration:none;display:block;}
+.article-summary-link:hover .article-summary{color:var(--accent);}
 .featured-label{
   font-size:0.65rem;
   font-weight:700;
@@ -752,22 +756,19 @@ export function featuredCard(article: Article): string {
   const ago = timeAgo(article.publishedAt);
   const badge = sourceBadge(article.sourceType);
 
-  const tags = article.tags.length
-    ? `<div class="article-tags">${article.tags
-        .map((t) => `<a href="/tag/${escapeHtml(t)}">${escapeHtml(t)}</a>`)
-        .join('')}</div>`
-    : '';
+  const detailHref = `/article/${escapeHtml(article.id)}`;
+  let sourceSiteUrl = '';
+  try { sourceSiteUrl = new URL(article.url).origin; } catch {}
 
   return `<div class="featured-card">
   <div class="featured-label">Featured</div>
-  <h3 class="article-title"><a href="/article/${escapeHtml(article.id)}">${title}</a></h3>
+  <h3 class="article-title"><a href="${detailHref}">${title}</a></h3>
   <div class="article-meta">
-    <span class="source-name">${escapeHtml(article.sourceName)}</span>
+    ${sourceSiteUrl ? `<a href="${escapeHtml(sourceSiteUrl)}" class="source-name" target="_blank" rel="noopener">${escapeHtml(article.sourceName)}</a>` : `<span class="source-name">${escapeHtml(article.sourceName)}</span>`}
     <span class="source-badge ${badge.cls}">${badge.label}</span>
     ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
   </div>
-  ${summary ? `<p class="article-summary">${summary}</p>` : ''}
-  ${tags}
+  ${summary ? `<a href="${detailHref}" class="article-summary-link"><p class="article-summary">${summary}</p></a>` : ''}
 </div>`;
 }
 
