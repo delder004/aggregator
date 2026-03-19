@@ -716,22 +716,6 @@ export function articleCard(article: Article): string {
     ? `<span class="meta-dot">&middot;</span> <span class="social-score">&blacktriangle; ${article.socialScore}</span>`
     : '';
 
-  const tags = article.tags.length
-    ? `<div class="article-tags">${article.tags
-        .map((t) => `<a href="/tag/${escapeHtml(t)}">${escapeHtml(t)}</a>`)
-        .join('')}</div>`
-    : '';
-
-  const companyTags = article.companyMentions && article.companyMentions.length > 0
-    ? `<div class="article-tags">${article.companyMentions
-        .map((c) => {
-          const companyId = _companyNameToId?.get(c);
-          const href = companyId ? `/company/${escapeHtml(companyId)}` : '/companies';
-          return `<a class="company-tag" href="${href}">${escapeHtml(c)}</a>`;
-        })
-        .join('')}</div>`
-    : '';
-
   return `<article class="article-card">
   ${thumb}
   <div class="article-body">
@@ -743,8 +727,6 @@ export function articleCard(article: Article): string {
       ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
-    ${tags}
-    ${companyTags}
   </div>
 </article>`;
 }

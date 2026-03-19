@@ -88,7 +88,11 @@ export default {
       let detailBody = `<div class="article-detail">`;
       detailBody += `<h1>${title}</h1>`;
       detailBody += `<div class="article-meta">`;
-      detailBody += `<span class="source-name">${escapeHtml(article.sourceName)}</span>`;
+      let sourceSiteUrl = '';
+      try { sourceSiteUrl = new URL(article.url).origin; } catch {}
+      detailBody += sourceSiteUrl
+        ? `<a href="${escapeHtml(sourceSiteUrl)}" class="source-name" target="_blank" rel="noopener">${escapeHtml(article.sourceName)}</a>`
+        : `<span class="source-name">${escapeHtml(article.sourceName)}</span>`;
       if (article.author) {
         detailBody += ` <span class="meta-dot">&middot;</span> ${escapeHtml(article.author)}`;
       }
