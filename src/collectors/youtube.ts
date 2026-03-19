@@ -148,8 +148,8 @@ async function searchYouTube(
   url.searchParams.set('maxResults', String(MAX_RESULTS_PER_SEARCH));
   url.searchParams.set('key', apiKey);
 
-  // Filter to videos published in the last 24 hours to stay current
-  const publishedAfter = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  // Filter to videos published in the last 7 days
+  const publishedAfter = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   url.searchParams.set('publishedAfter', publishedAfter);
 
   // Exclude live broadcasts — we only want completed videos

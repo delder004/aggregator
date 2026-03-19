@@ -94,13 +94,13 @@ function truncate(text: string, maxLen: number): string {
 }
 
 /**
- * Build numeric filter for "last 7 days" on Algolia HN API.
- * YC launches are less frequent than regular news, so we look back 7 days.
+ * Build numeric filter for "last 30 days" on Algolia HN API.
+ * YC launches are less frequent than regular news, so we look back 30 days.
  */
-function last7dFilter(): string {
+function last30dFilter(): string {
   const now = Math.floor(Date.now() / 1000);
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60;
-  return `created_at_i>${sevenDaysAgo}`;
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
+  return `created_at_i>${thirtyDaysAgo}`;
 }
 
 /**
@@ -182,7 +182,7 @@ async function fetchHNLaunches(query: string): Promise<HNHit[]> {
     const params = new URLSearchParams({
       query,
       tags: 'story',
-      numericFilters: last7dFilter(),
+      numericFilters: last30dFilter(),
       hitsPerPage: '20',
     });
 

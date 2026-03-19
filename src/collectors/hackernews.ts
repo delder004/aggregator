@@ -4,7 +4,7 @@ import type { Collector, CollectedArticle, SourceConfig } from '../types';
  * Hacker News collector using the Algolia HN Search API.
  *
  * Queries hn.algolia.com/api/v1/search for stories matching the configured
- * query string, filtered to the last 24 hours. Deduplicates results by URL
+ * query string, filtered to the last 7 days. Deduplicates results by URL
  * across multiple queries. Skips Ask HN and comment-only posts.
  */
 
@@ -32,13 +32,13 @@ interface HNSearchResponse {
 }
 
 /**
- * Build the numeric timestamp filter for "last 24 hours".
+ * Build the numeric timestamp filter for "last 7 days".
  * Algolia uses `created_at_i` (Unix epoch seconds) for numeric range filters.
  */
-function last24hFilter(): string {
+function last7dFilter(): string {
   const now = Math.floor(Date.now() / 1000);
-  const oneDayAgo = now - 24 * 60 * 60;
-  return `created_at_i>${oneDayAgo}`;
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60;
+  return `created_at_i>${sevenDaysAgo}`;
 }
 
 /**
@@ -97,7 +97,7 @@ async function fetchQuery(query: string): Promise<HNSearchResponse | null> {
   const params = new URLSearchParams({
     query,
     tags: 'story',
-    numericFilters: last24hFilter(),
+    numericFilters: last7dFilter(),
     hitsPerPage: '50',
   });
 

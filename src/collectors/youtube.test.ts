@@ -278,7 +278,7 @@ describe('YouTube Collector', () => {
     expect(result[1].url).toBe('https://youtube.com/watch?v=def456');
   });
 
-  it('should set publishedAfter to filter last 24 hours', async () => {
+  it('should set publishedAfter to filter last 7 days', async () => {
     mockFetch.mockResolvedValueOnce(makeYouTubeResponse([]));
 
     const collector = createYouTubeCollector({ YOUTUBE_API_KEY: 'test-key' });
@@ -288,9 +288,9 @@ describe('YouTube Collector', () => {
     const publishedAfter = calledUrl.searchParams.get('publishedAfter');
     expect(publishedAfter).toBeTruthy();
 
-    // Should be roughly 24 hours ago (within a few seconds)
+    // Should be roughly 7 days ago (within a few seconds)
     const publishedDate = new Date(publishedAfter!);
-    const expectedDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const expectedDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const diffMs = Math.abs(publishedDate.getTime() - expectedDate.getTime());
     expect(diffMs).toBeLessThan(5000); // within 5 seconds
   });
