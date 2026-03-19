@@ -54,7 +54,7 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 - **No client-side JavaScript.** Pages are pure static HTML with inline CSS.
 - **Page weight < 50KB.** No external stylesheets, fonts, or libraries.
 - **Collectors must not throw.** Return empty arrays on failure and log errors — one broken source must not kill the cron job.
-- **90-day rolling window.** Feed shows articles from the last 90 days.
+- **180-day rolling window.** Feed shows articles from the last 180 days.
 - **Scoring threshold:** 50+ = published, 70+ = featured placement.
 - **All HTML is pre-rendered into KV** during the cron job, not on request.
 
