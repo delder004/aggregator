@@ -123,7 +123,6 @@ function renderTimeGrouped(articles: Article[]): string {
 
   let html = '';
   for (const g of groups) {
-    html += `<div class="time-group">${escapeHtml(g.label)}</div>\n`;
     html += renderSourceClusters(diversifyFeed(g.articles));
   }
 
