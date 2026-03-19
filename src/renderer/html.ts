@@ -742,8 +742,10 @@ export function featuredCard(article: Article): string {
 }
 
 /** Render the tag navigation bar. */
-export function tagNav(activeTag: string): string {
-  const links = NAV_TAGS.map((t) => {
+export function tagNav(activeTag: string, tagsWithArticles?: Set<string>): string {
+  const links = NAV_TAGS.filter((t) =>
+    t.slug === '' || t.slug === 'companies' || !tagsWithArticles || tagsWithArticles.has(t.slug)
+  ).map((t) => {
     let href: string;
     if (!t.slug) {
       href = '/';
