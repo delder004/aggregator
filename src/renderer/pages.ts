@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article, InsightSummary, InsightPeriodType, Company, CompanyInsight } from '../types';
+import type { Article, Company, CompanyInsight } from '../types';
 import {
   layout,
   articleCard,
@@ -16,9 +16,6 @@ import {
   timeGroup,
   escapeHtml,
   renderSourceClusters,
-  insightCard,
-  insightNav,
-  periodToSlug,
   setCompanyLinkMap,
   NAV_TAGS,
   type LayoutOptions,
@@ -141,8 +138,7 @@ function generateHomepage(
   featured: Article[],
   latest: Article[],
   allArticles: Article[],
-  layoutOpts: Partial<LayoutOptions>,
-  summaries?: InsightSummary[]
+  layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
@@ -189,23 +185,6 @@ function generateHomepage(
 </li>\n`;
     }
     body += `</ol>\n`;
-  }
-
-  // Insights section — show latest summary of each period type
-  if (summaries && summaries.length > 0) {
-    const sorted = sortSummaries(summaries);
-    const seen = new Set<string>();
-    const latestByType: InsightSummary[] = [];
-    for (const s of sorted) {
-      if (!seen.has(s.periodType)) {
-        seen.add(s.periodType);
-        latestByType.push(s);
-      }
-    }
-    body += `<div class="section-label">Insights <a href="/insights" style="font-size:0.75rem;font-weight:400;color:var(--accent);margin-left:0.5rem;">View all &rarr;</a></div>\n`;
-    body += `<div class="insights-grid">\n`;
-    body += latestByType.map((s) => insightCard(s)).join('\n');
-    body += `\n</div>\n`;
   }
 
   // Latest section — time-grouped
@@ -400,130 +379,6 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
 }
 
 // ---------------------------------------------------------------------------
-// Insights pages
-// ---------------------------------------------------------------------------
-
-/** Per-type archive limits. */
-const INSIGHT_ARCHIVE_LIMITS: Record<InsightPeriodType, number> = {
-  hourly: 48,
-  daily: 30,
-  weekly: 12,
-  monthly: 12,
-  quarterly: 8,
-};
-
-/** All period types in display order. */
-const PERIOD_TYPES: InsightPeriodType[] = [
-  'hourly',
-  'daily',
-  'weekly',
-  'monthly',
-  'quarterly',
-];
-
-/** Sort summaries by periodStart descending (newest first). */
-function sortSummaries(summaries: InsightSummary[]): InsightSummary[] {
-  return [...summaries].sort(
-    (a, b) =>
-      new Date(b.periodStart).getTime() - new Date(a.periodStart).getTime()
-  );
-}
-
-function generateInsightsPages(
-  summaries: InsightSummary[],
-  layoutOpts: Partial<LayoutOptions>
-): Record<string, string> {
-  const pages: Record<string, string> = {};
-  const sorted = sortSummaries(summaries);
-
-  // --- Index page: latest summary of each type ---
-  {
-    const seen = new Set<string>();
-    const latestByType: InsightSummary[] = [];
-    for (const s of sorted) {
-      if (!seen.has(s.periodType)) {
-        seen.add(s.periodType);
-        latestByType.push(s);
-      }
-    }
-
-    let body = `<div class="section-label">Insights</div>\n`;
-    body += insightNav('');
-    body += `<div class="insights-grid">\n`;
-    body += latestByType.map((s) => insightCard(s)).join('\n');
-    body += `\n</div>\n`;
-
-    pages['/insights'] = layout(body, {
-      title: 'Insights',
-      description: 'AI-generated summaries and analysis of agentic AI in accounting trends.',
-      path: '/insights',
-      ...layoutOpts,
-    });
-  }
-
-  // --- Archive pages per type ---
-  for (const periodType of PERIOD_TYPES) {
-    const ofType = sorted.filter((s) => s.periodType === periodType);
-    const limited = ofType.slice(0, INSIGHT_ARCHIVE_LIMITS[periodType]);
-
-    const typeLabel = periodType.charAt(0).toUpperCase() + periodType.slice(1);
-    let body = `<div class="section-label">${escapeHtml(typeLabel)} Insights</div>\n`;
-    body += insightNav(periodType);
-
-    if (limited.length > 0) {
-      body += `<div class="insights-grid">\n`;
-      body += limited.map((s) => insightCard(s)).join('\n');
-      body += `\n</div>\n`;
-    } else {
-      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No ${periodType} insights yet. Check back soon.</p>`;
-    }
-
-    const path = `/insights/${periodType}`;
-    pages[path] = layout(body, {
-      title: `${typeLabel} Insights`,
-      description: `${typeLabel} summaries and analysis of agentic AI in accounting.`,
-      path,
-      ...layoutOpts,
-    });
-  }
-
-  // --- Detail pages for each summary ---
-  for (const summary of sorted) {
-    const slug = periodToSlug(summary.periodType, summary.periodStart);
-    const path = `/insights/${summary.periodType}/${slug}`;
-    const typeLabel =
-      summary.periodType.charAt(0).toUpperCase() + summary.periodType.slice(1);
-    const dateStr = new Date(summary.periodStart).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC',
-    });
-
-    let body = insightNav(summary.periodType);
-    body += `<div class="insight-header">
-  <span class="insight-badge ${escapeHtml(summary.periodType)}">${escapeHtml(typeLabel)}</span>
-  <h1>${escapeHtml(summary.title)}</h1>
-  <div class="insight-meta">
-    <time datetime="${escapeHtml(summary.periodStart)}">${dateStr}</time>
-    <span class="meta-dot">&middot;</span>
-    <span>${summary.articleCount} article${summary.articleCount === 1 ? '' : 's'} analyzed</span>
-  </div>
-</div>\n`;
-    body += `<div class="insight-content">\n${summary.contentHtml}\n</div>\n`;
-
-    pages[path] = layout(body, {
-      title: summary.title,
-      description: `${typeLabel} insight: ${escapeHtml(summary.title)}`,
-      path,
-      ...layoutOpts,
-    });
-  }
-
-  return pages;
-}
-
-// ---------------------------------------------------------------------------
 // Sitemap
 // ---------------------------------------------------------------------------
 
@@ -548,7 +403,6 @@ function generateSitemap(
   }
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
-  urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
   if (companies) {
@@ -580,7 +434,6 @@ export function generateAllPages(
   featuredArticles: Article[],
   tags: string[],
   stats?: { sources: number; articles: number; lastUpdated: string },
-  summaries?: InsightSummary[],
   companies?: Company[],
   companyArticles?: Map<string, Article[]>,
   companyInsights?: Map<string, CompanyInsight>
@@ -611,14 +464,10 @@ export function generateAllPages(
   }
 
   const pages: Record<string, string> = {
-    ...generateHomepage(featured, latest, articles, layoutOpts, summaries),
+    ...generateHomepage(featured, latest, articles, layoutOpts),
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
   };
-
-  if (summaries && summaries.length > 0) {
-    Object.assign(pages, generateInsightsPages(summaries, layoutOpts));
-  }
 
   if (companies && companies.length > 0) {
     const articleMap = companyArticles ?? new Map<string, Article[]>();

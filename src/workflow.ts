@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from 'cloudflare:workers';
-import type { Env, Article, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, CompanyInsight, InsightSummary, SourceType } from './types';
+import type { Env, Article, CollectedArticle, Collector, SourceConfig, ScoredArticle, Company, CompanyInsight, SourceType } from './types';
 import { rssCollector } from './collectors/rss';
 import { hackerNewsCollector } from './collectors/hackernews';
 import { createYouTubeCollector } from './collectors/youtube';
@@ -18,15 +18,11 @@ import {
   getAllActiveSources,
   getAllUniqueTags,
   getUnscoredArticles,
-  insertSummary,
-  getAllRecentSummaries,
   getAllCompanyArticles,
   getAllCompanyInsights,
 } from './db/queries';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
-import { generateInsights } from './insights/generator';
-import { generateCompanyInsights } from './insights/company-insights';
 
 const MAX_SCORE_PER_RUN = 50;
 const SOURCES_PER_BATCH = 10;
@@ -451,53 +447,9 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
-    await step.sleep('pre-company-insights-pause', '1 second');
-
-    // Step 3: Generate company insights
-    const companyInsightResult = await step.do(
-      'generate-company-insights',
-      {
-        retries: { limit: 1, delay: '5 seconds' },
-      },
-      async () => {
-        try {
-          const generated = await generateCompanyInsights(this.env);
-          return { generated: generated.length };
-        } catch (err) {
-          console.error('Company insight generation failed:', err);
-          return { generated: 0 };
-        }
-      }
-    );
-
-    await step.sleep('pre-insights-pause', '1 second');
-
-    // Step 4: Generate insights
-    const insights = await step.do(
-      'generate-insights',
-      {
-        retries: { limit: 1, delay: '5 seconds' },
-      },
-      async () => {
-        try {
-          const generated = await generateInsights(this.env);
-          if (generated.length > 0) {
-            for (const summary of generated) {
-              await insertSummary(this.env.DB, summary);
-            }
-            console.log(`Generated ${generated.length} insight summaries`);
-          }
-          return { generated: generated.length };
-        } catch (err) {
-          console.error('Insight generation failed:', err);
-          return { generated: 0 };
-        }
-      }
-    );
-
     await step.sleep('pre-render-pause', '1 second');
 
-    // Step 4: Render pages
+    // Step 3: Render pages
     const rendering = await step.do(
       'render-pages',
       {
@@ -557,18 +509,11 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             console.error('Failed to fetch company insights:', err);
           }
 
-          let summaries: InsightSummary[] = [];
-          try {
-            summaries = await getAllRecentSummaries(this.env.DB);
-          } catch (err) {
-            console.error('Failed to fetch summaries:', err);
-          }
-
           const pages = generateAllPages(recentArticles, featuredArticles, tags, {
             sources: sourceCount,
             articles: totalArticles,
             lastUpdated,
-          }, summaries, companies, companyArticles, companyInsights);
+          }, companies, companyArticles, companyInsights);
 
           const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
           pages['/feed.xml'] = rssFeed;
@@ -624,7 +569,6 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       `Process workflow completed in ${elapsed}ms. ` +
       `Scored: ${scoring.scored}, ` +
       `Companies matched: ${companyTracking.matched}, ` +
-      `Company insights: ${companyInsightResult.generated}, Insights: ${insights.generated}, ` +
       `Pages: ${rendering.pagesWritten}`
     );
 

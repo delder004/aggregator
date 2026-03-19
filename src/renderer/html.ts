@@ -1144,7 +1144,6 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="container footer-inner">
       <div class="footer-links">
         <a href="/feed.xml">RSS Feed</a>
-        <a href="/insights">Insights</a>
         <a href="/about">About</a>
       </div>
       ${statsLine}
