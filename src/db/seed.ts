@@ -214,6 +214,60 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'Trovata Blog',
     config: JSON.stringify({ url: 'https://trovata.io/blog/', articlePathPrefix: '/blog/', company: 'Trovata' }),
   },
+  {
+    id: 'scrape-floqast',
+    source_type: 'blogscraper',
+    name: 'FloQast Blog',
+    config: JSON.stringify({ url: 'https://floqast.com/blog/', articlePathPrefix: '/blog/', company: 'FloQast' }),
+  },
+  {
+    id: 'scrape-truewind',
+    source_type: 'blogscraper',
+    name: 'Truewind Blog',
+    config: JSON.stringify({ url: 'https://www.truewind.ai/blog', articlePathPrefix: '/blog/', company: 'Truewind' }),
+  },
+  {
+    id: 'scrape-trullion',
+    source_type: 'blogscraper',
+    name: 'Trullion Blog',
+    config: JSON.stringify({ url: 'https://trullion.com/blog', articlePathPrefix: '/blog/', company: 'Trullion' }),
+  },
+  {
+    id: 'scrape-zeni',
+    source_type: 'blogscraper',
+    name: 'Zeni Blog',
+    config: JSON.stringify({ url: 'https://www.zeni.ai/blog', articlePathPrefix: '/blog/', company: 'Zeni' }),
+  },
+  {
+    id: 'scrape-inkle',
+    source_type: 'blogscraper',
+    name: 'Inkle Blog',
+    config: JSON.stringify({ url: 'https://www.inkle.ai/blog', articlePathPrefix: '/blog/', company: 'Inkle' }),
+  },
+  {
+    id: 'scrape-kintsugi',
+    source_type: 'blogscraper',
+    name: 'Kintsugi Blog',
+    config: JSON.stringify({ url: 'https://trykintsugi.com/blog', articlePathPrefix: '/blog/', company: 'Kintsugi' }),
+  },
+  {
+    id: 'scrape-bluej',
+    source_type: 'blogscraper',
+    name: 'Blue J Blog',
+    config: JSON.stringify({ url: 'https://www.bluej.com/blog', articlePathPrefix: '/blog/', company: 'Blue J' }),
+  },
+  {
+    id: 'scrape-blackore',
+    source_type: 'blogscraper',
+    name: 'Black Ore News',
+    config: JSON.stringify({ url: 'https://www.blackore.ai/newsroom', articlePathPrefix: '/articles/', company: 'Black Ore' }),
+  },
+  {
+    id: 'scrape-basis',
+    source_type: 'blogscraper',
+    name: 'Basis Blog',
+    config: JSON.stringify({ url: 'https://www.getbasis.ai/blog', articlePathPrefix: '/blogs/', company: 'Basis' }),
+  },
 
   // --- Y Combinator ---
   {
