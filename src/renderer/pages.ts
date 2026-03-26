@@ -194,6 +194,7 @@ function generateHomepage(
   pages['/'] = layout(body, {
     path: '/',
     activeTag: '',
+    activeTab: 'news',
     ...layoutOpts,
   });
 
@@ -209,6 +210,7 @@ function generateHomepage(
       title: `Page ${pageNum}`,
       path,
       activeTag: '',
+      activeTab: 'news',
       ...layoutOpts,
     });
   }
@@ -235,7 +237,7 @@ function generateTagPages(
   // then union with any additional tags found in articles.
   const navTagSlugs = NAV_TAGS
     .map((t) => t.slug)
-    .filter((s) => s !== '' && s !== 'companies');
+    .filter((s) => s !== '');
   const articleTags = collectTags(articles);
   const allTagsSet = new Set<string>([...navTagSlugs, ...articleTags]);
   const tags = [...allTagsSet].sort();
@@ -263,6 +265,7 @@ function generateTagPages(
       description: `Articles about ${tagLabel} in AI-powered accounting.`,
       path: basePath,
       activeTag: tag,
+      activeTab: 'news',
       ...layoutOpts,
     });
 
@@ -279,6 +282,7 @@ function generateTagPages(
         description: `Articles about ${tagLabel} in AI-powered accounting — page ${pageNum}.`,
         path,
         activeTag: tag,
+        activeTab: 'news',
         ...layoutOpts,
       });
     }
@@ -402,6 +406,7 @@ function generateSitemap(
   }
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
   if (companies) {
@@ -469,13 +474,14 @@ export function generateAllPages(
     ...generateAboutPage(layoutOpts),
   };
 
+  const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
   if (companies && companies.length > 0) {
     const articleMap = companyArticles ?? new Map<string, Article[]>();
     const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
-    const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
     Object.assign(pages, generateCompaniesPage(companies, articleMap, layoutOpts));
     Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
   }
+  Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
 
   pages['/og.svg'] = generateOgImage();
 
@@ -548,6 +554,7 @@ ${companyRows}`;
       title: 'Companies',
       description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
       path: '/companies',
+      activeTab: 'companies',
       ...layoutOpts,
     }),
   };
@@ -669,9 +676,94 @@ function generateCompanyDetailPages(
       title: `${company.name} — Feed`,
       description: `Latest news and articles about ${company.name} in AI-powered accounting.`,
       path,
+      activeTab: 'companies',
       ...layoutOpts,
     });
   }
 
   return pages;
+}
+
+// ---------------------------------------------------------------------------
+// Jobs page
+// ---------------------------------------------------------------------------
+
+function generateJobsPage(
+  companies: Company[],
+  companyJobs: Map<string, CompanyJob[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  // Collect all jobs, attaching company info
+  const allJobs: (CompanyJob & { companyName: string; companyId: string })[] = [];
+  for (const company of companies) {
+    const jobs = companyJobs.get(company.id) ?? [];
+    for (const job of jobs) {
+      allJobs.push({ ...job, companyName: company.name, companyId: company.id });
+    }
+  }
+
+  // Sort by postedAt descending (newest first), then by company name
+  allJobs.sort((a, b) => {
+    const da = a.postedAt ? new Date(a.postedAt).getTime() : 0;
+    const db = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+    if (db !== da) return db - da;
+    return a.companyName.localeCompare(b.companyName);
+  });
+
+  let body = '';
+
+  if (allJobs.length === 0) {
+    body += `<div class="section-label">Open Roles in AI Accounting</div>\n`;
+    body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
+  } else {
+    body += `<div class="section-label">Open Roles in AI Accounting</div>\n`;
+    body += `<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0).length} companies.</p>\n`;
+
+    // Group by company
+    const byCompany = new Map<string, typeof allJobs>();
+    for (const job of allJobs) {
+      const existing = byCompany.get(job.companyId) ?? [];
+      existing.push(job);
+      byCompany.set(job.companyId, existing);
+    }
+
+    // Sort companies by job count descending
+    const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
+      (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
+    );
+
+    for (const companyId of sortedCompanyIds) {
+      const jobs = byCompany.get(companyId)!;
+      const companyName = jobs[0].companyName;
+      body += `<div class="time-group"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> (${jobs.length})</div>\n`;
+
+      for (const job of jobs) {
+        const locationTag = job.location
+          ? `<span style="display:inline-block;color:var(--text-tertiary);font-size:0.7rem;margin-left:0.4rem;vertical-align:middle;">${escapeHtml(job.location)}</span>`
+          : '';
+        const remoteTag = job.isRemote
+          ? `<span style="display:inline-block;background:#0d9488;color:#fff;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.4rem;vertical-align:middle;">Remote</span>`
+          : '';
+        const deptTag = job.department
+          ? `<span style="display:inline-block;font-size:0.7rem;color:var(--text-tertiary);margin-left:0.4rem;">${escapeHtml(job.department)}</span>`
+          : '';
+        body += `<div class="article-card" style="align-items:center;padding:0.6rem 0;">
+  <div class="article-body">
+    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>${remoteTag}${locationTag}</h3>
+    <div class="article-meta">${deptTag}</div>
+  </div>
+</div>\n`;
+      }
+    }
+  }
+
+  return {
+    '/jobs': layout(body, {
+      title: 'Jobs',
+      description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+      path: '/jobs',
+      activeTab: 'jobs',
+      ...layoutOpts,
+    }),
+  };
 }

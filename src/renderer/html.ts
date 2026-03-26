@@ -29,7 +29,6 @@ export const NAV_TAGS: { label: string; slug: string }[] = [
   { label: 'Startups', slug: 'startup' },
   { label: 'Big 4', slug: 'big-4' },
   { label: 'Research', slug: 'research' },
-  { label: 'Companies', slug: 'companies' },
 ];
 
 // Source type badge colors
@@ -167,6 +166,25 @@ a.logo{text-decoration:none;}
 }
 .tag-nav a:hover{background:var(--border);text-decoration:none;}
 .tag-nav a.active{background:var(--accent);color:#fff;}
+
+/* Tab bar */
+.tab-bar{
+  display:flex;
+  gap:0;
+  border-bottom:2px solid var(--border);
+  margin-top:1.25rem;
+}
+.tab-bar a{
+  font-size:0.85rem;
+  font-weight:600;
+  padding:0.6rem 1.2rem;
+  color:var(--text-tertiary);
+  border-bottom:2px solid transparent;
+  margin-bottom:-2px;
+  transition:color 0.15s;
+}
+.tab-bar a:hover{color:var(--text);text-decoration:none;}
+.tab-bar a.active{color:var(--accent);border-bottom-color:var(--accent);}
 
 /* Section headers */
 .section-label{
@@ -744,13 +762,11 @@ export function featuredCard(article: Article): string {
 /** Render the tag navigation bar. */
 export function tagNav(activeTag: string, tagsWithArticles?: Set<string>): string {
   const links = NAV_TAGS.filter((t) =>
-    t.slug === '' || t.slug === 'companies' || !tagsWithArticles || tagsWithArticles.has(t.slug)
+    t.slug === '' || !tagsWithArticles || tagsWithArticles.has(t.slug)
   ).map((t) => {
     let href: string;
     if (!t.slug) {
       href = '/';
-    } else if (t.slug === 'companies') {
-      href = '/companies';
     } else {
       href = `/tag/${t.slug}`;
     }
@@ -996,6 +1012,7 @@ export interface LayoutOptions {
   description?: string;
   path?: string;
   activeTag?: string;
+  activeTab?: 'news' | 'companies' | 'jobs' | '';
   stats?: { sources: number; crawled: number; articles: number; lastUpdated: string };
 }
 
@@ -1013,7 +1030,17 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const canonicalPath = options.path ?? '/';
   const canonical = `${SITE_URL}${canonicalPath}`;
   const activeTag = options.activeTag ?? '';
+  const activeTab = options.activeTab ?? '';
   const stats = options.stats;
+
+  const tabs = [
+    { label: 'News', href: '/', key: 'news' },
+    { label: 'Companies', href: '/companies', key: 'companies' },
+    { label: 'Jobs', href: '/jobs', key: 'jobs' },
+  ];
+  const tabBarHtml = `<nav class="tab-bar">${tabs.map(t =>
+    `<a href="${t.href}"${t.key === activeTab ? ' class="active"' : ''}>${t.label}</a>`
+  ).join('')}</nav>`;
 
   const statsLine = stats
     ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.crawled.toLocaleString()} articles crawled &middot; ${stats.articles.toLocaleString()} articles published &middot; Updated ${stats.lastUpdated}</div>`
@@ -1063,6 +1090,10 @@ export function layout(body: string, options: LayoutOptions = {}): string {
       </div>
     </div>
   </header>
+
+  <div class="container">
+    ${tabBarHtml}
+  </div>
 
   <main class="container">
     ${body}
