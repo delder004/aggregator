@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS company_jobs (
     url TEXT NOT NULL,
     posted_at TEXT,
     last_seen_at TEXT NOT NULL,
+    is_remote INTEGER DEFAULT 0,
     FOREIGN KEY (company_id) REFERENCES companies(id)
 );
 

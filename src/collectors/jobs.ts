@@ -22,6 +22,13 @@ interface RawJob {
   location: string | null;
   url: string;
   postedAt: string | null;
+  isRemote: boolean;
+}
+
+/** Detect whether a job is remote based on its location and title. */
+function detectRemote(location: string | null, title: string): boolean {
+  const text = `${location ?? ''} ${title}`.toLowerCase();
+  return /\bremote\b/.test(text);
 }
 
 // ---------------------------------------------------------------------------
@@ -47,13 +54,17 @@ async function fetchGreenhouseJobs(token: string): Promise<RawJob[]> {
     }>;
   };
 
-  return (data.jobs || []).map((j) => ({
-    title: j.title,
-    department: j.departments?.[0]?.name || null,
-    location: j.location?.name || null,
-    url: j.absolute_url,
-    postedAt: j.updated_at || null,
-  }));
+  return (data.jobs || []).map((j) => {
+    const location = j.location?.name || null;
+    return {
+      title: j.title,
+      department: j.departments?.[0]?.name || null,
+      location,
+      url: j.absolute_url,
+      postedAt: j.updated_at || null,
+      isRemote: detectRemote(location, j.title),
+    };
+  });
 }
 
 async function fetchLeverJobs(token: string): Promise<RawJob[]> {
@@ -72,13 +83,17 @@ async function fetchLeverJobs(token: string): Promise<RawJob[]> {
     createdAt: number;
   }>;
 
-  return (data || []).map((j) => ({
-    title: j.text,
-    department: j.categories?.team || j.categories?.department || null,
-    location: j.categories?.location || null,
-    url: j.hostedUrl,
-    postedAt: j.createdAt ? new Date(j.createdAt).toISOString() : null,
-  }));
+  return (data || []).map((j) => {
+    const location = j.categories?.location || null;
+    return {
+      title: j.text,
+      department: j.categories?.team || j.categories?.department || null,
+      location,
+      url: j.hostedUrl,
+      postedAt: j.createdAt ? new Date(j.createdAt).toISOString() : null,
+      isRemote: detectRemote(location, j.text),
+    };
+  });
 }
 
 async function fetchAshbyJobs(token: string): Promise<RawJob[]> {
@@ -100,13 +115,17 @@ async function fetchAshbyJobs(token: string): Promise<RawJob[]> {
     }>;
   };
 
-  return (data.jobs || []).map((j) => ({
-    title: j.title,
-    department: j.department || null,
-    location: j.location || null,
-    url: j.jobUrl,
-    postedAt: j.publishedDate || null,
-  }));
+  return (data.jobs || []).map((j) => {
+    const location = j.location || null;
+    return {
+      title: j.title,
+      department: j.department || null,
+      location,
+      url: j.jobUrl,
+      postedAt: j.publishedDate || null,
+      isRemote: detectRemote(location, j.title),
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -200,14 +219,15 @@ export async function collectAllJobs(
       stmts.push(
         db
           .prepare(
-            `INSERT INTO company_jobs (id, company_id, title, department, location, url, posted_at, last_seen_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO company_jobs (id, company_id, title, department, location, url, posted_at, last_seen_at, is_remote)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(url) DO UPDATE SET
                title = excluded.title,
                department = excluded.department,
                location = excluded.location,
                posted_at = COALESCE(excluded.posted_at, company_jobs.posted_at),
-               last_seen_at = excluded.last_seen_at`
+               last_seen_at = excluded.last_seen_at,
+               is_remote = excluded.is_remote`
           )
           .bind(
             crypto.randomUUID(),
@@ -217,7 +237,8 @@ export async function collectAllJobs(
             job.location,
             job.url,
             job.postedAt,
-            now
+            now,
+            job.isRemote ? 1 : 0
           )
       );
     }
@@ -276,6 +297,7 @@ export async function getAllCompanyJobs(
         url: row.url as string,
         postedAt: (row.posted_at as string) || null,
         lastSeenAt: row.last_seen_at as string,
+        isRemote: row.is_remote === 1,
       };
       const existing = map.get(job.companyId) ?? [];
       existing.push(job);

@@ -98,6 +98,7 @@ export interface CompanyJob {
   url: string;
   postedAt: string | null;
   lastSeenAt: string;
+  isRemote: boolean;
 }
 
 export interface Collector {
