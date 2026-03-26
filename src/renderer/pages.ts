@@ -583,16 +583,15 @@ function renderJobsSection(jobs: CompanyJob[], companyName: string): string {
     const deptJobs = departments.get(dept)!;
     html += `<div class="time-group">${escapeHtml(dept)}</div>\n`;
     for (const job of deptJobs) {
-      const location = job.location
-        ? `<span style="color:var(--text-tertiary);font-size:0.8rem;">${escapeHtml(job.location)}</span>`
+      const locationTag = job.location
+        ? `<span style="display:inline-block;color:var(--text-tertiary);font-size:0.7rem;margin-left:0.4rem;vertical-align:middle;">${escapeHtml(job.location)}</span>`
         : '';
       const remoteTag = job.isRemote
         ? `<span style="display:inline-block;background:#0d9488;color:#fff;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.4rem;vertical-align:middle;">Remote</span>`
         : '';
       html += `<div class="article-card" style="align-items:center;padding:0.6rem 0;">
   <div class="article-body">
-    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>${remoteTag}</h3>
-    ${location ? `<div class="article-meta">${location}</div>` : ''}
+    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>${remoteTag}${locationTag}</h3>
   </div>
 </div>\n`;
     }
