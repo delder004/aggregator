@@ -8,7 +8,7 @@
 import type { Company, CompanyJob, JobsBoardType } from '../types';
 
 /** Max companies to scrape per cron run (to stay within subrequest budget). */
-const MAX_COMPANIES_PER_RUN = 10;
+const MAX_COMPANIES_PER_RUN = 30;
 
 /** KV key for tracking when jobs were last fetched. */
 const JOBS_LAST_FETCHED_KEY = '__jobs_last_fetched__';
