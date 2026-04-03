@@ -114,3 +114,9 @@ CREATE TABLE IF NOT EXISTS company_jobs (
 
 CREATE INDEX IF NOT EXISTS idx_company_jobs_company ON company_jobs(company_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_company_jobs_url ON company_jobs(url);
+
+CREATE TABLE IF NOT EXISTS subscribers (
+    email TEXT PRIMARY KEY,
+    subscribed_at TEXT NOT NULL,
+    is_active INTEGER DEFAULT 1
+);

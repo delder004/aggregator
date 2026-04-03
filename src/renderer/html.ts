@@ -573,17 +573,24 @@ a.source-name:hover{text-decoration:underline;}
 }
 .newsletter-box h3{font-size:1.15rem;font-weight:700;margin-bottom:0.4rem;}
 .newsletter-box p{font-size:0.88rem;opacity:0.9;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.5;}
-.newsletter-box .cta-btn{
-  display:inline-block;
+.newsletter-box form{display:flex;gap:0.5rem;max-width:420px;margin:0 auto;}
+.newsletter-box input[type="email"]{flex:1;padding:0.6rem 1rem;border:2px solid rgba(255,255,255,0.3);border-radius:100px;font-size:0.88rem;background:rgba(255,255,255,0.15);color:#fff;outline:none;min-width:0;}
+.newsletter-box input[type="email"]::placeholder{color:rgba(255,255,255,0.6);}
+.newsletter-box input[type="email"]:focus{border-color:#fff;background:rgba(255,255,255,0.25);}
+.newsletter-box button{
   background:#fff;
   color:#0f766e;
   font-weight:600;
   font-size:0.88rem;
   padding:0.6rem 1.5rem;
   border-radius:100px;
+  border:none;
+  cursor:pointer;
   transition:background 0.15s,transform 0.15s;
+  white-space:nowrap;
 }
-.newsletter-box .cta-btn:hover{background:#f0fdfa;transform:translateY(-1px);text-decoration:none;}
+.newsletter-box button:hover{background:#f0fdfa;transform:translateY(-1px);}
+.newsletter-msg{font-size:0.82rem;margin-top:0.5rem;font-weight:500;}
 
 /* Footer */
 .site-footer{
@@ -862,6 +869,14 @@ a.source-name:hover{text-decoration:underline;}
 .article-detail .article-tags{margin-bottom:1.5rem;}
 .article-detail .original-link{display:inline-block;padding:0.5rem 1.2rem;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:0.85rem;font-weight:500;}
 .article-detail .original-link:hover{background:var(--accent-hover);text-decoration:none;}
+.share-bar{display:flex;align-items:center;gap:0.5rem;margin-top:1rem;}
+.share-bar span{font-size:0.8rem;color:var(--text-secondary);font-weight:500;}
+.share-btn{display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.75rem;border-radius:100px;font-size:0.78rem;font-weight:500;color:#fff;transition:opacity 0.15s;}
+.share-btn:hover{opacity:0.85;text-decoration:none;color:#fff;}
+.share-btn svg{width:14px;height:14px;fill:currentColor;}
+.share-btn.x{background:#000;}
+.share-btn.linkedin{background:#0a66c2;}
+.share-btn.email{background:var(--text-secondary);}
 .related-section{margin-top:2rem;border-top:1px solid var(--border);padding-top:1rem;}
 
 /* Most discussed */
@@ -1473,7 +1488,10 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="newsletter-box">
       <h3>Stay ahead of AI in accounting</h3>
       <p>Get the latest news on agentic AI for accounting, audit, and tax delivered to your inbox. Curated by AI, reviewed by professionals.</p>
-      <a class="cta-btn" href="mailto:hello@agenticaiaccounting.com?subject=Newsletter%20Signup&amp;body=I%27d%20like%20to%20subscribe%20to%20the%20Agentic%20AI%20Accounting%20newsletter.">Subscribe to Newsletter</a>
+      <form action="/subscribe" method="POST">
+        <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+        <button type="submit">Subscribe</button>
+      </form>
     </div>
   </div>
 
