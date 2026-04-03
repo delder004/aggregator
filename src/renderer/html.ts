@@ -478,36 +478,69 @@ a.source-name:hover{text-decoration:underline;}
 .job-filters{
   margin-bottom:1.25rem;
   display:flex;
-  flex-direction:column;
-  gap:0.5rem;
-}
-.job-filter-row{
-  display:flex;
   flex-wrap:wrap;
-  gap:0.35rem;
+  gap:0.5rem;
   align-items:center;
 }
-.job-filter-label{
-  font-size:0.72rem;
-  font-weight:600;
-  color:var(--text-tertiary);
-  text-transform:uppercase;
-  letter-spacing:0.04em;
-  margin-right:0.25rem;
-  white-space:nowrap;
-}
-.job-filter-row a{
+.job-filters .job-filter-btn{
   font-size:0.78rem;
-  padding:0.25rem 0.65rem;
+  padding:0.4rem 0.85rem;
   border-radius:100px;
   background:var(--tag-bg);
   color:var(--tag-text);
   transition:all 0.15s;
   white-space:nowrap;
   font-weight:500;
+  text-decoration:none;
+  display:inline-block;
 }
-.job-filter-row a:hover{background:var(--border);text-decoration:none;}
-.job-filter-row a.active{background:var(--accent);color:#fff;}
+.job-filters .job-filter-btn:hover{background:var(--border);text-decoration:none;}
+.job-filters .job-filter-btn.active{background:var(--accent);color:#fff;}
+.job-dropdown{position:relative;}
+.job-dropdown summary{
+  font-size:0.78rem;
+  padding:0.4rem 0.85rem;
+  border-radius:100px;
+  background:var(--tag-bg);
+  color:var(--tag-text);
+  cursor:pointer;
+  font-weight:500;
+  white-space:nowrap;
+  list-style:none;
+  display:inline-flex;
+  align-items:center;
+  gap:0.3rem;
+  transition:all 0.15s;
+}
+.job-dropdown summary::-webkit-details-marker{display:none;}
+.job-dropdown summary:hover{background:var(--border);}
+.job-dropdown summary.has-active{background:var(--accent);color:#fff;}
+.job-dropdown[open] summary{background:var(--border);}
+.job-dropdown[open] summary.has-active{background:var(--accent);color:#fff;}
+.job-dropdown .dropdown-menu{
+  position:absolute;
+  top:calc(100% + 0.35rem);
+  left:0;
+  z-index:50;
+  min-width:12rem;
+  max-height:16rem;
+  overflow-y:auto;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);
+  padding:0.35rem 0;
+}
+.job-dropdown .dropdown-menu a{
+  display:block;
+  padding:0.4rem 0.85rem;
+  font-size:0.8rem;
+  color:var(--text);
+  text-decoration:none;
+  white-space:nowrap;
+}
+.job-dropdown .dropdown-menu a:hover{background:var(--tag-bg);}
+.job-dropdown .dropdown-menu a.active{color:var(--accent);font-weight:600;}
 
 /* Job cards */
 .job-grid{

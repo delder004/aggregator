@@ -985,15 +985,24 @@ function slugify(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-/** Render a single filter row with a label. */
-function filterRow(label: string, items: { href: string; text: string; active: boolean }[]): string {
+/** Render a dropdown filter for job pages. */
+function filterDropdown(
+  label: string,
+  items: { href: string; text: string; active: boolean }[]
+): string {
   if (items.length === 0) return '';
-  let html = `<div class="job-filter-row">\n`;
-  html += `  <span class="job-filter-label">${escapeHtml(label)}</span>\n`;
+  const hasActive = items.some(i => i.active);
+  const activeItem = items.find(i => i.active);
+  const displayLabel = activeItem ? activeItem.text : label;
+  const arrow = '&#9662;';
+  let html = `<details class="job-dropdown">\n`;
+  html += `  <summary${hasActive ? ' class="has-active"' : ''}>${displayLabel} ${arrow}</summary>\n`;
+  html += `  <div class="dropdown-menu">\n`;
   for (const item of items) {
-    html += `  <a href="${item.href}"${item.active ? ' class="active"' : ''}>${item.text}</a>\n`;
+    html += `    <a href="${item.href}"${item.active ? ' class="active"' : ''}>${item.text}</a>\n`;
   }
-  html += `</div>\n`;
+  html += `  </div>\n`;
+  html += `</details>\n`;
   return html;
 }
 
@@ -1007,28 +1016,26 @@ function jobFilterNav(
 ): string {
   let html = `<nav class="job-filters">\n`;
 
-  // All / Remote row
-  html += `<div class="job-filter-row">\n`;
-  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All Jobs</a>\n`;
+  // All Jobs / Remote buttons
+  html += `  <a href="/jobs" class="job-filter-btn${activeFilter === '' ? ' active' : ''}">All Jobs</a>\n`;
   if (hasRemote) {
-    html += `  <a href="/jobs/remote"${activeFilter === 'remote' ? ' class="active"' : ''}>Remote</a>\n`;
+    html += `  <a href="/jobs/remote" class="job-filter-btn${activeFilter === 'remote' ? ' active' : ''}">Remote</a>\n`;
   }
-  html += `</div>\n`;
 
-  // Role (department) row
-  html += filterRow('Role', departments.slice(0, 10).map(dept => {
+  // Role dropdown
+  html += filterDropdown('Role', departments.map(dept => {
     const slug = slugify(dept);
     return { href: `/jobs/dept/${slug}`, text: escapeHtml(dept), active: activeFilter === `dept-${slug}` };
   }));
 
-  // Location row
-  html += filterRow('Location', locations.slice(0, 8).map(loc => {
+  // Location dropdown
+  html += filterDropdown('Location', locations.map(loc => {
     const slug = slugify(loc);
     return { href: `/jobs/location/${slug}`, text: escapeHtml(loc), active: activeFilter === `loc-${slug}` };
   }));
 
-  // Company row
-  html += filterRow('Company', companyNames.slice(0, 10).map(c => {
+  // Company dropdown
+  html += filterDropdown('Company', companyNames.map(c => {
     const slug = slugify(c.id);
     return { href: `/jobs/company/${slug}`, text: escapeHtml(c.name), active: activeFilter === `company-${slug}` };
   }));
@@ -1037,43 +1044,25 @@ function jobFilterNav(
   return html;
 }
 
-/** Render job cards grouped by company. */
+/** Render job cards as a flat chronological list (most recent first). */
 function renderJobCards(jobs: EnrichedJob[]): string {
   if (jobs.length === 0) {
     return `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No matching jobs found.</p>`;
   }
 
-  let body = '';
-  const byCompany = new Map<string, EnrichedJob[]>();
+  let body = `<div class="job-grid">\n`;
   for (const job of jobs) {
-    const existing = byCompany.get(job.companyId) ?? [];
-    existing.push(job);
-    byCompany.set(job.companyId, existing);
-  }
+    const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
+    const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
+    const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
 
-  const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
-    (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
-  );
-
-  for (const companyId of sortedCompanyIds) {
-    const companyJobs = byCompany.get(companyId)!;
-    const companyName = companyJobs[0].companyName;
-    body += `<div class="section-label"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> &mdash; ${companyJobs.length} role${companyJobs.length !== 1 ? 's' : ''}</div>\n`;
-    body += `<div class="job-grid">\n`;
-
-    for (const job of companyJobs) {
-      const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
-      const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
-      const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
-
-      body += `<div class="job-card">
+    body += `<div class="job-card">
   <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
-  <div class="job-company"><a href="/company/${escapeHtml(companyId)}">${escapeHtml(companyName)}</a></div>
+  <div class="job-company"><a href="/company/${escapeHtml(job.companyId)}">${escapeHtml(job.companyName)}</a></div>
   <div class="job-tags">${remoteBadge}${locationBadge}${deptBadge}</div>
 </div>\n`;
-    }
-    body += `</div>\n`;
   }
+  body += `</div>\n`;
 
   return body;
 }
