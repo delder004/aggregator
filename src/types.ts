@@ -85,6 +85,8 @@ export interface Company {
   articleCount: number;
   jobsBoardType: string | null;
   jobsBoardToken: string | null;
+  employeeCountMin?: number | null;
+  employeeCountMax?: number | null;
 }
 
 export type JobsBoardType = 'greenhouse' | 'lever' | 'ashby';

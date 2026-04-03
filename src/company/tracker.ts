@@ -771,6 +771,8 @@ function mapRowToCompany(row: Record<string, unknown>): Company {
     lastMentionedAt: (row.last_mentioned_at as string) || null,
     jobsBoardType: (row.jobs_board_type as string) || null,
     jobsBoardToken: (row.jobs_board_token as string) || null,
+    employeeCountMin: (row.employee_count_min as number) ?? null,
+    employeeCountMax: (row.employee_count_max as number) ?? null,
   };
 }
 

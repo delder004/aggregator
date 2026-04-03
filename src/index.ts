@@ -1,6 +1,6 @@
 import type { Env } from './types';
 import { getArticleById, getRelatedArticles } from './db/queries';
-import { layout, articleCard, escapeHtml } from './renderer/html';
+import { layout, articleCard, escapeHtml, readTime } from './renderer/html';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
 
@@ -65,6 +65,7 @@ export default {
         detailBody += ` <span class="meta-dot">&middot;</span> ${escapeHtml(article.author)}`;
       }
       detailBody += ` <span class="meta-dot">&middot;</span> <time datetime="${article.publishedAt}">${new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>`;
+      detailBody += ` <span class="meta-dot">&middot;</span> ${readTime(article)}`;
       if (article.relevanceScore) {
         detailBody += ` <span class="meta-dot">&middot;</span> Relevance: ${article.relevanceScore}/100`;
       }

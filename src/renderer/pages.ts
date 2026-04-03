@@ -19,6 +19,7 @@ import {
   setCompanyLinkMap,
   NAV_TAGS,
   insightCard,
+  companySizeLabel,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
@@ -720,6 +721,8 @@ function generateCompaniesPage(
       const articleCount = companyArticles.get(c.id)?.length ?? 0;
       const jobCount = companyJobs?.get(c.id)?.length ?? 0;
 
+      const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
+
       companyRows += `<div class="company-card">
   <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
   ${desc ? `<p class="card-desc">${desc}</p>` : ''}
@@ -727,6 +730,7 @@ function generateCompaniesPage(
     ${c.category ? `<span class="card-badge">${escapeHtml(c.category)}</span>` : ''}
     <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
     ${jobCount > 0 ? `<span class="meta-dot">&middot;</span> <span style="color:var(--accent);">${jobCount} open role${jobCount !== 1 ? 's' : ''}</span>` : ''}
+    ${sizeLabel ? `<span class="meta-dot">&middot;</span> <span>${escapeHtml(sizeLabel)}</span>` : ''}
     ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(c.website))}</a>` : ''}
   </div>
 </div>\n`;
@@ -833,6 +837,10 @@ function generateCompanyDetailPages(
     if (jobs.length > 0) {
       body += `<span class="meta-dot">&middot;</span> <a href="#jobs" style="color:var(--accent);">${jobs.length} open role${jobs.length !== 1 ? 's' : ''}</a>`;
     }
+    const detailSizeLabel = companySizeLabel(company.employeeCountMin ?? null, company.employeeCountMax ?? null);
+    if (detailSizeLabel) {
+      body += `<span class="meta-dot">&middot;</span> <span>${escapeHtml(detailSizeLabel)}</span>`;
+    }
     body += `</div>`;
     body += `</div>\n`;
 
@@ -878,13 +886,87 @@ function generateCompanyDetailPages(
 // Jobs page
 // ---------------------------------------------------------------------------
 
+type EnrichedJob = CompanyJob & { companyName: string; companyId: string };
+
+/** Slugify a string for URL use. */
+function slugify(str: string): string {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Render a filter nav bar for job pages. */
+function jobFilterNav(
+  departments: string[],
+  locations: string[],
+  activeFilter: string,
+  hasRemote: boolean
+): string {
+  let html = `<nav class="tag-nav" style="margin-bottom:1rem;">\n`;
+  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All</a>\n`;
+  if (hasRemote) {
+    html += `  <a href="/jobs/remote"${activeFilter === 'remote' ? ' class="active"' : ''}>Remote</a>\n`;
+  }
+  for (const dept of departments.slice(0, 10)) {
+    const slug = slugify(dept);
+    html += `  <a href="/jobs/dept/${slug}"${activeFilter === `dept-${slug}` ? ' class="active"' : ''}>${escapeHtml(dept)}</a>\n`;
+  }
+  for (const loc of locations.slice(0, 8)) {
+    const slug = slugify(loc);
+    html += `  <a href="/jobs/location/${slug}"${activeFilter === `loc-${slug}` ? ' class="active"' : ''}>${escapeHtml(loc)}</a>\n`;
+  }
+  html += `</nav>\n`;
+  return html;
+}
+
+/** Render job cards grouped by company. */
+function renderJobCards(jobs: EnrichedJob[]): string {
+  if (jobs.length === 0) {
+    return `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No matching jobs found.</p>`;
+  }
+
+  let body = '';
+  const byCompany = new Map<string, EnrichedJob[]>();
+  for (const job of jobs) {
+    const existing = byCompany.get(job.companyId) ?? [];
+    existing.push(job);
+    byCompany.set(job.companyId, existing);
+  }
+
+  const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
+    (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
+  );
+
+  for (const companyId of sortedCompanyIds) {
+    const companyJobs = byCompany.get(companyId)!;
+    const companyName = companyJobs[0].companyName;
+    body += `<div class="section-label"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> &mdash; ${companyJobs.length} role${companyJobs.length !== 1 ? 's' : ''}</div>\n`;
+    body += `<div class="job-grid">\n`;
+
+    for (const job of companyJobs) {
+      const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
+      const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
+      const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
+
+      body += `<div class="job-card">
+  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
+  <div class="job-company"><a href="/company/${escapeHtml(companyId)}">${escapeHtml(companyName)}</a></div>
+  <div class="job-tags">${remoteBadge}${locationBadge}${deptBadge}</div>
+</div>\n`;
+    }
+    body += `</div>\n`;
+  }
+
+  return body;
+}
+
 function generateJobsPage(
   companies: Company[],
   companyJobs: Map<string, CompanyJob[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
+  const pages: Record<string, string> = {};
+
   // Collect all jobs, attaching company info
-  const allJobs: (CompanyJob & { companyName: string; companyId: string })[] = [];
+  const allJobs: EnrichedJob[] = [];
   for (const company of companies) {
     const jobs = companyJobs.get(company.id) ?? [];
     for (const job of jobs) {
@@ -900,57 +982,100 @@ function generateJobsPage(
     return a.companyName.localeCompare(b.companyName);
   });
 
-  let body = '';
+  // Collect unique departments and locations for filter nav
+  const deptCounts = new Map<string, number>();
+  const locCounts = new Map<string, number>();
+  let remoteCount = 0;
+  for (const job of allJobs) {
+    if (job.department) {
+      deptCounts.set(job.department, (deptCounts.get(job.department) ?? 0) + 1);
+    }
+    if (job.location) {
+      locCounts.set(job.location, (locCounts.get(job.location) ?? 0) + 1);
+    }
+    if (job.isRemote) remoteCount++;
+  }
+  // Sort by count descending
+  const departments = [...deptCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+  const locations = [...locCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+  const hasRemote = remoteCount > 0;
+
+  const filterNav = jobFilterNav(departments, locations, '', hasRemote);
   const companiesWithJobs = companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0);
 
+  // Main /jobs page (all jobs)
+  let body = '';
   if (allJobs.length === 0) {
     body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
+    body += filterNav;
     body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
   } else {
     body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
-    body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
-
-    // Group by company
-    const byCompany = new Map<string, typeof allJobs>();
-    for (const job of allJobs) {
-      const existing = byCompany.get(job.companyId) ?? [];
-      existing.push(job);
-      byCompany.set(job.companyId, existing);
-    }
-
-    // Sort companies by job count descending
-    const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
-      (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
-    );
-
-    for (const companyId of sortedCompanyIds) {
-      const jobs = byCompany.get(companyId)!;
-      const companyName = jobs[0].companyName;
-      body += `<div class="section-label"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> &mdash; ${jobs.length} role${jobs.length !== 1 ? 's' : ''}</div>\n`;
-      body += `<div class="job-grid">\n`;
-
-      for (const job of jobs) {
-        const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
-        const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
-        const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
-
-        body += `<div class="job-card">
-  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
-  <div class="job-company"><a href="/company/${escapeHtml(companyId)}">${escapeHtml(companyName)}</a></div>
-  <div class="job-tags">${remoteBadge}${locationBadge}${deptBadge}</div>
-</div>\n`;
-      }
-      body += `</div>\n`;
-    }
+    body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
+    body += filterNav;
+    body += renderJobCards(allJobs);
   }
 
-  return {
-    '/jobs': layout(body, {
-      title: 'Jobs',
-      description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
-      path: '/jobs',
+  pages['/jobs'] = layout(body, {
+    title: 'Jobs',
+    description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+    path: '/jobs',
+    activeTab: 'jobs',
+    ...layoutOpts,
+  });
+
+  // Remote filter page
+  if (hasRemote) {
+    const remoteJobs = allJobs.filter(j => j.isRemote);
+    let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
+    remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
+    remoteBody += jobFilterNav(departments, locations, 'remote', hasRemote);
+    remoteBody += renderJobCards(remoteJobs);
+
+    pages['/jobs/remote'] = layout(remoteBody, {
+      title: 'Remote Jobs',
+      description: 'Remote roles at AI accounting companies.',
+      path: '/jobs/remote',
       activeTab: 'jobs',
       ...layoutOpts,
-    }),
-  };
+    });
+  }
+
+  // Department filter pages
+  for (const dept of departments) {
+    const slug = slugify(dept);
+    const deptJobs = allJobs.filter(j => j.department === dept);
+    let deptBody = `<h2 class="section-heading">${escapeHtml(dept)} Roles</h2>\n`;
+    deptBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${deptJobs.length} role${deptJobs.length !== 1 ? 's' : ''} in ${escapeHtml(dept)}.</p>\n`;
+    deptBody += jobFilterNav(departments, locations, `dept-${slug}`, hasRemote);
+    deptBody += renderJobCards(deptJobs);
+
+    pages[`/jobs/dept/${slug}`] = layout(deptBody, {
+      title: `${dept} Jobs`,
+      description: `${dept} roles at AI accounting companies.`,
+      path: `/jobs/dept/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  // Location filter pages
+  for (const loc of locations) {
+    const slug = slugify(loc);
+    const locJobs = allJobs.filter(j => j.location === loc);
+    let locBody = `<h2 class="section-heading">Roles in ${escapeHtml(loc)}</h2>\n`;
+    locBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${locJobs.length} role${locJobs.length !== 1 ? 's' : ''} in ${escapeHtml(loc)}.</p>\n`;
+    locBody += jobFilterNav(departments, locations, `loc-${slug}`, hasRemote);
+    locBody += renderJobCards(locJobs);
+
+    pages[`/jobs/location/${slug}`] = layout(locBody, {
+      title: `Jobs in ${loc}`,
+      description: `AI accounting roles in ${loc}.`,
+      path: `/jobs/location/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }

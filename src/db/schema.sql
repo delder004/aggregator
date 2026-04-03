@@ -53,7 +53,9 @@ CREATE TABLE IF NOT EXISTS companies (
     last_mentioned_at TEXT,
     article_count INTEGER DEFAULT 0,
     jobs_board_type TEXT,
-    jobs_board_token TEXT
+    jobs_board_token TEXT,
+    employee_count_min INTEGER,
+    employee_count_max INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);

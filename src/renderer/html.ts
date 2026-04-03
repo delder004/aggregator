@@ -516,6 +516,29 @@ a.source-name:hover{text-decoration:underline;}
   font-weight:600;
 }
 
+/* Newsletter signup */
+.newsletter-box{
+  background:linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+  border-radius:var(--radius-lg);
+  padding:2rem;
+  color:#fff;
+  margin:2rem 0;
+  text-align:center;
+}
+.newsletter-box h3{font-size:1.15rem;font-weight:700;margin-bottom:0.4rem;}
+.newsletter-box p{font-size:0.88rem;opacity:0.9;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.5;}
+.newsletter-box .cta-btn{
+  display:inline-block;
+  background:#fff;
+  color:#0f766e;
+  font-weight:600;
+  font-size:0.88rem;
+  padding:0.6rem 1.5rem;
+  border-radius:100px;
+  transition:background 0.15s,transform 0.15s;
+}
+.newsletter-box .cta-btn:hover{background:#f0fdfa;transform:translateY(-1px);text-decoration:none;}
+
 /* Footer */
 .site-footer{
   border-top:1px solid var(--border);
@@ -779,6 +802,33 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** Format company employee count range as a human-readable label. */
+export function companySizeLabel(min: number | null, max: number | null): string {
+  if (min == null && max == null) return '';
+  if (min != null && max != null) {
+    if (min === max) return `${min} employees`;
+    return `${min}-${max} employees`;
+  }
+  if (min != null) return `${min}+ employees`;
+  return `Up to ${max} employees`;
+}
+
+/** Estimate read time in minutes from text content. Returns "X min read". */
+export function readTime(article: Article): string {
+  let wordCount = 0;
+  if (article.transcript) {
+    wordCount += article.transcript.split(/\s+/).length;
+  } else if (article.contentSnippet) {
+    wordCount += article.contentSnippet.split(/\s+/).length;
+  }
+  if (article.aiSummary) {
+    wordCount += article.aiSummary.split(/\s+/).length;
+  }
+  // Minimum 1 min, estimate 200 words/min
+  const minutes = Math.max(1, Math.round(wordCount / 200));
+  return `${minutes} min read`;
+}
+
 /** Produce a human-readable relative time string from an ISO 8601 date. */
 export function timeAgo(isoDate: string): string {
   const now = Date.now();
@@ -930,6 +980,7 @@ export function articleCard(article: Article): string {
       <span class="source-name">${escapeHtml(article.sourceName)}</span>
       <span class="source-badge ${badge.cls}">${badge.label}</span>
       ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}${socialDisplay}
+      <span class="meta-dot">&middot;</span> <span>${readTime(article)}</span>
     </div>
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
   </div>
@@ -954,6 +1005,7 @@ export function featuredCard(article: Article): string {
     ${sourceSiteUrl ? `<a href="${escapeHtml(sourceSiteUrl)}" class="source-name" target="_blank" rel="noopener">${escapeHtml(article.sourceName)}</a>` : `<span class="source-name">${escapeHtml(article.sourceName)}</span>`}
     <span class="source-badge ${badge.cls}">${badge.label}</span>
     ${ago ? `<span class="meta-dot">&middot;</span> <time datetime="${formatIsoDate(article.publishedAt)}">${ago}</time>` : ''}
+    <span class="meta-dot">&middot;</span> <span>${readTime(article)}</span>
   </div>
   ${summary ? `<a href="${detailHref}" class="article-summary-link"><p class="article-summary">${summary}</p></a>` : ''}
 </div>`;
@@ -1306,6 +1358,14 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <main class="${containerClass}">
     ${body}
   </main>
+
+  <div class="container">
+    <div class="newsletter-box">
+      <h3>Stay ahead of AI in accounting</h3>
+      <p>Get the latest news on agentic AI for accounting, audit, and tax delivered to your inbox. Curated by AI, reviewed by professionals.</p>
+      <a class="cta-btn" href="mailto:hello@agenticaiaccounting.com?subject=Newsletter%20Signup&amp;body=I%27d%20like%20to%20subscribe%20to%20the%20Agentic%20AI%20Accounting%20newsletter.">Subscribe to Newsletter</a>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <div class="container">
