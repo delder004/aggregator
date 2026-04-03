@@ -191,7 +191,7 @@ function generateHomepage(
   if (discussed.length > 0) {
     body += `<div class="spotlight-grid" style="margin-top:1.5rem;">\n`;
     body += `<div class="spotlight-card">`;
-    body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Trending This Week</h3>`;
+    body += `<h3 class="spotlight-heading">Trending This Week</h3>`;
     body += `<ol class="discussed-list">\n`;
     for (const a of discussed) {
       const href = `/article/${escapeHtml(a.id)}`;
@@ -210,10 +210,10 @@ function generateHomepage(
     if (insights && insights.length > 0) {
       const latestInsight = insights[0];
       body += `<div class="spotlight-card">`;
-      body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Latest Insight</h3>`;
+      body += `<h3 class="spotlight-heading">Latest Insight</h3>`;
       body += insightCard(latestInsight);
       if (insights.length > 1) {
-        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/resources" style="font-size:0.82rem;">View all digests &rarr;</a></div>`;
+        body += `<div class="view-all"><a href="/resources">View all digests &rarr;</a></div>`;
       }
       body += `</div>\n`;
     } else {
@@ -223,14 +223,14 @@ function generateHomepage(
           .sort((a, b) => b.articleCount - a.articleCount)
           .slice(0, 4);
         body += `<div class="spotlight-card">`;
-        body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Top Companies</h3>`;
+        body += `<h3 class="spotlight-heading">Top Companies</h3>`;
         for (const c of topCompanies) {
-          body += `<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);">
-  <a href="/company/${escapeHtml(c.id)}" style="font-size:0.88rem;font-weight:500;color:var(--text);">${escapeHtml(c.name)}</a>
-  <span style="font-size:0.73rem;color:var(--text-tertiary);margin-left:0.4rem;">${c.articleCount} articles</span>
+          body += `<div class="spotlight-item">
+  <a href="/company/${escapeHtml(c.id)}" class="spotlight-item-link">${escapeHtml(c.name)}</a>
+  <span class="spotlight-item-count">${c.articleCount} articles</span>
 </div>\n`;
         }
-        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/companies" style="font-size:0.82rem;">View all companies &rarr;</a></div>`;
+        body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>`;
         body += `</div>\n`;
       }
     }
@@ -242,7 +242,7 @@ function generateHomepage(
   if (latestPages.length > 0) {
     body += renderTimeGrouped(latestPages[0]);
   } else {
-    body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet. Check back soon.</p>`;
+    body += `<p class="empty-state">No articles yet. Check back soon.</p>`;
   }
 
   body += pagination(1, totalPages);
@@ -313,7 +313,7 @@ function generateTagPages(
     if (tagPages.length > 0) {
       body += renderTimeGrouped(tagPages[0]);
     } else {
-      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles for this tag yet.</p>`;
+      body += `<p class="empty-state">No articles for this tag yet.</p>`;
     }
     body += pagination(1, totalPages, basePath);
 
