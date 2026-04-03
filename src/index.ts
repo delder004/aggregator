@@ -1,6 +1,7 @@
 import type { Env } from './types';
 import { getArticleById, getRelatedArticles } from './db/queries';
 import { layout, articleCard, escapeHtml, readTime } from './renderer/html';
+import { addSubscriberToButtondown } from './newsletter/buttondown';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
 
@@ -59,6 +60,14 @@ export default {
         await env.DB.prepare(
           'INSERT OR IGNORE INTO subscribers (email, subscribed_at) VALUES (?, ?)'
         ).bind(email, new Date().toISOString()).run();
+
+        // Sync subscriber to Buttondown (non-blocking — D1 is source of truth)
+        if (env.BUTTONDOWN_API_KEY) {
+          const synced = await addSubscriberToButtondown(env.BUTTONDOWN_API_KEY, email);
+          if (!synced) {
+            console.error(`Buttondown sync failed for ${email}, D1 record saved`);
+          }
+        }
 
         return Response.redirect(`${url.origin}/?subscribed=1`, 303);
       } catch {
