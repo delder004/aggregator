@@ -213,7 +213,7 @@ function generateHomepage(
       body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Latest Insight</h3>`;
       body += insightCard(latestInsight);
       if (insights.length > 1) {
-        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/insights" style="font-size:0.82rem;">View all insights &rarr;</a></div>`;
+        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/resources" style="font-size:0.82rem;">View all digests &rarr;</a></div>`;
       }
       body += `</div>\n`;
     } else {
@@ -539,8 +539,7 @@ function generateSitemap(
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
-  urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
-  urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
@@ -611,8 +610,7 @@ export function generateAllPages(
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
     ...generateFaqPage(layoutOpts),
-    ...generateInsightsPage(insights ?? [], layoutOpts),
-    ...generateResourcesPage(layoutOpts),
+    ...generateResourcesPage(insights ?? [], layoutOpts),
   };
 
   if (companies && companies.length > 0) {
@@ -639,60 +637,29 @@ export function generateAllPages(
 // Insights page
 // ---------------------------------------------------------------------------
 
-function generateInsightsPage(
+function generateResourcesPage(
   insights: InsightSummary[],
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   let body = '';
 
-  body += `<h2 class="section-heading">AI Accounting Insights</h2>\n`;
-  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">AI-generated summaries and analysis of the latest trends in agentic AI for accounting. Updated regularly with key themes, emerging patterns, and industry developments.</p>\n`;
+  body += `<h2 class="section-heading">Resources</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Insights, guides, and essential resources for understanding AI in accounting.</p>\n`;
 
-  if (insights.length === 0) {
-    body += `<div class="spotlight-grid">\n`;
-    body += `<div class="spotlight-card">
-  <h3 style="margin-bottom:0.5rem;">Coming Soon</h3>
-  <p>We're building AI-generated insights that analyze trends across all our sources. Check back soon for periodic summaries covering key themes in AI-powered accounting.</p>
-</div>\n`;
-    body += `<div class="spotlight-card">
-  <h3 style="margin-bottom:0.5rem;">What to Expect</h3>
-  <p>Daily, weekly, and monthly digests that synthesize the most important developments. Each insight covers emerging tools, regulatory changes, company movements, and research breakthroughs.</p>
-</div>\n`;
+  // Latest insight brief
+  if (insights.length > 0) {
+    const latest = insights[0];
+    body += `<h3 class="section-label">Latest Digest</h3>\n`;
+    body += `<div class="insights-grid" style="margin-bottom:1.5rem;">\n`;
+    body += insightCard(latest);
     body += `</div>\n`;
-  } else {
-    body += `<div class="insights-grid">\n`;
-    for (const insight of insights) {
-      body += insightCard(insight);
-    }
-    body += `</div>\n`;
+    body += `<div style="margin-bottom:2rem;"><a href="/insights" style="font-size:0.85rem;font-weight:500;">See all digests &rarr;</a></div>\n`;
   }
 
-  return {
-    '/insights': layout(body, {
-      title: 'Insights',
-      description: 'AI-generated insights and analysis of trends in agentic AI for accounting.',
-      path: '/insights',
-      activeTab: 'insights',
-      ...layoutOpts,
-    }),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Resources page
-// ---------------------------------------------------------------------------
-
-function generateResourcesPage(
-  layoutOpts: Partial<LayoutOptions>
-): Record<string, string> {
-  let body = '';
-
-  body += `<h2 class="section-heading">Resources</h2>\n`;
-  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Essential resources for understanding the intersection of artificial intelligence and the accounting profession.</p>\n`;
-
+  // Resource cards
+  body += `<h3 class="section-label">Guides &amp; References</h3>\n`;
   body += `<div class="resource-grid">\n`;
 
-  // Resource cards
   const resources = [
     {
       type: 'Guide',
@@ -742,8 +709,8 @@ function generateResourcesPage(
 
   body += `</div>\n`;
 
-  // Additional sections
-  body += `<h2 class="section-heading" style="margin-top:2.5rem;">Stay Informed</h2>\n`;
+  // Stay Informed
+  body += `<h3 class="section-label" style="margin-top:2.5rem;">Stay Informed</h3>\n`;
   body += `<div class="spotlight-grid">\n`;
   body += `<div class="spotlight-card">
   <h3><a href="/feed.xml">RSS Feed</a></h3>
@@ -757,15 +724,36 @@ function generateResourcesPage(
 </div>\n`;
   body += `</div>\n`;
 
-  return {
+  const pages: Record<string, string> = {
     '/resources': layout(body, {
       title: 'Resources',
-      description: 'Essential resources for understanding AI in accounting — guides, tools, research, and career development.',
+      description: 'Insights, guides, and essential resources for understanding AI in accounting.',
       path: '/resources',
       activeTab: 'resources',
       ...layoutOpts,
     }),
   };
+
+  // Full insights listing page (linked from "See all digests")
+  if (insights.length > 0) {
+    let insightsBody = `<h2 class="section-heading">All Digests</h2>\n`;
+    insightsBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">AI-generated summaries and analysis of the latest trends in agentic AI for accounting.</p>\n`;
+    insightsBody += `<div class="insights-grid">\n`;
+    for (const insight of insights) {
+      insightsBody += insightCard(insight);
+    }
+    insightsBody += `</div>\n`;
+
+    pages['/insights'] = layout(insightsBody, {
+      title: 'Digests',
+      description: 'AI-generated digests and analysis of trends in agentic AI for accounting.',
+      path: '/insights',
+      activeTab: 'resources',
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }
 
 // ---------------------------------------------------------------------------
@@ -970,26 +958,54 @@ function slugify(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-/** Render a filter nav bar for job pages. */
+/** Render a single filter row with a label. */
+function filterRow(label: string, items: { href: string; text: string; active: boolean }[]): string {
+  if (items.length === 0) return '';
+  let html = `<div class="job-filter-row">\n`;
+  html += `  <span class="job-filter-label">${escapeHtml(label)}</span>\n`;
+  for (const item of items) {
+    html += `  <a href="${item.href}"${item.active ? ' class="active"' : ''}>${item.text}</a>\n`;
+  }
+  html += `</div>\n`;
+  return html;
+}
+
+/** Render distinct filter groups for job pages. */
 function jobFilterNav(
   departments: string[],
   locations: string[],
+  companyNames: { id: string; name: string }[],
   activeFilter: string,
   hasRemote: boolean
 ): string {
-  let html = `<nav class="tag-nav" style="margin-bottom:1rem;">\n`;
-  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All</a>\n`;
+  let html = `<nav class="job-filters">\n`;
+
+  // All / Remote row
+  html += `<div class="job-filter-row">\n`;
+  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All Jobs</a>\n`;
   if (hasRemote) {
     html += `  <a href="/jobs/remote"${activeFilter === 'remote' ? ' class="active"' : ''}>Remote</a>\n`;
   }
-  for (const dept of departments.slice(0, 10)) {
+  html += `</div>\n`;
+
+  // Role (department) row
+  html += filterRow('Role', departments.slice(0, 10).map(dept => {
     const slug = slugify(dept);
-    html += `  <a href="/jobs/dept/${slug}"${activeFilter === `dept-${slug}` ? ' class="active"' : ''}>${escapeHtml(dept)}</a>\n`;
-  }
-  for (const loc of locations.slice(0, 8)) {
+    return { href: `/jobs/dept/${slug}`, text: escapeHtml(dept), active: activeFilter === `dept-${slug}` };
+  }));
+
+  // Location row
+  html += filterRow('Location', locations.slice(0, 8).map(loc => {
     const slug = slugify(loc);
-    html += `  <a href="/jobs/location/${slug}"${activeFilter === `loc-${slug}` ? ' class="active"' : ''}>${escapeHtml(loc)}</a>\n`;
-  }
+    return { href: `/jobs/location/${slug}`, text: escapeHtml(loc), active: activeFilter === `loc-${slug}` };
+  }));
+
+  // Company row
+  html += filterRow('Company', companyNames.slice(0, 10).map(c => {
+    const slug = slugify(c.id);
+    return { href: `/jobs/company/${slug}`, text: escapeHtml(c.name), active: activeFilter === `company-${slug}` };
+  }));
+
   html += `</nav>\n`;
   return html;
 }
@@ -1077,8 +1093,14 @@ function generateJobsPage(
   const locations = [...locCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
   const hasRemote = remoteCount > 0;
 
-  const filterNav = jobFilterNav(departments, locations, '', hasRemote);
+  // Collect companies sorted by job count
   const companiesWithJobs = companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0);
+  const companiesByJobCount = companiesWithJobs
+    .map(c => ({ id: c.id, name: c.name, count: (companyJobs.get(c.id) ?? []).length }))
+    .sort((a, b) => b.count - a.count);
+  const companyFilterList = companiesByJobCount.map(c => ({ id: c.id, name: c.name }));
+
+  const filterNav = jobFilterNav(departments, locations, companyFilterList, '', hasRemote);
 
   // Main /jobs page (all jobs)
   let body = '';
@@ -1106,7 +1128,7 @@ function generateJobsPage(
     const remoteJobs = allJobs.filter(j => j.isRemote);
     let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
     remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
-    remoteBody += jobFilterNav(departments, locations, 'remote', hasRemote);
+    remoteBody += jobFilterNav(departments, locations, companyFilterList, 'remote', hasRemote);
     remoteBody += renderJobCards(remoteJobs);
 
     pages['/jobs/remote'] = layout(remoteBody, {
@@ -1124,7 +1146,7 @@ function generateJobsPage(
     const deptJobs = allJobs.filter(j => j.department === dept);
     let deptBody = `<h2 class="section-heading">${escapeHtml(dept)} Roles</h2>\n`;
     deptBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${deptJobs.length} role${deptJobs.length !== 1 ? 's' : ''} in ${escapeHtml(dept)}.</p>\n`;
-    deptBody += jobFilterNav(departments, locations, `dept-${slug}`, hasRemote);
+    deptBody += jobFilterNav(departments, locations, companyFilterList, `dept-${slug}`, hasRemote);
     deptBody += renderJobCards(deptJobs);
 
     pages[`/jobs/dept/${slug}`] = layout(deptBody, {
@@ -1142,13 +1164,31 @@ function generateJobsPage(
     const locJobs = allJobs.filter(j => j.location === loc);
     let locBody = `<h2 class="section-heading">Roles in ${escapeHtml(loc)}</h2>\n`;
     locBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${locJobs.length} role${locJobs.length !== 1 ? 's' : ''} in ${escapeHtml(loc)}.</p>\n`;
-    locBody += jobFilterNav(departments, locations, `loc-${slug}`, hasRemote);
+    locBody += jobFilterNav(departments, locations, companyFilterList, `loc-${slug}`, hasRemote);
     locBody += renderJobCards(locJobs);
 
     pages[`/jobs/location/${slug}`] = layout(locBody, {
       title: `Jobs in ${loc}`,
       description: `AI accounting roles in ${loc}.`,
       path: `/jobs/location/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  // Company filter pages
+  for (const c of companiesByJobCount) {
+    const slug = slugify(c.id);
+    const cJobs = allJobs.filter(j => j.companyId === c.id);
+    let cBody = `<h2 class="section-heading">${escapeHtml(c.name)} Roles</h2>\n`;
+    cBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${cJobs.length} open role${cJobs.length !== 1 ? 's' : ''} at ${escapeHtml(c.name)}.</p>\n`;
+    cBody += jobFilterNav(departments, locations, companyFilterList, `company-${slug}`, hasRemote);
+    cBody += renderJobCards(cJobs);
+
+    pages[`/jobs/company/${slug}`] = layout(cBody, {
+      title: `${c.name} Jobs`,
+      description: `Open roles at ${c.name}.`,
+      path: `/jobs/company/${slug}`,
       activeTab: 'jobs',
       ...layoutOpts,
     });
