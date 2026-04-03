@@ -1,4 +1,4 @@
-import type { CollectedArticle, ScoredArticle, Env } from '../types';
+import type { CollectedArticle, CompanyMention, ScoredArticle, Env } from '../types';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -74,7 +74,7 @@ Also provide:
 - tags: up to 5 from [audit, tax, bookkeeping, compliance, payroll, invoicing, fraud-detection, financial-reporting, agentic-ai, llm, automation, startup, big-4, regulation, case-study, opinion, research, product-launch, funding, partnership, integration, open-source]
 - headline: Write a concise, journalist-style headline under 80 characters. Remove dates, author names, site names, and the word "Article". Use active voice, present tense where possible.
 - summary: A punchy 1-sentence TLDR that tells the reader "so what" — the key takeaway or news, not a description. Under 200 characters. Use specifics (numbers, names, outcomes) over vague descriptions. Bad: "Overview of AI benefits for accounting teams." Good: "GPT-5.4 tops DualEntry's accounting benchmark at 77% but still fails 1 in 3 tasks."
-- companyMentions: array of company names mentioned in the article (e.g., ["Deloitte", "Intuit", "OpenAI"]). Empty array if none.
+- companyMentions: array of companies mentioned. For each, provide an object with "name" (required) and optionally "website" (just the domain, e.g., "truewind.ai") if a URL or domain appears in the article. Example: [{"name": "Truewind", "website": "truewind.ai"}, {"name": "Deloitte"}]. Empty array if none.
 - transcriptSummary: ONLY include this field when a Transcript is provided. Write a structured summary with: (1) a "TLDW:" line — a single-sentence takeaway, (2) followed by "Key points:" with 3-5 bullet points capturing the most important insights from the transcript. Each bullet should be a concrete, specific fact or insight (not vague). Use "- " for bullets. Omit this field entirely if no transcript is provided.
 
 Respond with valid JSON only, no other text. Use this exact schema:
@@ -84,7 +84,7 @@ Respond with valid JSON only, no other text. Use this exact schema:
   "tags": [<string>, ...],
   "headline": "<string>",
   "summary": "<string>",
-  "companyMentions": [<string>, ...],
+  "companyMentions": [{"name": "<string>", "website": "<string> (optional)"}, ...],
   "transcriptSummary": "<string> (only when transcript provided)"
 }`;
 
@@ -95,6 +95,7 @@ interface ClassifierResponse {
   summary: string;
   headline: string;
   companyMentions: string[];
+  enrichedCompanyMentions?: CompanyMention[];
   transcriptSummary?: string;
 }
 
@@ -173,6 +174,7 @@ async function scoreOneArticle(
       headline: parsed.headline,
       tags: parsed.tags,
       companyMentions: parsed.companyMentions,
+      enrichedCompanyMentions: parsed.enrichedCompanyMentions,
       transcriptSummary: parsed.transcriptSummary,
     };
   } catch (firstError) {
@@ -197,6 +199,7 @@ async function scoreOneArticle(
     headline: parsed.headline,
     tags: parsed.tags,
     companyMentions: parsed.companyMentions,
+    enrichedCompanyMentions: parsed.enrichedCompanyMentions,
     transcriptSummary: parsed.transcriptSummary,
   };
 }
@@ -376,12 +379,48 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
     }
   }
 
-  // Validate companyMentions
+  // Validate companyMentions — accept both [{name, website?}] and [string] formats
   let companyMentions: string[] = [];
+  let enrichedCompanyMentions: CompanyMention[] | undefined;
   if (Array.isArray(obj.companyMentions)) {
-    companyMentions = obj.companyMentions
-      .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
-      .map((name) => name.trim());
+    const firstItem = obj.companyMentions[0];
+    const isStructured =
+      obj.companyMentions.length > 0 &&
+      typeof firstItem === 'object' &&
+      firstItem !== null;
+
+    if (isStructured) {
+      enrichedCompanyMentions = [];
+      for (const item of obj.companyMentions) {
+        if (typeof item === 'object' && item !== null) {
+          const entry = item as Record<string, unknown>;
+          const name =
+            typeof entry.name === 'string' ? entry.name.trim() : '';
+          if (name.length > 0) {
+            const website =
+              typeof entry.website === 'string'
+                ? entry.website.trim()
+                : undefined;
+            companyMentions.push(name);
+            enrichedCompanyMentions.push({
+              name,
+              website: website || undefined,
+            });
+          }
+        } else if (typeof item === 'string' && item.trim().length > 0) {
+          // Mixed array — treat plain strings as name-only
+          companyMentions.push(item.trim());
+          enrichedCompanyMentions.push({ name: item.trim() });
+        }
+      }
+    } else {
+      companyMentions = obj.companyMentions
+        .filter(
+          (name): name is string =>
+            typeof name === 'string' && name.trim().length > 0
+        )
+        .map((name) => name.trim());
+    }
   }
 
   // Validate optional transcriptSummary
@@ -393,5 +432,5 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
     }
   }
 
-  return { relevanceScore, qualityScore, tags, summary, headline, companyMentions, transcriptSummary };
+  return { relevanceScore, qualityScore, tags, summary, headline, companyMentions, enrichedCompanyMentions, transcriptSummary };
 }

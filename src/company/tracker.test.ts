@@ -7,6 +7,7 @@ import {
   updateCompanyStats,
   getArticlesForCompany,
   seedDefaultCompanies,
+  discoverNewCompanies,
 } from './tracker';
 import type { Company, ScoredArticle } from '../types';
 
@@ -204,5 +205,119 @@ describe('matchArticleToCompanies', () => {
 
     const matched = matchArticleToCompanies(article, companies);
     expect(matched).toContain('sage');
+  });
+});
+
+describe('discoverNewCompanies', () => {
+  const existingCompanies: Company[] = [
+    {
+      id: 'intuit',
+      name: 'Intuit',
+      aliases: ['QuickBooks'],
+      website: null,
+      description: null,
+      category: null,
+      fundingStage: null,
+      logoUrl: null,
+      isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
+      articleCount: 0,
+      lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
+    },
+  ];
+
+  function makeScoredArticle(overrides: Partial<ScoredArticle> = {}): ScoredArticle {
+    return {
+      url: 'https://example.com/article',
+      title: 'Test',
+      sourceType: 'rss',
+      sourceName: 'Test',
+      author: null,
+      publishedAt: new Date().toISOString(),
+      contentSnippet: null,
+      imageUrl: null,
+      relevanceScore: 80,
+      qualityScore: 60,
+      aiSummary: '',
+      headline: '',
+      tags: [],
+      companyMentions: [],
+      ...overrides,
+    };
+  }
+
+  it('should find new companies not in existing list', () => {
+    const articles = [
+      makeScoredArticle({ companyMentions: ['Truewind', 'Intuit'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Truewind');
+  });
+
+  it('should skip companies already tracked by alias', () => {
+    const articles = [
+      makeScoredArticle({ companyMentions: ['QuickBooks', 'NewCo'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('NewCo');
+  });
+
+  it('should skip articles below publish score', () => {
+    const articles = [
+      makeScoredArticle({ relevanceScore: 30, companyMentions: ['Truewind'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(0);
+  });
+
+  it('should skip generic names', () => {
+    const articles = [
+      makeScoredArticle({ companyMentions: ['AI', 'the', 'Truewind'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Truewind');
+  });
+
+  it('should deduplicate across articles', () => {
+    const articles = [
+      makeScoredArticle({ url: 'https://a.com', companyMentions: ['Truewind'] }),
+      makeScoredArticle({ url: 'https://b.com', companyMentions: ['Truewind'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(1);
+  });
+
+  it('should respect the limit parameter', () => {
+    const articles = [
+      makeScoredArticle({
+        companyMentions: ['CompA', 'CompB', 'CompC', 'CompD'],
+      }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {}, 2);
+    expect(result).toHaveLength(2);
+  });
+
+  it('should attach website hints', () => {
+    const articles = [
+      makeScoredArticle({ companyMentions: ['Truewind'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {
+      Truewind: 'truewind.ai',
+    });
+    expect(result[0].website).toBe('truewind.ai');
+  });
+
+  it('should be case-insensitive when matching existing companies', () => {
+    const articles = [
+      makeScoredArticle({ companyMentions: ['intuit', 'INTUIT', 'NewCo'] }),
+    ];
+    const result = discoverNewCompanies(articles, existingCompanies, {});
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('NewCo');
   });
 });

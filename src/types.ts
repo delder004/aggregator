@@ -60,6 +60,12 @@ export interface CollectedArticle {
   transcript?: string;
 }
 
+/** Enriched company mention from the classifier (transient, not stored in DB). */
+export interface CompanyMention {
+  name: string;
+  website?: string;
+}
+
 export interface ScoredArticle extends CollectedArticle {
   relevanceScore: number;
   qualityScore: number;
@@ -67,6 +73,7 @@ export interface ScoredArticle extends CollectedArticle {
   headline: string;
   tags: string[];
   companyMentions: string[];
+  enrichedCompanyMentions?: CompanyMention[];
   transcriptSummary?: string;
 }
 
