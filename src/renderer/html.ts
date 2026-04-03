@@ -1276,6 +1276,8 @@ export interface LayoutOptions {
   stats?: { sources: number; crawled: number; articles: number; lastUpdated: string };
   heroHtml?: string;
   narrowContainer?: boolean;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
 }
 
 /**
@@ -1295,6 +1297,8 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const activeTab = options.activeTab ?? '';
   const stats = options.stats;
 
+  const noindex = options.noindex ?? false;
+  const jsonLd = options.jsonLd;
   const heroHtml = options.heroHtml ?? '';
   const containerClass = options.narrowContainer ? 'container-narrow' : 'container';
 
@@ -1321,7 +1325,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <title>${pageTitle}</title>
   <meta name="description" content="${description}" />
   <link rel="canonical" href="${canonical}" />
-  <link rel="alternate" type="application/rss+xml" title="${escapeHtml(SITE_TITLE)}" href="${SITE_URL}/feed.xml" />
+  ${noindex ? '<meta name="robots" content="noindex, follow" />\n  ' : ''}<link rel="alternate" type="application/rss+xml" title="${escapeHtml(SITE_TITLE)}" href="${SITE_URL}/feed.xml" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(faviconSvg())}" />
 
   <!-- Open Graph -->
@@ -1335,13 +1339,15 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${pageTitle}" />
   <meta name="twitter:description" content="${description}" />
-  <meta name="twitter:image" content="${SITE_URL}/og.svg" />
+  <meta name="twitter:image" content="${SITE_URL}/og.png" />
 
   <!-- OG Image -->
-  <meta property="og:image" content="${SITE_URL}/og.svg" />
+  <meta property="og:image" content="${SITE_URL}/og.png" />
+  <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
 
+  ${jsonLd ? `<!-- Structured Data -->\n  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n` : ''}
   <style>${getCSS()}</style>
 </head>
 <body>

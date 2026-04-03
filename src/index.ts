@@ -18,6 +18,14 @@ export default {
       path = path.slice(0, -1);
     }
 
+    // robots.txt
+    if (path === '/robots.txt') {
+      return new Response(
+        `User-agent: *\nAllow: /\n\nSitemap: https://agenticaiaccounting.com/sitemap.xml\n`,
+        { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } }
+      );
+    }
+
     // Manual cron trigger endpoint (authenticated via dedicated secret)
     if (path === '/cron') {
       const cronSecret = env.CRON_SECRET;
@@ -135,10 +143,32 @@ export default {
         detailBody += `</div>`;
       }
 
+      const articleJsonLd: Record<string, unknown> = {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        'headline': article.headline || article.title,
+        'datePublished': article.publishedAt,
+        'url': `https://agenticaiaccounting.com/article/${articleId}`,
+        'publisher': {
+          '@type': 'Organization',
+          'name': 'Agentic AI Accounting',
+          'url': 'https://agenticaiaccounting.com',
+          'logo': { '@type': 'ImageObject', 'url': 'https://agenticaiaccounting.com/og.png' },
+        },
+        'mainEntityOfPage': { '@type': 'WebPage', '@id': `https://agenticaiaccounting.com/article/${articleId}` },
+      };
+      if (article.author) {
+        articleJsonLd['author'] = { '@type': 'Person', 'name': article.author };
+      }
+      if (article.aiSummary) {
+        articleJsonLd['description'] = article.aiSummary;
+      }
+
       const html = layout(detailBody, {
         title: article.headline || article.title,
         description: article.aiSummary || `Article about ${article.title}`,
         path: `/article/${articleId}`,
+        jsonLd: articleJsonLd,
       });
 
       return new Response(html, {
@@ -152,6 +182,22 @@ export default {
     // Serve pre-rendered pages from KV
     const cached = await env.KV.get(path, 'text');
     if (cached) {
+      // OG image stored as base64-prefixed PNG
+      if (cached.startsWith('__PNG_BASE64__')) {
+        const b64 = cached.slice('__PNG_BASE64__'.length);
+        const binaryString = atob(b64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return new Response(bytes, {
+          headers: {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400',
+          },
+        });
+      }
+
       const isXml = path.endsWith('.xml');
       return new Response(cached, {
         headers: {
