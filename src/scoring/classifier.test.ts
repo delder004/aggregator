@@ -222,6 +222,84 @@ describe('parseAndValidateResponse', () => {
     expect(result.companyMentions).toEqual(['Deloitte', 'Intuit']);
   });
 
+  it('should parse structured companyMentions with name and website', () => {
+    const json = JSON.stringify({
+      relevanceScore: 50,
+      qualityScore: 50,
+      tags: [],
+      summary: 'Test.',
+      companyMentions: [
+        { name: 'Truewind', website: 'truewind.ai' },
+        { name: 'Deloitte' },
+      ],
+    });
+    const result = parseAndValidateResponse(json);
+    expect(result.companyMentions).toEqual(['Truewind', 'Deloitte']);
+    expect(result.enrichedCompanyMentions).toEqual([
+      { name: 'Truewind', website: 'truewind.ai' },
+      { name: 'Deloitte', website: undefined },
+    ]);
+  });
+
+  it('should handle mixed structured and string companyMentions', () => {
+    const json = JSON.stringify({
+      relevanceScore: 50,
+      qualityScore: 50,
+      tags: [],
+      summary: 'Test.',
+      companyMentions: [
+        { name: 'Intuit', website: 'intuit.com' },
+        'OpenAI',
+      ],
+    });
+    const result = parseAndValidateResponse(json);
+    expect(result.companyMentions).toEqual(['Intuit', 'OpenAI']);
+    expect(result.enrichedCompanyMentions).toEqual([
+      { name: 'Intuit', website: 'intuit.com' },
+      { name: 'OpenAI' },
+    ]);
+  });
+
+  it('should skip structured companyMentions with empty name', () => {
+    const json = JSON.stringify({
+      relevanceScore: 50,
+      qualityScore: 50,
+      tags: [],
+      summary: 'Test.',
+      companyMentions: [
+        { name: '', website: 'foo.com' },
+        { name: 'Valid' },
+      ],
+    });
+    const result = parseAndValidateResponse(json);
+    expect(result.companyMentions).toEqual(['Valid']);
+    expect(result.enrichedCompanyMentions).toEqual([{ name: 'Valid', website: undefined }]);
+  });
+
+  it('should treat empty website string as undefined in structured mentions', () => {
+    const json = JSON.stringify({
+      relevanceScore: 50,
+      qualityScore: 50,
+      tags: [],
+      summary: 'Test.',
+      companyMentions: [{ name: 'Rillet', website: '' }],
+    });
+    const result = parseAndValidateResponse(json);
+    expect(result.enrichedCompanyMentions).toEqual([{ name: 'Rillet', website: undefined }]);
+  });
+
+  it('should not set enrichedCompanyMentions for legacy string format', () => {
+    const json = JSON.stringify({
+      relevanceScore: 50,
+      qualityScore: 50,
+      tags: [],
+      summary: 'Test.',
+      companyMentions: ['Deloitte', 'Intuit'],
+    });
+    const result = parseAndValidateResponse(json);
+    expect(result.enrichedCompanyMentions).toBeUndefined();
+  });
+
   it('should strip markdown code fences from response', () => {
     const json = '```json\n{"relevanceScore":80,"qualityScore":60,"tags":["tax"],"summary":"Test.","companyMentions":[]}\n```';
     const result = parseAndValidateResponse(json);

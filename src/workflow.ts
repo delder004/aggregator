@@ -11,7 +11,8 @@ import { companyBlogCollector } from './collectors/companyblog';
 import { pressReleaseCollector } from './collectors/pressrelease';
 import { blogScraperCollector } from './collectors/blogscraper';
 import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
-import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats } from './company/tracker';
+import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats, discoverNewCompanies, createDiscoveredCompany, insertSource } from './company/tracker';
+import { probeWebsite, discoverBlog, probeJobBoards, MAX_ENRICHMENTS_PER_RUN } from './company/enricher';
 import {
   getPublishedArticles,
   getFeaturedArticles,
@@ -366,11 +367,23 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
           if (updateStmts.length > 0) {
             await this.env.DB.batch(updateStmts);
           }
+          // Extract website hints from enriched company mentions for the enrichment step
+          const websiteHints: Record<string, string> = {};
+          for (const s of scored) {
+            if (s.enrichedCompanyMentions) {
+              for (const m of s.enrichedCompanyMentions) {
+                if (m.website) {
+                  websiteHints[m.name] = m.website;
+                }
+              }
+            }
+          }
+
           console.log(`Scored ${scored.length} articles`);
-          return { scored: scored.length };
+          return { scored: scored.length, websiteHints };
         } catch (err) {
           console.error('Scoring failed:', err);
-          return { scored: 0 };
+          return { scored: 0, websiteHints: {} as Record<string, string> };
         }
       }
     );
@@ -446,6 +459,122 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
         } catch (err) {
           console.error('Company tracking failed:', err);
           return { matched: 0 };
+        }
+      }
+    );
+
+    await step.sleep('pre-enrichment-pause', '1 second');
+
+    // Step 2.5: Discover and enrich new companies from article mentions
+    const enrichment = await step.do(
+      'company-enrichment',
+      {
+        retries: { limit: 1, delay: '5 seconds' },
+      },
+      async () => {
+        try {
+          const companies = await getTrackedCompanies(this.env.DB);
+          const recentlyScored = await getRecentlyScoredArticles(this.env.DB, startTimeISO);
+
+          if (recentlyScored.length === 0) {
+            return { discovered: 0, enriched: 0 };
+          }
+
+          const websiteHints = scoring.websiteHints ?? {};
+          const candidates = discoverNewCompanies(
+            recentlyScored,
+            companies,
+            websiteHints,
+            MAX_ENRICHMENTS_PER_RUN
+          );
+
+          if (candidates.length === 0) {
+            console.log('No new companies to discover');
+            return { discovered: 0, enriched: 0 };
+          }
+
+          console.log(
+            `[Enricher] Discovered ${candidates.length} new company candidates: ${candidates.map((c) => c.name).join(', ')}`
+          );
+
+          let enrichedCount = 0;
+          for (const candidate of candidates) {
+            try {
+              // 1. Probe website (using classifier hint if available)
+              const website = await probeWebsite(
+                candidate.name,
+                candidate.website
+              );
+
+              // 2. Create the company in DB
+              const companyId = await createDiscoveredCompany(
+                this.env.DB,
+                candidate.name,
+                website
+              );
+
+              // 3. If we have a website, try blog discovery
+              if (website) {
+                const blog = await discoverBlog(website);
+                if (blog.type === 'rss' && blog.feedUrl) {
+                  await insertSource(
+                    this.env.DB,
+                    `auto-blog-${companyId}`,
+                    'companyblog',
+                    `${candidate.name} Blog`,
+                    { url: blog.feedUrl, company: candidate.name }
+                  );
+                  console.log(
+                    `[Enricher] Auto-created RSS source for ${candidate.name}: ${blog.feedUrl}`
+                  );
+                } else if (blog.type === 'scraper' && blog.blogUrl) {
+                  await insertSource(
+                    this.env.DB,
+                    `auto-scrape-${companyId}`,
+                    'blogscraper',
+                    `${candidate.name} Blog`,
+                    {
+                      url: blog.blogUrl,
+                      articlePathPrefix: '/blog/',
+                      company: candidate.name,
+                    }
+                  );
+                  console.log(
+                    `[Enricher] Auto-created blog scraper for ${candidate.name}: ${blog.blogUrl}`
+                  );
+                }
+              }
+
+              // 4. Probe job boards
+              const jobBoard = await probeJobBoards(candidate.name);
+              if (jobBoard) {
+                await this.env.DB
+                  .prepare(
+                    'UPDATE companies SET jobs_board_type = ?, jobs_board_token = ? WHERE id = ?'
+                  )
+                  .bind(jobBoard.type, jobBoard.token, companyId)
+                  .run();
+                console.log(
+                  `[Enricher] Found ${jobBoard.type} job board for ${candidate.name} (token: ${jobBoard.token})`
+                );
+              }
+
+              enrichedCount++;
+            } catch (err) {
+              console.error(
+                `[Enricher] Failed to enrich ${candidate.name}:`,
+                err
+              );
+            }
+          }
+
+          console.log(
+            `[Enricher] Complete: ${candidates.length} discovered, ${enrichedCount} enriched`
+          );
+          return { discovered: candidates.length, enriched: enrichedCount };
+        } catch (err) {
+          console.error('Company enrichment step failed:', err);
+          return { discovered: 0, enriched: 0 };
         }
       }
     );
@@ -622,6 +751,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       `Process workflow completed in ${elapsed}ms. ` +
       `Scored: ${scoring.scored}, ` +
       `Companies matched: ${companyTracking.matched}, ` +
+      `Enrichment: ${enrichment.discovered} discovered / ${enrichment.enriched} enriched, ` +
       `Jobs: ${jobCollection.fetched} from ${jobCollection.companies} companies${jobCollection.skipped ? ' (skipped)' : ''}, ` +
       `Pages: ${rendering.pagesWritten}`
     );

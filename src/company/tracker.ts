@@ -1,4 +1,6 @@
-import type { Article, Company, ScoredArticle, SourceType } from '../types';
+import type { Article, Company, CompanyMention, ScoredArticle, SourceType } from '../types';
+import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
+import { isGenericName } from './enricher';
 
 /**
  * Company entity manager for tracking accounting AI companies.
@@ -8,6 +10,7 @@ import type { Article, Company, ScoredArticle, SourceType } from '../types';
  * - Match articles to companies by name/mention
  * - Link articles to companies via a junction table
  * - Update company stats (article count, last mentioned date)
+ * - Discover new companies from article mentions
  * - Seed default accounting AI companies
  */
 
@@ -743,6 +746,93 @@ export async function seedDefaultCompanies(db: D1Database): Promise<void> {
   } catch (err) {
     console.error('[CompanyTracker] Error seeding default companies:', err);
   }
+}
+
+/**
+ * Compare classifier-extracted company names against tracked companies.
+ * Returns mentions not yet in the companies table (candidates for auto-discovery).
+ */
+export function discoverNewCompanies(
+  recentArticles: ScoredArticle[],
+  existingCompanies: Company[],
+  websiteHints: Record<string, string>,
+  limit: number = 5
+): CompanyMention[] {
+  // Build a set of known names (lowercase) including aliases
+  const knownNames = new Set<string>();
+  for (const c of existingCompanies) {
+    knownNames.add(c.name.toLowerCase());
+    for (const alias of c.aliases) {
+      knownNames.add(alias.toLowerCase());
+    }
+  }
+
+  // Collect unique new mentions from published articles
+  const candidates = new Map<string, CompanyMention>();
+  for (const article of recentArticles) {
+    if (article.relevanceScore < MIN_PUBLISH_SCORE) continue;
+
+    for (const name of article.companyMentions) {
+      const lower = name.toLowerCase();
+      if (knownNames.has(lower)) continue;
+      if (isGenericName(name)) continue;
+      if (!candidates.has(lower)) {
+        const website = websiteHints[name] || undefined;
+        candidates.set(lower, { name, website });
+      } else if (websiteHints[name] && !candidates.get(lower)!.website) {
+        candidates.get(lower)!.website = websiteHints[name];
+      }
+    }
+  }
+
+  return [...candidates.values()].slice(0, limit);
+}
+
+/**
+ * Insert a newly discovered company into the companies table.
+ * Returns the generated company ID.
+ */
+export async function createDiscoveredCompany(
+  db: D1Database,
+  name: string,
+  website: string | null
+): Promise<string> {
+  const id = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const now = new Date().toISOString();
+
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO companies
+       (id, name, aliases, website, description, is_active, added_at, article_count)
+       VALUES (?, ?, '[]', ?, NULL, 1, ?, 0)`
+    )
+    .bind(id, name, website, now)
+    .run();
+
+  return id;
+}
+
+/**
+ * Insert a new source into the sources table for auto-discovered blogs.
+ */
+export async function insertSource(
+  db: D1Database,
+  id: string,
+  sourceType: string,
+  name: string,
+  config: Record<string, string>
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO sources (id, source_type, name, config, is_active, error_count)
+       VALUES (?, ?, ?, ?, 1, 0)`
+    )
+    .bind(id, sourceType, name, JSON.stringify(config))
+    .run();
 }
 
 /**
