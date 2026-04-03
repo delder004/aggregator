@@ -6,7 +6,7 @@
  * key-value pairs directly into Cloudflare KV.
  */
 
-import type { Article, Company, CompanyInsight, CompanyJob } from '../types';
+import type { Article, Company, CompanyInsight, CompanyJob, InsightSummary } from '../types';
 import {
   layout,
   articleCard,
@@ -18,6 +18,8 @@ import {
   renderSourceClusters,
   setCompanyLinkMap,
   NAV_TAGS,
+  insightCard,
+  companySizeLabel,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
@@ -36,7 +38,8 @@ const SITE_URL = 'https://agenticaiaccounting.com';
 /** Generate a branded 1200x630 SVG for og:image. */
 function generateOgImage(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#0f766e"/>
+  <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f766e"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient></defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
   <g transform="translate(120,160) scale(6)">
     <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
     <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
@@ -126,7 +129,10 @@ function generateHomepage(
   featured: Article[],
   latest: Article[],
   allArticles: Article[],
-  layoutOpts: Partial<LayoutOptions>
+  layoutOpts: Partial<LayoutOptions>,
+  companies?: Company[],
+  companyJobs?: Map<string, CompanyJob[]>,
+  insights?: InsightSummary[]
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
@@ -138,15 +144,32 @@ function generateHomepage(
   const sortedFeatured = sortByDate(featured);
   const sortedLatest = sortByDate(latest);
 
+  // Hero section
+  const stats = layoutOpts.stats;
+  const totalJobs = companyJobs
+    ? [...companyJobs.values()].reduce((sum, jobs) => sum + jobs.length, 0)
+    : 0;
+  const heroHtml = `<div class="hero">
+  <div class="container">
+    <h1>AI + Accounting News</h1>
+    <p>Your daily source for the latest in agentic AI for accounting, audit, tax, and bookkeeping. Automatically curated and AI-scored from ${stats ? stats.sources : '50'}+ sources.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><span class="hero-stat-value">${stats ? stats.articles.toLocaleString() : '0'}</span><span class="hero-stat-label">Articles Published</span></div>
+      <div class="hero-stat"><span class="hero-stat-value">${companies ? companies.length : '0'}</span><span class="hero-stat-label">Companies Tracked</span></div>
+      <div class="hero-stat"><span class="hero-stat-value">${totalJobs}</span><span class="hero-stat-label">Open Roles</span></div>
+    </div>
+  </div>
+</div>`;
+
   // Build homepage (page 1)
   let body = '';
 
-  // Featured section — 2-column grid on desktop
+  // Featured section — 3-column grid on desktop
   const topFeatured = sortedFeatured.length > 0
     ? diversifyFeatured(sortedFeatured, 1, 6)
     : [];
   if (topFeatured.length > 0) {
-    body += `<div class="section-label">Featured</div>\n`;
+    body += `<h2 class="section-heading">Featured Stories</h2>\n`;
     body += `<div class="featured-grid">\n`;
     body += topFeatured.map((a) => featuredCard(a)).join('\n');
     body += `\n</div>\n`;
@@ -166,7 +189,9 @@ function generateHomepage(
     .slice(0, 5);
 
   if (discussed.length > 0) {
-    body += `<div class="section-label">Most Discussed</div>\n`;
+    body += `<div class="spotlight-grid" style="margin-top:1.5rem;">\n`;
+    body += `<div class="spotlight-card">`;
+    body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Trending This Week</h3>`;
     body += `<ol class="discussed-list">\n`;
     for (const a of discussed) {
       const href = `/article/${escapeHtml(a.id)}`;
@@ -179,6 +204,37 @@ function generateHomepage(
 </li>\n`;
     }
     body += `</ol>\n`;
+    body += `</div>\n`;
+
+    // Latest insights preview (if available)
+    if (insights && insights.length > 0) {
+      const latestInsight = insights[0];
+      body += `<div class="spotlight-card">`;
+      body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Latest Insight</h3>`;
+      body += insightCard(latestInsight);
+      if (insights.length > 1) {
+        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/insights" style="font-size:0.82rem;">View all insights &rarr;</a></div>`;
+      }
+      body += `</div>\n`;
+    } else {
+      // Company spotlight instead
+      if (companies && companies.length > 0) {
+        const topCompanies = [...companies]
+          .sort((a, b) => b.articleCount - a.articleCount)
+          .slice(0, 4);
+        body += `<div class="spotlight-card">`;
+        body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Top Companies</h3>`;
+        for (const c of topCompanies) {
+          body += `<div style="padding:0.4rem 0;border-bottom:1px solid var(--border);">
+  <a href="/company/${escapeHtml(c.id)}" style="font-size:0.88rem;font-weight:500;color:var(--text);">${escapeHtml(c.name)}</a>
+  <span style="font-size:0.73rem;color:var(--text-tertiary);margin-left:0.4rem;">${c.articleCount} articles</span>
+</div>\n`;
+        }
+        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/companies" style="font-size:0.82rem;">View all companies &rarr;</a></div>`;
+        body += `</div>\n`;
+      }
+    }
+    body += `</div>\n`;
   }
 
   // Latest section — time-grouped with inline tag filter
@@ -195,6 +251,7 @@ function generateHomepage(
     path: '/',
     activeTag: '',
     activeTab: 'news',
+    heroHtml,
     ...layoutOpts,
   });
 
@@ -382,6 +439,81 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
 }
 
 // ---------------------------------------------------------------------------
+// FAQ page
+// ---------------------------------------------------------------------------
+
+function generateFaqPage(layoutOpts: Partial<LayoutOptions>): Record<string, string> {
+  const faqs: { q: string; a: string }[] = [
+    {
+      q: 'What is Agentic AI Accounting?',
+      a: 'Agentic AI Accounting is a fully automated news aggregator that tracks the intersection of artificial intelligence and the accounting profession. We collect content from 50+ sources, score it for relevance using AI, and publish a clean, fast, ad-free feed — updated every hour.',
+    },
+    {
+      q: 'How are articles scored and selected?',
+      a: 'Every article is evaluated by an AI classifier (Claude by Anthropic) that assigns a relevance score from 0 to 100. Articles scoring 50 or above are published to the feed. Articles scoring 70+ receive featured placement on the homepage. The AI also generates a headline, summary, and topic tags for each article.',
+    },
+    {
+      q: 'How often is the site updated?',
+      a: 'The collection pipeline runs every hour. New articles are fetched from all sources, scored, and published automatically. The "Updated" timestamp in the header shows the last successful pipeline run.',
+    },
+    {
+      q: 'What sources do you aggregate from?',
+      a: 'We currently pull from RSS feeds (Accounting Today, Journal of Accountancy, Going Concern, CPA Practice Advisor, and more), Substack newsletters, Hacker News, YouTube, arXiv research papers, company blogs, and press releases. See the <a href="/about">About page</a> for the full list.',
+    },
+    {
+      q: 'Why don\'t I see a specific article from a source you track?',
+      a: 'There are a few reasons an article might not appear: it may have scored below our relevance threshold of 50, it may not have been picked up in the collection window, or the source feed may not have included it. Our AI scoring prioritizes articles specifically about AI applied to accounting, audit, tax, and bookkeeping — general AI or general accounting news may not qualify.',
+    },
+    {
+      q: 'Can I submit a source or company to be tracked?',
+      a: 'Yes! We\'re always looking to expand our coverage. Send the source URL or company name to <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a> and we\'ll evaluate it for inclusion.',
+    },
+    {
+      q: 'How does the company tracker work?',
+      a: 'We maintain a list of companies building AI-powered tools for accounting. When an article mentions a tracked company, it\'s automatically linked to that company\'s profile page. Company pages show recent coverage, AI-generated insights, and open job listings pulled from their careers pages.',
+    },
+    {
+      q: 'Where do job listings come from?',
+      a: 'Job listings are collected directly from company career pages via Greenhouse, Lever, and Ashby job board APIs. They\'re refreshed regularly and removed when no longer active. We don\'t post jobs manually — they\'re all sourced automatically from tracked companies.',
+    },
+    {
+      q: 'Is there an RSS feed?',
+      a: 'Yes. You can subscribe at <a href="/feed.xml">/feed.xml</a> to get the latest articles in any RSS reader. The feed includes the 50 most recent articles with AI-generated summaries.',
+    },
+    {
+      q: 'Is there any client-side JavaScript or tracking?',
+      a: 'No. This site is pure static HTML with inline CSS — no client-side JavaScript, no cookies, no analytics trackers, no ads. Every page is pre-rendered and served from Cloudflare\'s edge network for minimal latency. Total page weight is under 50KB.',
+    },
+    {
+      q: 'Who runs this site?',
+      a: 'Agentic AI Accounting is an independent project. The entire pipeline — collection, scoring, company tracking, and publishing — is automated. There is no editorial staff. Questions or feedback? Reach us at <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a>.',
+    },
+  ];
+
+  let body = `<h2 class="section-heading">Frequently Asked Questions</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">Everything you need to know about Agentic AI Accounting.</p>\n`;
+  body += `<ul class="faq-list">\n`;
+
+  for (const faq of faqs) {
+    body += `<li class="faq-item">
+  <h3>${escapeHtml(faq.q)}</h3>
+  <p>${faq.a}</p>
+</li>\n`;
+  }
+
+  body += `</ul>\n`;
+
+  return {
+    '/faq': layout(body, {
+      title: 'FAQ',
+      description: 'Frequently asked questions about Agentic AI Accounting — how it works, sources, scoring, and more.',
+      path: '/faq',
+      ...layoutOpts,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Sitemap
 // ---------------------------------------------------------------------------
 
@@ -407,6 +539,9 @@ function generateSitemap(
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
   if (companies) {
@@ -441,7 +576,8 @@ export function generateAllPages(
   companies?: Company[],
   companyArticles?: Map<string, Article[]>,
   companyInsights?: Map<string, CompanyInsight>,
-  companyJobs?: Map<string, CompanyJob[]>
+  companyJobs?: Map<string, CompanyJob[]>,
+  insights?: InsightSummary[]
 ): Record<string, string> {
   const latest = sortByDate(articles);
   const featured = sortByDate(featuredArticles);
@@ -468,17 +604,21 @@ export function generateAllPages(
     setCompanyLinkMap(nameToId);
   }
 
+  const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
+
   const pages: Record<string, string> = {
-    ...generateHomepage(featured, latest, articles, layoutOpts),
+    ...generateHomepage(featured, latest, articles, layoutOpts, companies, jobsMap, insights),
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
+    ...generateFaqPage(layoutOpts),
+    ...generateInsightsPage(insights ?? [], layoutOpts),
+    ...generateResourcesPage(layoutOpts),
   };
 
-  const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
   if (companies && companies.length > 0) {
     const articleMap = companyArticles ?? new Map<string, Article[]>();
     const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
-    Object.assign(pages, generateCompaniesPage(companies, articleMap, layoutOpts));
+    Object.assign(pages, generateCompaniesPage(companies, articleMap, jobsMap, layoutOpts));
     Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
   }
   Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
@@ -496,12 +636,146 @@ export function generateAllPages(
 }
 
 // ---------------------------------------------------------------------------
+// Insights page
+// ---------------------------------------------------------------------------
+
+function generateInsightsPage(
+  insights: InsightSummary[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  let body = '';
+
+  body += `<h2 class="section-heading">AI Accounting Insights</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">AI-generated summaries and analysis of the latest trends in agentic AI for accounting. Updated regularly with key themes, emerging patterns, and industry developments.</p>\n`;
+
+  if (insights.length === 0) {
+    body += `<div class="spotlight-grid">\n`;
+    body += `<div class="spotlight-card">
+  <h3 style="margin-bottom:0.5rem;">Coming Soon</h3>
+  <p>We're building AI-generated insights that analyze trends across all our sources. Check back soon for periodic summaries covering key themes in AI-powered accounting.</p>
+</div>\n`;
+    body += `<div class="spotlight-card">
+  <h3 style="margin-bottom:0.5rem;">What to Expect</h3>
+  <p>Daily, weekly, and monthly digests that synthesize the most important developments. Each insight covers emerging tools, regulatory changes, company movements, and research breakthroughs.</p>
+</div>\n`;
+    body += `</div>\n`;
+  } else {
+    body += `<div class="insights-grid">\n`;
+    for (const insight of insights) {
+      body += insightCard(insight);
+    }
+    body += `</div>\n`;
+  }
+
+  return {
+    '/insights': layout(body, {
+      title: 'Insights',
+      description: 'AI-generated insights and analysis of trends in agentic AI for accounting.',
+      path: '/insights',
+      activeTab: 'insights',
+      ...layoutOpts,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Resources page
+// ---------------------------------------------------------------------------
+
+function generateResourcesPage(
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  let body = '';
+
+  body += `<h2 class="section-heading">Resources</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Essential resources for understanding the intersection of artificial intelligence and the accounting profession.</p>\n`;
+
+  body += `<div class="resource-grid">\n`;
+
+  // Resource cards
+  const resources = [
+    {
+      type: 'Guide',
+      typeColor: 'background:#0f766e15;color:#0f766e;',
+      title: 'What is Agentic AI?',
+      desc: 'An introduction to autonomous AI agents and how they\'re being applied in accounting workflows — from data entry to complex audit procedures.',
+    },
+    {
+      type: 'Industry',
+      typeColor: 'background:#16a34a15;color:#16a34a;',
+      title: 'Big 4 &amp; AI Adoption',
+      desc: 'How Deloitte, PwC, EY, and KPMG are integrating AI agents into their audit, tax, and advisory practices. Key partnerships and investments.',
+    },
+    {
+      type: 'Technology',
+      typeColor: 'background:#f59e0b15;color:#f59e0b;',
+      title: 'AI Tools for Accountants',
+      desc: 'A curated directory of AI-powered tools for bookkeeping, tax preparation, audit automation, compliance monitoring, and financial reporting.',
+    },
+    {
+      type: 'Research',
+      typeColor: 'background:#8b5cf615;color:#8b5cf6;',
+      title: 'Academic Research',
+      desc: 'Key academic papers exploring AI applications in accounting — from machine learning for fraud detection to NLP for financial document analysis.',
+    },
+    {
+      type: 'Regulatory',
+      typeColor: 'background:#ef444415;color:#ef4444;',
+      title: 'AI Regulation &amp; Compliance',
+      desc: 'How evolving AI regulations affect the accounting profession. Standards from AICPA, PCAOB, FASB, and international bodies on AI use in financial reporting.',
+    },
+    {
+      type: 'Career',
+      typeColor: 'background:#0d948815;color:#0d9488;',
+      title: 'AI Skills for CPAs',
+      desc: 'The skills accounting professionals need in the AI era. From prompt engineering to understanding AI audit tools, and how to future-proof your career.',
+    },
+  ];
+
+  for (const r of resources) {
+    body += `<div class="resource-card">
+  <span class="resource-type" style="${r.typeColor}">${r.type}</span>
+  <h3>${r.title}</h3>
+  <p>${r.desc}</p>
+</div>\n`;
+  }
+
+  body += `</div>\n`;
+
+  // Additional sections
+  body += `<h2 class="section-heading" style="margin-top:2.5rem;">Stay Informed</h2>\n`;
+  body += `<div class="spotlight-grid">\n`;
+  body += `<div class="spotlight-card">
+  <h3><a href="/feed.xml">RSS Feed</a></h3>
+  <p>Subscribe to our RSS feed to get the latest AI + accounting news delivered to your favorite reader. Updated hourly with AI-scored, curated content.</p>
+  <div class="card-meta"><a href="/feed.xml" style="font-weight:500;">Subscribe &rarr;</a></div>
+</div>\n`;
+  body += `<div class="spotlight-card">
+  <h3><a href="/companies">Company Tracker</a></h3>
+  <p>Follow the companies building the future of AI-powered accounting. Track funding rounds, product launches, and industry partnerships in real time.</p>
+  <div class="card-meta"><a href="/companies" style="font-weight:500;">Browse companies &rarr;</a></div>
+</div>\n`;
+  body += `</div>\n`;
+
+  return {
+    '/resources': layout(body, {
+      title: 'Resources',
+      description: 'Essential resources for understanding AI in accounting — guides, tools, research, and career development.',
+      path: '/resources',
+      activeTab: 'resources',
+      ...layoutOpts,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Companies page
 // ---------------------------------------------------------------------------
 
 function generateCompaniesPage(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
+  companyJobs: Map<string, CompanyJob[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
@@ -516,35 +790,37 @@ function generateCompaniesPage(
 
   let companyRows = '';
   for (const [category, cos] of categories) {
-    companyRows += `<div class="time-group">${escapeHtml(category)}</div>\n`;
+    companyRows += `<h2 class="section-heading">${escapeHtml(category)}</h2>\n`;
+    companyRows += `<div class="company-grid">\n`;
     for (const c of cos) {
       const name = escapeHtml(c.name);
       const desc = c.description ? escapeHtml(c.description) : '';
       const articleCount = companyArticles.get(c.id)?.length ?? 0;
-      const lastMention = c.lastMentionedAt
-        ? `Last mentioned ${new Date(c.lastMentionedAt).toLocaleDateString()}`
-        : '';
+      const jobCount = companyJobs?.get(c.id)?.length ?? 0;
 
-      companyRows += `<div class="article-card" style="align-items:center;">
-  <div class="article-body">
-    <h3 class="article-title"><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
-    ${desc ? `<p class="article-summary">${desc}</p>` : ''}
-    <div class="article-meta">
-      <span class="source-name">${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
-      ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank" style="color:var(--text-tertiary);">${escapeHtml(safeHostname(c.website))}</a>` : ''}
-      ${lastMention ? `<span class="meta-dot">&middot;</span> <span>${lastMention}</span>` : ''}
-    </div>
+      const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
+
+      companyRows += `<div class="company-card">
+  <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
+  ${desc ? `<p class="card-desc">${desc}</p>` : ''}
+  <div class="card-meta">
+    ${c.category ? `<span class="card-badge">${escapeHtml(c.category)}</span>` : ''}
+    <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
+    ${jobCount > 0 ? `<span class="meta-dot">&middot;</span> <span style="color:var(--accent);">${jobCount} open role${jobCount !== 1 ? 's' : ''}</span>` : ''}
+    ${sizeLabel ? `<span class="meta-dot">&middot;</span> <span>${escapeHtml(sizeLabel)}</span>` : ''}
+    ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(c.website))}</a>` : ''}
   </div>
 </div>\n`;
     }
+    companyRows += `</div>\n`;
   }
 
   const body = companies.length === 0
-    ? `<div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
+    ? `<h2 class="section-heading">Companies &amp; Startups</h2>
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet. Check back soon.</p>`
     : `
-<div class="section-label">Companies &amp; Startups in Agentic AI Accounting</div>
-<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+<h2 class="section-heading">Companies &amp; Startups in AI Accounting</h2>
+<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
   Tracking ${companies.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
 </p>
 ${companyRows}`;
@@ -584,27 +860,22 @@ function renderJobsSection(jobs: CompanyJob[], companyName: string): string {
   });
 
   let html = `<div class="section-label">Open Roles (${jobs.length})</div>\n`;
-  html += `<div style="margin-bottom:1.5rem;">\n`;
 
   for (const dept of sortedDepts) {
     const deptJobs = departments.get(dept)!;
-    html += `<div class="time-group">${escapeHtml(dept)}</div>\n`;
+    html += `<div style="font-size:0.78rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin:1rem 0 0.5rem;">${escapeHtml(dept)}</div>\n`;
+    html += `<div class="job-grid">\n`;
     for (const job of deptJobs) {
-      const locationTag = job.location
-        ? `<span style="display:inline-block;color:var(--text-tertiary);font-size:0.7rem;margin-left:0.4rem;vertical-align:middle;">${escapeHtml(job.location)}</span>`
-        : '';
-      const remoteTag = job.isRemote
-        ? `<span style="display:inline-block;background:#0d9488;color:#fff;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.4rem;vertical-align:middle;">Remote</span>`
-        : '';
-      html += `<div class="article-card" style="align-items:center;padding:0.6rem 0;">
-  <div class="article-body">
-    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>${remoteTag}${locationTag}</h3>
-  </div>
+      const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
+      const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
+      html += `<div class="job-card">
+  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
+  <div class="job-tags">${remoteBadge}${locationBadge}</div>
 </div>\n`;
     }
+    html += `</div>\n`;
   }
 
-  html += `</div>\n`;
   return html;
 }
 
@@ -642,6 +913,10 @@ function generateCompanyDetailPages(
     body += `<span>${articles.length} article${articles.length !== 1 ? 's' : ''}</span>`;
     if (jobs.length > 0) {
       body += `<span class="meta-dot">&middot;</span> <a href="#jobs" style="color:var(--accent);">${jobs.length} open role${jobs.length !== 1 ? 's' : ''}</a>`;
+    }
+    const detailSizeLabel = companySizeLabel(company.employeeCountMin ?? null, company.employeeCountMax ?? null);
+    if (detailSizeLabel) {
+      body += `<span class="meta-dot">&middot;</span> <span>${escapeHtml(detailSizeLabel)}</span>`;
     }
     body += `</div>`;
     body += `</div>\n`;
@@ -688,13 +963,87 @@ function generateCompanyDetailPages(
 // Jobs page
 // ---------------------------------------------------------------------------
 
+type EnrichedJob = CompanyJob & { companyName: string; companyId: string };
+
+/** Slugify a string for URL use. */
+function slugify(str: string): string {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Render a filter nav bar for job pages. */
+function jobFilterNav(
+  departments: string[],
+  locations: string[],
+  activeFilter: string,
+  hasRemote: boolean
+): string {
+  let html = `<nav class="tag-nav" style="margin-bottom:1rem;">\n`;
+  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All</a>\n`;
+  if (hasRemote) {
+    html += `  <a href="/jobs/remote"${activeFilter === 'remote' ? ' class="active"' : ''}>Remote</a>\n`;
+  }
+  for (const dept of departments.slice(0, 10)) {
+    const slug = slugify(dept);
+    html += `  <a href="/jobs/dept/${slug}"${activeFilter === `dept-${slug}` ? ' class="active"' : ''}>${escapeHtml(dept)}</a>\n`;
+  }
+  for (const loc of locations.slice(0, 8)) {
+    const slug = slugify(loc);
+    html += `  <a href="/jobs/location/${slug}"${activeFilter === `loc-${slug}` ? ' class="active"' : ''}>${escapeHtml(loc)}</a>\n`;
+  }
+  html += `</nav>\n`;
+  return html;
+}
+
+/** Render job cards grouped by company. */
+function renderJobCards(jobs: EnrichedJob[]): string {
+  if (jobs.length === 0) {
+    return `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No matching jobs found.</p>`;
+  }
+
+  let body = '';
+  const byCompany = new Map<string, EnrichedJob[]>();
+  for (const job of jobs) {
+    const existing = byCompany.get(job.companyId) ?? [];
+    existing.push(job);
+    byCompany.set(job.companyId, existing);
+  }
+
+  const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
+    (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
+  );
+
+  for (const companyId of sortedCompanyIds) {
+    const companyJobs = byCompany.get(companyId)!;
+    const companyName = companyJobs[0].companyName;
+    body += `<div class="section-label"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> &mdash; ${companyJobs.length} role${companyJobs.length !== 1 ? 's' : ''}</div>\n`;
+    body += `<div class="job-grid">\n`;
+
+    for (const job of companyJobs) {
+      const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
+      const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
+      const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
+
+      body += `<div class="job-card">
+  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
+  <div class="job-company"><a href="/company/${escapeHtml(companyId)}">${escapeHtml(companyName)}</a></div>
+  <div class="job-tags">${remoteBadge}${locationBadge}${deptBadge}</div>
+</div>\n`;
+    }
+    body += `</div>\n`;
+  }
+
+  return body;
+}
+
 function generateJobsPage(
   companies: Company[],
   companyJobs: Map<string, CompanyJob[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
+  const pages: Record<string, string> = {};
+
   // Collect all jobs, attaching company info
-  const allJobs: (CompanyJob & { companyName: string; companyId: string })[] = [];
+  const allJobs: EnrichedJob[] = [];
   for (const company of companies) {
     const jobs = companyJobs.get(company.id) ?? [];
     for (const job of jobs) {
@@ -710,60 +1059,100 @@ function generateJobsPage(
     return a.companyName.localeCompare(b.companyName);
   });
 
-  let body = '';
+  // Collect unique departments and locations for filter nav
+  const deptCounts = new Map<string, number>();
+  const locCounts = new Map<string, number>();
+  let remoteCount = 0;
+  for (const job of allJobs) {
+    if (job.department) {
+      deptCounts.set(job.department, (deptCounts.get(job.department) ?? 0) + 1);
+    }
+    if (job.location) {
+      locCounts.set(job.location, (locCounts.get(job.location) ?? 0) + 1);
+    }
+    if (job.isRemote) remoteCount++;
+  }
+  // Sort by count descending
+  const departments = [...deptCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+  const locations = [...locCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+  const hasRemote = remoteCount > 0;
 
+  const filterNav = jobFilterNav(departments, locations, '', hasRemote);
+  const companiesWithJobs = companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0);
+
+  // Main /jobs page (all jobs)
+  let body = '';
   if (allJobs.length === 0) {
-    body += `<div class="section-label">Open Roles in AI Accounting</div>\n`;
+    body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
+    body += filterNav;
     body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
   } else {
-    body += `<div class="section-label">Open Roles in AI Accounting</div>\n`;
-    body += `<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0).length} companies.</p>\n`;
-
-    // Group by company
-    const byCompany = new Map<string, typeof allJobs>();
-    for (const job of allJobs) {
-      const existing = byCompany.get(job.companyId) ?? [];
-      existing.push(job);
-      byCompany.set(job.companyId, existing);
-    }
-
-    // Sort companies by job count descending
-    const sortedCompanyIds = [...byCompany.keys()].sort((a, b) =>
-      (byCompany.get(b)?.length ?? 0) - (byCompany.get(a)?.length ?? 0)
-    );
-
-    for (const companyId of sortedCompanyIds) {
-      const jobs = byCompany.get(companyId)!;
-      const companyName = jobs[0].companyName;
-      body += `<div class="time-group"><a href="/company/${escapeHtml(companyId)}" style="color:inherit;text-decoration:none;">${escapeHtml(companyName)}</a> (${jobs.length})</div>\n`;
-
-      for (const job of jobs) {
-        const locationTag = job.location
-          ? `<span style="display:inline-block;color:var(--text-tertiary);font-size:0.7rem;margin-left:0.4rem;vertical-align:middle;">${escapeHtml(job.location)}</span>`
-          : '';
-        const remoteTag = job.isRemote
-          ? `<span style="display:inline-block;background:#0d9488;color:#fff;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.4rem;vertical-align:middle;">Remote</span>`
-          : '';
-        const deptTag = job.department
-          ? `<span style="display:inline-block;font-size:0.7rem;color:var(--text-tertiary);margin-left:0.4rem;">${escapeHtml(job.department)}</span>`
-          : '';
-        body += `<div class="article-card" style="align-items:center;padding:0.6rem 0;">
-  <div class="article-body">
-    <h3 class="article-title" style="font-size:0.9rem;margin-bottom:0.15rem;"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a>${remoteTag}${locationTag}</h3>
-    <div class="article-meta">${deptTag}</div>
-  </div>
-</div>\n`;
-      }
-    }
+    body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
+    body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
+    body += filterNav;
+    body += renderJobCards(allJobs);
   }
 
-  return {
-    '/jobs': layout(body, {
-      title: 'Jobs',
-      description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
-      path: '/jobs',
+  pages['/jobs'] = layout(body, {
+    title: 'Jobs',
+    description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+    path: '/jobs',
+    activeTab: 'jobs',
+    ...layoutOpts,
+  });
+
+  // Remote filter page
+  if (hasRemote) {
+    const remoteJobs = allJobs.filter(j => j.isRemote);
+    let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
+    remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
+    remoteBody += jobFilterNav(departments, locations, 'remote', hasRemote);
+    remoteBody += renderJobCards(remoteJobs);
+
+    pages['/jobs/remote'] = layout(remoteBody, {
+      title: 'Remote Jobs',
+      description: 'Remote roles at AI accounting companies.',
+      path: '/jobs/remote',
       activeTab: 'jobs',
       ...layoutOpts,
-    }),
-  };
+    });
+  }
+
+  // Department filter pages
+  for (const dept of departments) {
+    const slug = slugify(dept);
+    const deptJobs = allJobs.filter(j => j.department === dept);
+    let deptBody = `<h2 class="section-heading">${escapeHtml(dept)} Roles</h2>\n`;
+    deptBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${deptJobs.length} role${deptJobs.length !== 1 ? 's' : ''} in ${escapeHtml(dept)}.</p>\n`;
+    deptBody += jobFilterNav(departments, locations, `dept-${slug}`, hasRemote);
+    deptBody += renderJobCards(deptJobs);
+
+    pages[`/jobs/dept/${slug}`] = layout(deptBody, {
+      title: `${dept} Jobs`,
+      description: `${dept} roles at AI accounting companies.`,
+      path: `/jobs/dept/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  // Location filter pages
+  for (const loc of locations) {
+    const slug = slugify(loc);
+    const locJobs = allJobs.filter(j => j.location === loc);
+    let locBody = `<h2 class="section-heading">Roles in ${escapeHtml(loc)}</h2>\n`;
+    locBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${locJobs.length} role${locJobs.length !== 1 ? 's' : ''} in ${escapeHtml(loc)}.</p>\n`;
+    locBody += jobFilterNav(departments, locations, `loc-${slug}`, hasRemote);
+    locBody += renderJobCards(locJobs);
+
+    pages[`/jobs/location/${slug}`] = layout(locBody, {
+      title: `Jobs in ${loc}`,
+      description: `AI accounting roles in ${loc}.`,
+      path: `/jobs/location/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }

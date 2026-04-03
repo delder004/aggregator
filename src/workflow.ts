@@ -21,6 +21,7 @@ import {
   getAllCompanyArticles,
   getAllCompanyInsights,
   getTotalArticleCount,
+  getLatestSummaries,
 } from './db/queries';
 import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
@@ -546,12 +547,19 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
             console.error('Failed to fetch company jobs:', err);
           }
 
+          let insights = undefined;
+          try {
+            insights = await getLatestSummaries(this.env.DB);
+          } catch (err) {
+            console.error('Failed to fetch insights:', err);
+          }
+
           const pages = generateAllPages(recentArticles, featuredArticles, tags, {
             sources: sourceCount,
             crawled: crawledArticles,
             articles: publishedCount,
             lastUpdated,
-          }, companies, companyArticles, companyInsights, companyJobs);
+          }, companies, companyArticles, companyInsights, companyJobs, insights);
 
           const rssFeed = generateRssFeed(recentArticles.slice(0, 50));
           pages['/feed.xml'] = rssFeed;
