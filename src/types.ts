@@ -125,6 +125,7 @@ export interface Env {
   COLLECT_WORKFLOW: Workflow;
   PROCESS_WORKFLOW: Workflow;
   HEALTHCHECK_URL?: string;
+  BUTTONDOWN_API_KEY?: string;
 }
 
 // -- Insights Summary types --

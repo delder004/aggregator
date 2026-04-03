@@ -27,6 +27,8 @@ import {
 import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
 import { generateRssFeed } from './renderer/rss';
+import { generateWeeklyNewsletter } from './renderer/newsletter';
+import { createNewsletterDraft } from './newsletter/buttondown';
 
 const MAX_SCORE_PER_RUN = 50;
 const SOURCES_PER_BATCH = 10;
@@ -746,6 +748,55 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       }
     );
 
+    // Step 5: Weekly newsletter draft (Monday UTC)
+    const newsletter = await step.do(
+      'newsletter-draft',
+      {
+        retries: { limit: 1, delay: '5 seconds' },
+      },
+      async () => {
+        try {
+          if (!this.env.BUTTONDOWN_API_KEY) {
+            return { skipped: true, reason: 'no API key' };
+          }
+
+          const now = new Date();
+          if (now.getUTCDay() !== 1) {
+            return { skipped: true, reason: 'not Monday' };
+          }
+
+          const lastDraft = await this.env.KV.get('newsletter:last_draft');
+          if (lastDraft) {
+            const elapsed = now.getTime() - new Date(lastDraft).getTime();
+            if (elapsed < 6 * 24 * 60 * 60 * 1000) {
+              return { skipped: true, reason: 'already sent this week' };
+            }
+          }
+
+          const articles = await getPublishedArticles(this.env.DB, {
+            limit: 50,
+            minScore: MIN_PUBLISH_SCORE,
+          });
+          const { subject, body } = generateWeeklyNewsletter(articles);
+
+          const ok = await createNewsletterDraft(
+            this.env.BUTTONDOWN_API_KEY,
+            subject,
+            body
+          );
+
+          if (ok) {
+            await this.env.KV.put('newsletter:last_draft', now.toISOString());
+          }
+
+          return { skipped: false, created: ok };
+        } catch (err) {
+          console.error('Newsletter draft failed:', err);
+          return { skipped: false, created: false };
+        }
+      }
+    );
+
     const elapsed = Date.now() - startTime;
     console.log(
       `Process workflow completed in ${elapsed}ms. ` +
@@ -753,7 +804,8 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env> {
       `Companies matched: ${companyTracking.matched}, ` +
       `Enrichment: ${enrichment.discovered} discovered / ${enrichment.enriched} enriched, ` +
       `Jobs: ${jobCollection.fetched} from ${jobCollection.companies} companies${jobCollection.skipped ? ' (skipped)' : ''}, ` +
-      `Pages: ${rendering.pagesWritten}`
+      `Pages: ${rendering.pagesWritten}, ` +
+      `Newsletter: ${newsletter.skipped ? 'skipped (' + (newsletter as { reason?: string }).reason + ')' : newsletter.created ? 'draft created' : 'failed'}`
     );
 
     // Ping health check on success

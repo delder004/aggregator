@@ -606,24 +606,18 @@ a.source-name:hover{text-decoration:underline;}
 }
 .newsletter-box h3{font-size:1.15rem;font-weight:700;margin-bottom:0.4rem;}
 .newsletter-box p{font-size:0.88rem;opacity:0.9;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.5;}
-.newsletter-box form{display:flex;gap:0.5rem;max-width:420px;margin:0 auto;}
-.newsletter-box input[type="email"]{flex:1;padding:0.6rem 1rem;border:2px solid rgba(255,255,255,0.3);border-radius:100px;font-size:0.88rem;background:rgba(255,255,255,0.15);color:#fff;outline:none;min-width:0;}
-.newsletter-box input[type="email"]::placeholder{color:rgba(255,255,255,0.6);}
-.newsletter-box input[type="email"]:focus{border-color:#fff;background:rgba(255,255,255,0.25);}
-.newsletter-box button{
+.newsletter-box .cta-btn{
+  display:inline-block;
   background:#fff;
   color:#0f766e;
   font-weight:600;
   font-size:0.88rem;
   padding:0.6rem 1.5rem;
   border-radius:100px;
-  border:none;
-  cursor:pointer;
+  text-decoration:none;
   transition:background 0.15s,transform 0.15s;
-  white-space:nowrap;
 }
-.newsletter-box button:hover{background:#f0fdfa;transform:translateY(-1px);}
-.newsletter-msg{font-size:0.82rem;margin-top:0.5rem;font-weight:500;}
+.newsletter-box .cta-btn:hover{background:#f0fdfa;transform:translateY(-1px);text-decoration:none;}
 
 /* Footer */
 .site-footer{
@@ -1521,10 +1515,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="newsletter-box">
       <h3>Stay ahead of AI in accounting</h3>
       <p>Get the latest news on agentic AI for accounting, audit, and tax delivered to your inbox. Curated by AI, reviewed by professionals.</p>
-      <form action="/subscribe" method="POST">
-        <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
-        <button type="submit">Subscribe</button>
-      </form>
+      <a class="cta-btn" href="https://buttondown.com/agenticaiaccounting" target="_blank" rel="noopener">Subscribe to Newsletter</a>
     </div>
   </div>
 
