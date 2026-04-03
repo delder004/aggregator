@@ -1309,7 +1309,7 @@ export interface LayoutOptions {
   description?: string;
   path?: string;
   activeTag?: string;
-  activeTab?: 'news' | 'companies' | 'jobs' | 'insights' | 'resources' | '';
+  activeTab?: 'news' | 'companies' | 'jobs' | 'resources' | '';
   stats?: { sources: number; crawled: number; articles: number; lastUpdated: string };
   heroHtml?: string;
   narrowContainer?: boolean;
@@ -1339,7 +1339,6 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     { label: 'News', href: '/', key: 'news' },
     { label: 'Companies', href: '/companies', key: 'companies' },
     { label: 'Jobs', href: '/jobs', key: 'jobs' },
-    { label: 'Insights', href: '/insights', key: 'insights' },
     { label: 'Resources', href: '/resources', key: 'resources' },
   ];
   const tabBarHtml = `<nav class="tab-bar">${tabs.map(t =>
@@ -1427,7 +1426,6 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           <a href="/">Latest News</a>
           <a href="/companies">Companies</a>
           <a href="/jobs">Job Board</a>
-          <a href="/insights">Insights</a>
           <a href="/resources">Resources</a>
         </div>
         <div class="footer-col">

@@ -213,7 +213,7 @@ function generateHomepage(
       body += `<h3 style="margin-bottom:0.75rem;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);">Latest Insight</h3>`;
       body += insightCard(latestInsight);
       if (insights.length > 1) {
-        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/insights" style="font-size:0.82rem;">View all insights &rarr;</a></div>`;
+        body += `<div style="margin-top:0.75rem;text-align:right;"><a href="/resources" style="font-size:0.82rem;">View all digests &rarr;</a></div>`;
       }
       body += `</div>\n`;
     } else {
@@ -539,8 +539,7 @@ function generateSitemap(
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
-  urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
-  urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
@@ -611,8 +610,7 @@ export function generateAllPages(
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
     ...generateFaqPage(layoutOpts),
-    ...generateInsightsPage(insights ?? [], layoutOpts),
-    ...generateResourcesPage(layoutOpts),
+    ...generateResourcesPage(insights ?? [], layoutOpts),
   };
 
   if (companies && companies.length > 0) {
@@ -639,60 +637,29 @@ export function generateAllPages(
 // Insights page
 // ---------------------------------------------------------------------------
 
-function generateInsightsPage(
+function generateResourcesPage(
   insights: InsightSummary[],
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   let body = '';
 
-  body += `<h2 class="section-heading">AI Accounting Insights</h2>\n`;
-  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">AI-generated summaries and analysis of the latest trends in agentic AI for accounting. Updated regularly with key themes, emerging patterns, and industry developments.</p>\n`;
+  body += `<h2 class="section-heading">Resources</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Insights, guides, and essential resources for understanding AI in accounting.</p>\n`;
 
-  if (insights.length === 0) {
-    body += `<div class="spotlight-grid">\n`;
-    body += `<div class="spotlight-card">
-  <h3 style="margin-bottom:0.5rem;">Coming Soon</h3>
-  <p>We're building AI-generated insights that analyze trends across all our sources. Check back soon for periodic summaries covering key themes in AI-powered accounting.</p>
-</div>\n`;
-    body += `<div class="spotlight-card">
-  <h3 style="margin-bottom:0.5rem;">What to Expect</h3>
-  <p>Daily, weekly, and monthly digests that synthesize the most important developments. Each insight covers emerging tools, regulatory changes, company movements, and research breakthroughs.</p>
-</div>\n`;
+  // Latest insight brief
+  if (insights.length > 0) {
+    const latest = insights[0];
+    body += `<h3 class="section-label">Latest Digest</h3>\n`;
+    body += `<div class="insights-grid" style="margin-bottom:1.5rem;">\n`;
+    body += insightCard(latest);
     body += `</div>\n`;
-  } else {
-    body += `<div class="insights-grid">\n`;
-    for (const insight of insights) {
-      body += insightCard(insight);
-    }
-    body += `</div>\n`;
+    body += `<div style="margin-bottom:2rem;"><a href="/insights" style="font-size:0.85rem;font-weight:500;">See all digests &rarr;</a></div>\n`;
   }
 
-  return {
-    '/insights': layout(body, {
-      title: 'Insights',
-      description: 'AI-generated insights and analysis of trends in agentic AI for accounting.',
-      path: '/insights',
-      activeTab: 'insights',
-      ...layoutOpts,
-    }),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Resources page
-// ---------------------------------------------------------------------------
-
-function generateResourcesPage(
-  layoutOpts: Partial<LayoutOptions>
-): Record<string, string> {
-  let body = '';
-
-  body += `<h2 class="section-heading">Resources</h2>\n`;
-  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Essential resources for understanding the intersection of artificial intelligence and the accounting profession.</p>\n`;
-
+  // Resource cards
+  body += `<h3 class="section-label">Guides &amp; References</h3>\n`;
   body += `<div class="resource-grid">\n`;
 
-  // Resource cards
   const resources = [
     {
       type: 'Guide',
@@ -742,8 +709,8 @@ function generateResourcesPage(
 
   body += `</div>\n`;
 
-  // Additional sections
-  body += `<h2 class="section-heading" style="margin-top:2.5rem;">Stay Informed</h2>\n`;
+  // Stay Informed
+  body += `<h3 class="section-label" style="margin-top:2.5rem;">Stay Informed</h3>\n`;
   body += `<div class="spotlight-grid">\n`;
   body += `<div class="spotlight-card">
   <h3><a href="/feed.xml">RSS Feed</a></h3>
@@ -757,15 +724,36 @@ function generateResourcesPage(
 </div>\n`;
   body += `</div>\n`;
 
-  return {
+  const pages: Record<string, string> = {
     '/resources': layout(body, {
       title: 'Resources',
-      description: 'Essential resources for understanding AI in accounting — guides, tools, research, and career development.',
+      description: 'Insights, guides, and essential resources for understanding AI in accounting.',
       path: '/resources',
       activeTab: 'resources',
       ...layoutOpts,
     }),
   };
+
+  // Full insights listing page (linked from "See all digests")
+  if (insights.length > 0) {
+    let insightsBody = `<h2 class="section-heading">All Digests</h2>\n`;
+    insightsBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">AI-generated summaries and analysis of the latest trends in agentic AI for accounting.</p>\n`;
+    insightsBody += `<div class="insights-grid">\n`;
+    for (const insight of insights) {
+      insightsBody += insightCard(insight);
+    }
+    insightsBody += `</div>\n`;
+
+    pages['/insights'] = layout(insightsBody, {
+      title: 'Digests',
+      description: 'AI-generated digests and analysis of trends in agentic AI for accounting.',
+      path: '/insights',
+      activeTab: 'resources',
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }
 
 // ---------------------------------------------------------------------------
