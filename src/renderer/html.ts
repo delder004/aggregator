@@ -49,21 +49,21 @@ const SOURCE_COLORS: Record<string, { bg: string; text: string; darkBg: string; 
 function getCSS(): string {
   return `
 :root {
-  --bg: #f8f9fc;
-  --bg-secondary: #eef0f5;
+  --bg: #fafafa;
+  --bg-secondary: #f0f0f2;
   --bg-card: #ffffff;
-  --text: #1a1a2e;
-  --text-secondary: #4a4a68;
-  --text-tertiary: #8888a4;
-  --border: #e2e4ec;
-  --accent: #4d65ff;
-  --accent-hover: #3b50e0;
-  --accent-subtle: #4d65ff10;
-  --featured-bg: #f0f3ff;
-  --featured-border: #c7d0ff;
-  --featured-accent: #4d65ff;
-  --tag-bg: #eef0f5;
-  --tag-text: #4a4a68;
+  --text: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --border: #e4e4e7;
+  --accent: #0f766e;
+  --accent-hover: #0d9488;
+  --accent-subtle: #0f766e12;
+  --featured-bg: #f0fdfa;
+  --featured-border: #99f6e4;
+  --featured-accent: #0f766e;
+  --tag-bg: #f0f0f2;
+  --tag-text: #52525b;
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
   --shadow-lg: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   --radius: 12px;
@@ -74,22 +74,22 @@ function getCSS(): string {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0c0c1d;
-    --bg-secondary: #161630;
-    --bg-card: #1a1a36;
-    --text: #f0f0f8;
-    --text-secondary: #a0a0be;
-    --text-tertiary: #606080;
-    --border: #2a2a4a;
-    --accent: #6b7fff;
-    --accent-hover: #8b9aff;
-    --accent-subtle: #6b7fff15;
-    --featured-bg: #1a1a40;
-    --featured-border: #2d2d60;
-    --featured-accent: #6b7fff;
-    --tag-bg: #2a2a4a;
-    --tag-text: #a0a0be;
-    --shadow: 0 1px 3px rgba(0,0,0,0.5);
+    --bg: #09090b;
+    --bg-secondary: #18181b;
+    --bg-card: #1c1c20;
+    --text: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #52525b;
+    --border: #27272a;
+    --accent: #2dd4bf;
+    --accent-hover: #5eead4;
+    --accent-subtle: #2dd4bf15;
+    --featured-bg: #042f2e;
+    --featured-border: #115e59;
+    --featured-accent: #2dd4bf;
+    --tag-bg: #27272a;
+    --tag-text: #a1a1aa;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
     --shadow-lg: 0 4px 12px rgba(0,0,0,0.6);
     --score-high: #4ade80;
     --score-med: #facc15;
@@ -157,7 +157,7 @@ a.logo{text-decoration:none;}
 
 /* Hero section */
 .hero{
-  background:linear-gradient(135deg, #4d65ff 0%, #6b7fff 50%, #8b9aff 100%);
+  background:linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
   padding:3rem 0;
   margin-bottom:0;
   color:#fff;
@@ -879,7 +879,7 @@ function logoSvg(): string {
 /** Favicon SVG — 32x32 with blue background and white "A" logo. */
 function faviconSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
-  <rect width="20" height="20" rx="4" fill="#4d65ff"/>
+  <rect width="20" height="20" rx="4" fill="#0f766e"/>
   <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
   <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
   <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>

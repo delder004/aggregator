@@ -37,7 +37,7 @@ const SITE_URL = 'https://agenticaiaccounting.com';
 /** Generate a branded 1200x630 SVG for og:image. */
 function generateOgImage(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4d65ff"/><stop offset="100%" stop-color="#8b9aff"/></linearGradient></defs>
+  <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f766e"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient></defs>
   <rect width="1200" height="630" fill="url(#g)"/>
   <g transform="translate(120,160) scale(6)">
     <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
@@ -618,7 +618,7 @@ function generateResourcesPage(
   const resources = [
     {
       type: 'Guide',
-      typeColor: 'background:#4d65ff15;color:#4d65ff;',
+      typeColor: 'background:#0f766e15;color:#0f766e;',
       title: 'What is Agentic AI?',
       desc: 'An introduction to autonomous AI agents and how they\'re being applied in accounting workflows — from data entry to complex audit procedures.',
     },
