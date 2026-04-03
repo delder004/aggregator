@@ -463,6 +463,41 @@ a.source-name:hover{text-decoration:underline;}
 .company-card .card-meta{font-size:0.73rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
 .company-card .card-badge{display:inline-block;font-size:0.65rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:100px;background:var(--accent-subtle);color:var(--accent);}
 
+/* Job filters */
+.job-filters{
+  margin-bottom:1.25rem;
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+}
+.job-filter-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.35rem;
+  align-items:center;
+}
+.job-filter-label{
+  font-size:0.72rem;
+  font-weight:600;
+  color:var(--text-tertiary);
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  margin-right:0.25rem;
+  white-space:nowrap;
+}
+.job-filter-row a{
+  font-size:0.78rem;
+  padding:0.25rem 0.65rem;
+  border-radius:100px;
+  background:var(--tag-bg);
+  color:var(--tag-text);
+  transition:all 0.15s;
+  white-space:nowrap;
+  font-weight:500;
+}
+.job-filter-row a:hover{background:var(--border);text-decoration:none;}
+.job-filter-row a.active{background:var(--accent);color:#fff;}
+
 /* Job cards */
 .job-grid{
   display:grid;
@@ -716,6 +751,8 @@ a.source-name:hover{text-decoration:underline;}
   .featured-card .article-title{font-size:0.93rem;}
   .tag-nav{gap:0.3rem;}
   .tag-nav a{font-size:0.73rem;padding:0.2rem 0.5rem;}
+  .job-filter-row a{font-size:0.73rem;padding:0.2rem 0.5rem;}
+  .job-filter-label{font-size:0.65rem;}
   .header-row{gap:0.5rem;}
   .logo{width:32px;height:32px;border-radius:7px;}
   .hero{padding:2rem 0;}

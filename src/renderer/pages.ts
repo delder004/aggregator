@@ -970,26 +970,54 @@ function slugify(str: string): string {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-/** Render a filter nav bar for job pages. */
+/** Render a single filter row with a label. */
+function filterRow(label: string, items: { href: string; text: string; active: boolean }[]): string {
+  if (items.length === 0) return '';
+  let html = `<div class="job-filter-row">\n`;
+  html += `  <span class="job-filter-label">${escapeHtml(label)}</span>\n`;
+  for (const item of items) {
+    html += `  <a href="${item.href}"${item.active ? ' class="active"' : ''}>${item.text}</a>\n`;
+  }
+  html += `</div>\n`;
+  return html;
+}
+
+/** Render distinct filter groups for job pages. */
 function jobFilterNav(
   departments: string[],
   locations: string[],
+  companyNames: { id: string; name: string }[],
   activeFilter: string,
   hasRemote: boolean
 ): string {
-  let html = `<nav class="tag-nav" style="margin-bottom:1rem;">\n`;
-  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All</a>\n`;
+  let html = `<nav class="job-filters">\n`;
+
+  // All / Remote row
+  html += `<div class="job-filter-row">\n`;
+  html += `  <a href="/jobs"${activeFilter === '' ? ' class="active"' : ''}>All Jobs</a>\n`;
   if (hasRemote) {
     html += `  <a href="/jobs/remote"${activeFilter === 'remote' ? ' class="active"' : ''}>Remote</a>\n`;
   }
-  for (const dept of departments.slice(0, 10)) {
+  html += `</div>\n`;
+
+  // Role (department) row
+  html += filterRow('Role', departments.slice(0, 10).map(dept => {
     const slug = slugify(dept);
-    html += `  <a href="/jobs/dept/${slug}"${activeFilter === `dept-${slug}` ? ' class="active"' : ''}>${escapeHtml(dept)}</a>\n`;
-  }
-  for (const loc of locations.slice(0, 8)) {
+    return { href: `/jobs/dept/${slug}`, text: escapeHtml(dept), active: activeFilter === `dept-${slug}` };
+  }));
+
+  // Location row
+  html += filterRow('Location', locations.slice(0, 8).map(loc => {
     const slug = slugify(loc);
-    html += `  <a href="/jobs/location/${slug}"${activeFilter === `loc-${slug}` ? ' class="active"' : ''}>${escapeHtml(loc)}</a>\n`;
-  }
+    return { href: `/jobs/location/${slug}`, text: escapeHtml(loc), active: activeFilter === `loc-${slug}` };
+  }));
+
+  // Company row
+  html += filterRow('Company', companyNames.slice(0, 10).map(c => {
+    const slug = slugify(c.id);
+    return { href: `/jobs/company/${slug}`, text: escapeHtml(c.name), active: activeFilter === `company-${slug}` };
+  }));
+
   html += `</nav>\n`;
   return html;
 }
@@ -1077,8 +1105,14 @@ function generateJobsPage(
   const locations = [...locCounts.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
   const hasRemote = remoteCount > 0;
 
-  const filterNav = jobFilterNav(departments, locations, '', hasRemote);
+  // Collect companies sorted by job count
   const companiesWithJobs = companies.filter(c => (companyJobs.get(c.id) ?? []).length > 0);
+  const companiesByJobCount = companiesWithJobs
+    .map(c => ({ id: c.id, name: c.name, count: (companyJobs.get(c.id) ?? []).length }))
+    .sort((a, b) => b.count - a.count);
+  const companyFilterList = companiesByJobCount.map(c => ({ id: c.id, name: c.name }));
+
+  const filterNav = jobFilterNav(departments, locations, companyFilterList, '', hasRemote);
 
   // Main /jobs page (all jobs)
   let body = '';
@@ -1106,7 +1140,7 @@ function generateJobsPage(
     const remoteJobs = allJobs.filter(j => j.isRemote);
     let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
     remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
-    remoteBody += jobFilterNav(departments, locations, 'remote', hasRemote);
+    remoteBody += jobFilterNav(departments, locations, companyFilterList, 'remote', hasRemote);
     remoteBody += renderJobCards(remoteJobs);
 
     pages['/jobs/remote'] = layout(remoteBody, {
@@ -1124,7 +1158,7 @@ function generateJobsPage(
     const deptJobs = allJobs.filter(j => j.department === dept);
     let deptBody = `<h2 class="section-heading">${escapeHtml(dept)} Roles</h2>\n`;
     deptBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${deptJobs.length} role${deptJobs.length !== 1 ? 's' : ''} in ${escapeHtml(dept)}.</p>\n`;
-    deptBody += jobFilterNav(departments, locations, `dept-${slug}`, hasRemote);
+    deptBody += jobFilterNav(departments, locations, companyFilterList, `dept-${slug}`, hasRemote);
     deptBody += renderJobCards(deptJobs);
 
     pages[`/jobs/dept/${slug}`] = layout(deptBody, {
@@ -1142,13 +1176,31 @@ function generateJobsPage(
     const locJobs = allJobs.filter(j => j.location === loc);
     let locBody = `<h2 class="section-heading">Roles in ${escapeHtml(loc)}</h2>\n`;
     locBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${locJobs.length} role${locJobs.length !== 1 ? 's' : ''} in ${escapeHtml(loc)}.</p>\n`;
-    locBody += jobFilterNav(departments, locations, `loc-${slug}`, hasRemote);
+    locBody += jobFilterNav(departments, locations, companyFilterList, `loc-${slug}`, hasRemote);
     locBody += renderJobCards(locJobs);
 
     pages[`/jobs/location/${slug}`] = layout(locBody, {
       title: `Jobs in ${loc}`,
       description: `AI accounting roles in ${loc}.`,
       path: `/jobs/location/${slug}`,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
+
+  // Company filter pages
+  for (const c of companiesByJobCount) {
+    const slug = slugify(c.id);
+    const cJobs = allJobs.filter(j => j.companyId === c.id);
+    let cBody = `<h2 class="section-heading">${escapeHtml(c.name)} Roles</h2>\n`;
+    cBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${cJobs.length} open role${cJobs.length !== 1 ? 's' : ''} at ${escapeHtml(c.name)}.</p>\n`;
+    cBody += jobFilterNav(departments, locations, companyFilterList, `company-${slug}`, hasRemote);
+    cBody += renderJobCards(cJobs);
+
+    pages[`/jobs/company/${slug}`] = layout(cBody, {
+      title: `${c.name} Jobs`,
+      description: `Open roles at ${c.name}.`,
+      path: `/jobs/company/${slug}`,
       activeTab: 'jobs',
       ...layoutOpts,
     });
