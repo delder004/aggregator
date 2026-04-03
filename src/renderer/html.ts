@@ -642,6 +642,14 @@ a.source-name:hover{text-decoration:underline;}
 .resource-card p{font-size:0.82rem;color:var(--text-secondary);line-height:1.5;}
 .resource-card .resource-type{display:inline-block;font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;padding:0.15rem 0.5rem;border-radius:100px;margin-bottom:0.6rem;}
 
+/* FAQ page */
+.faq-list{list-style:none;margin:1.5rem 0;}
+.faq-item{border-bottom:1px solid var(--border);padding:1.25rem 0;}
+.faq-item:last-child{border-bottom:none;}
+.faq-item h3{font-size:1rem;font-weight:600;margin-bottom:0.5rem;color:var(--text);}
+.faq-item p{font-size:0.88rem;color:var(--text-secondary);line-height:1.7;margin-bottom:0.4rem;}
+.faq-item a{font-weight:500;}
+
 /* About page */
 .about-content{padding:2rem 0;}
 .about-content h1{font-size:1.8rem;font-weight:800;margin-bottom:1rem;letter-spacing:-0.02em;}
@@ -1398,6 +1406,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
         <div class="footer-col">
           <h4>Connect</h4>
           <a href="/about">About Us</a>
+          <a href="/faq">FAQ</a>
           <a href="/feed.xml">RSS Feed</a>
           <a href="mailto:hello@agenticaiaccounting.com">Contact</a>
         </div>

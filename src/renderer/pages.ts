@@ -439,6 +439,81 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
 }
 
 // ---------------------------------------------------------------------------
+// FAQ page
+// ---------------------------------------------------------------------------
+
+function generateFaqPage(layoutOpts: Partial<LayoutOptions>): Record<string, string> {
+  const faqs: { q: string; a: string }[] = [
+    {
+      q: 'What is Agentic AI Accounting?',
+      a: 'Agentic AI Accounting is a fully automated news aggregator that tracks the intersection of artificial intelligence and the accounting profession. We collect content from 50+ sources, score it for relevance using AI, and publish a clean, fast, ad-free feed — updated every hour.',
+    },
+    {
+      q: 'How are articles scored and selected?',
+      a: 'Every article is evaluated by an AI classifier (Claude by Anthropic) that assigns a relevance score from 0 to 100. Articles scoring 50 or above are published to the feed. Articles scoring 70+ receive featured placement on the homepage. The AI also generates a headline, summary, and topic tags for each article.',
+    },
+    {
+      q: 'How often is the site updated?',
+      a: 'The collection pipeline runs every hour. New articles are fetched from all sources, scored, and published automatically. The "Updated" timestamp in the header shows the last successful pipeline run.',
+    },
+    {
+      q: 'What sources do you aggregate from?',
+      a: 'We currently pull from RSS feeds (Accounting Today, Journal of Accountancy, Going Concern, CPA Practice Advisor, and more), Substack newsletters, Hacker News, YouTube, arXiv research papers, company blogs, and press releases. See the <a href="/about">About page</a> for the full list.',
+    },
+    {
+      q: 'Why don\'t I see a specific article from a source you track?',
+      a: 'There are a few reasons an article might not appear: it may have scored below our relevance threshold of 50, it may not have been picked up in the collection window, or the source feed may not have included it. Our AI scoring prioritizes articles specifically about AI applied to accounting, audit, tax, and bookkeeping — general AI or general accounting news may not qualify.',
+    },
+    {
+      q: 'Can I submit a source or company to be tracked?',
+      a: 'Yes! We\'re always looking to expand our coverage. Send the source URL or company name to <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a> and we\'ll evaluate it for inclusion.',
+    },
+    {
+      q: 'How does the company tracker work?',
+      a: 'We maintain a list of companies building AI-powered tools for accounting. When an article mentions a tracked company, it\'s automatically linked to that company\'s profile page. Company pages show recent coverage, AI-generated insights, and open job listings pulled from their careers pages.',
+    },
+    {
+      q: 'Where do job listings come from?',
+      a: 'Job listings are collected directly from company career pages via Greenhouse, Lever, and Ashby job board APIs. They\'re refreshed regularly and removed when no longer active. We don\'t post jobs manually — they\'re all sourced automatically from tracked companies.',
+    },
+    {
+      q: 'Is there an RSS feed?',
+      a: 'Yes. You can subscribe at <a href="/feed.xml">/feed.xml</a> to get the latest articles in any RSS reader. The feed includes the 50 most recent articles with AI-generated summaries.',
+    },
+    {
+      q: 'Is there any client-side JavaScript or tracking?',
+      a: 'No. This site is pure static HTML with inline CSS — no client-side JavaScript, no cookies, no analytics trackers, no ads. Every page is pre-rendered and served from Cloudflare\'s edge network for minimal latency. Total page weight is under 50KB.',
+    },
+    {
+      q: 'Who runs this site?',
+      a: 'Agentic AI Accounting is an independent project. The entire pipeline — collection, scoring, company tracking, and publishing — is automated. There is no editorial staff. Questions or feedback? Reach us at <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a>.',
+    },
+  ];
+
+  let body = `<h2 class="section-heading">Frequently Asked Questions</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">Everything you need to know about Agentic AI Accounting.</p>\n`;
+  body += `<ul class="faq-list">\n`;
+
+  for (const faq of faqs) {
+    body += `<li class="faq-item">
+  <h3>${escapeHtml(faq.q)}</h3>
+  <p>${faq.a}</p>
+</li>\n`;
+  }
+
+  body += `</ul>\n`;
+
+  return {
+    '/faq': layout(body, {
+      title: 'FAQ',
+      description: 'Frequently asked questions about Agentic AI Accounting — how it works, sources, scoring, and more.',
+      path: '/faq',
+      ...layoutOpts,
+    }),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Sitemap
 // ---------------------------------------------------------------------------
 
@@ -466,6 +541,7 @@ function generateSitemap(
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/insights</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
   if (companies) {
@@ -534,6 +610,7 @@ export function generateAllPages(
     ...generateHomepage(featured, latest, articles, layoutOpts, companies, jobsMap, insights),
     ...generateTagPages(articles, layoutOpts),
     ...generateAboutPage(layoutOpts),
+    ...generateFaqPage(layoutOpts),
     ...generateInsightsPage(insights ?? [], layoutOpts),
     ...generateResourcesPage(layoutOpts),
   };
