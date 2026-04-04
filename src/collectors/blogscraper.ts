@@ -1,5 +1,5 @@
 import type { Collector, CollectedArticle, SourceConfig } from '../types';
-import { sanitizeTitle } from './utils';
+import { sanitizeTitle, extractLeadingDate } from './utils';
 
 // Re-export for backwards compatibility
 export { sanitizeTitle } from './utils';
@@ -162,8 +162,12 @@ export const blogScraperCollector: Collector = {
         if (seen.has(fullUrl)) continue;
         seen.add(fullUrl);
 
+        // Try to extract a date from the raw text before sanitization strips it
+        const cleanedRaw = stripHtml(rawTitle);
+        const extractedDate = extractLeadingDate(cleanedRaw);
+
         // Extract, clean, and sanitize title
-        const title = sanitizeTitle(stripHtml(rawTitle));
+        const title = sanitizeTitle(cleanedRaw);
         if (!title || title.length < 5) continue;
 
         articles.push({
@@ -172,7 +176,7 @@ export const blogScraperCollector: Collector = {
           sourceType: 'blogscraper',
           sourceName: `${company} Blog`,
           author: null,
-          publishedAt: now,
+          publishedAt: extractedDate || now,
           contentSnippet: null,
           imageUrl: null,
         });

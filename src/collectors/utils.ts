@@ -25,6 +25,21 @@ export function decodeHtmlEntities(text: string): string {
     .replace(/&nbsp;/g, ' ');
 }
 
+/** Regex matching leading date patterns in titles (full and abbreviated month names) */
+const LEADING_DATE_RE =
+  /^((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4})\s*/i;
+
+/**
+ * Extract a leading date from raw title text, if present.
+ * Returns the parsed ISO string, or null if no date found.
+ */
+export function extractLeadingDate(raw: string): string | null {
+  const m = LEADING_DATE_RE.exec(raw);
+  if (!m) return null;
+  const parsed = new Date(m[1]);
+  return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 /**
  * Sanitize an article title by stripping common junk prefixes/suffixes,
  * decoding HTML entities, and truncating to a reasonable length.
@@ -32,6 +47,7 @@ export function decodeHtmlEntities(text: string): string {
  * Handles patterns like:
  *  - Leading "Article" prefix
  *  - Leading date patterns ("March 01, 2026Some title")
+ *  - Leading category tags ("CompanyTitle", "ProductTitle")
  *  - Trailing author/role suffixes joined without space ("CampfireTeam")
  *  - HTML entities
  *  - Long titles truncated at sentence boundary, with hard cutoff fallback
@@ -48,9 +64,13 @@ export function sanitizeTitle(raw: string): string {
   // concatenated "ArticleAI..." (no space/word-boundary between them)
   title = title.replace(/^Article(?=\s|[A-Z])\s*/i, '');
 
-  // Strip leading date patterns: "Month DD, YYYY" at start of string
+  // Strip leading date patterns (full and abbreviated month names)
+  title = title.replace(LEADING_DATE_RE, '');
+
+  // Strip leading category tags concatenated without space
+  // e.g., "CompanyBasis Raises..." → "Basis Raises..."
   title = title.replace(
-    /^(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\s*/i,
+    /^(?:Company|Product|Partnership|Feature|Update|News|Press|Event|Announcement)(?=[A-Z])/i,
     ''
   );
 
