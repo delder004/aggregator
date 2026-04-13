@@ -1515,7 +1515,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     <div class="newsletter-box">
       <h3>Stay ahead of AI in accounting</h3>
       <p>Get the latest news on agentic AI for accounting, audit, and tax delivered to your inbox. Curated by AI, reviewed by professionals.</p>
-      <a class="cta-btn" href="https://buttondown.com/agenticaiaccounting" target="_blank" rel="noopener">Subscribe to Newsletter</a>
+      <a class="cta-btn" href="https://buttondown.com/agenticaiccounting" target="_blank" rel="noopener">Subscribe to Newsletter</a>
     </div>
   </div>
 
