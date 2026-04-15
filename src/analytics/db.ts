@@ -2,7 +2,6 @@ import type {
   ArticleViewRow,
   CfAnalyticsSnapshot,
   CompetitorSnapshot,
-  IngestNamespaceStatus,
   KeywordRanking,
   SearchConsoleSnapshot,
   SnapshotStatus,
@@ -17,18 +16,26 @@ import { STALE_RUN_THRESHOLD_MS } from './budgets';
  *
  * Every snapshot writer follows this contract:
  *   1. Compute window via getWeeklyWindow().
- *   2. Call claim*() to insert-or-reclaim the row. If it returns null, the
- *      window is already complete or another worker holds an active claim,
- *      and the writer must no-op.
+ *   2. Call claim*() to insert-or-reclaim the row. It returns
+ *      { id, attemptCount } on success or null when the window is already
+ *      complete or another worker holds a fresh active claim.
  *   3. Do the work.
- *   4. Call complete*() with metadata + KV blob key on success, or fail*()
- *      with the error message on failure.
+ *   4. Call complete*() / fail*() with the attemptCount returned by claim*().
+ *      Both return a boolean: true means the write was applied; false means
+ *      the row was reclaimed by another worker mid-flight and the caller
+ *      must drop its result without retrying.
  *
  * Stale-run gate: a row in 'running' state is reclaimable only if its
- * updated_at is older than STALE_RUN_THRESHOLD_MS. This prevents two
- * concurrent jobs from clobbering each other while still allowing
- * recovery from a job that died mid-flight.
+ * updated_at is older than STALE_RUN_THRESHOLD_MS. Reclaiming bumps
+ * attempt_count, which acts as a generation counter — any late-finishing
+ * write from the previous owner is rejected by the WHERE clause check on
+ * attempt_count, so workers can never clobber each other's results.
  */
+
+export interface SnapshotClaim {
+  id: string;
+  attemptCount: number;
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -49,7 +56,7 @@ export async function claimCfAnalyticsSnapshot(
   windowStart: string,
   windowEnd: string,
   source: 'graphql' | 'analytics_engine'
-): Promise<{ id: string } | null> {
+): Promise<SnapshotClaim | null> {
   const id = generateId();
   const now = nowIso();
   const cutoff = staleCutoffIso();
@@ -70,11 +77,14 @@ export async function claimCfAnalyticsSnapshot(
            cf_analytics_snapshots.status <> 'running'
            OR cf_analytics_snapshots.updated_at < ?
          )
-       RETURNING id`
+       RETURNING id, attempt_count`
     )
     .bind(id, windowStart, windowEnd, source, now, now, cutoff)
-    .first<{ id: string }>();
-  return result ?? null;
+    .first<{ id: string; attempt_count: number }>();
+  if (!result) {
+    return null;
+  }
+  return { id: result.id, attemptCount: Number(result.attempt_count) };
 }
 
 export async function completeCfAnalyticsSnapshot(
@@ -82,6 +92,7 @@ export async function completeCfAnalyticsSnapshot(
   windowStart: string,
   windowEnd: string,
   source: 'graphql' | 'analytics_engine',
+  expectedAttemptCount: number,
   data: {
     blobKey: string;
     totalRequests: number | null;
@@ -92,9 +103,9 @@ export async function completeCfAnalyticsSnapshot(
     topReferrersCount: number | null;
     topCountriesCount: number | null;
   }
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE cf_analytics_snapshots
        SET status = 'complete',
@@ -109,7 +120,8 @@ export async function completeCfAnalyticsSnapshot(
            top_paths_count = ?,
            top_referrers_count = ?,
            top_countries_count = ?
-       WHERE window_start = ? AND window_end = ? AND source = ?`
+       WHERE window_start = ? AND window_end = ? AND source = ?
+         AND attempt_count = ? AND status = 'running'`
     )
     .bind(
       now,
@@ -124,9 +136,11 @@ export async function completeCfAnalyticsSnapshot(
       data.topCountriesCount,
       windowStart,
       windowEnd,
-      source
+      source,
+      expectedAttemptCount
     )
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function failCfAnalyticsSnapshot(
@@ -134,17 +148,20 @@ export async function failCfAnalyticsSnapshot(
   windowStart: string,
   windowEnd: string,
   source: 'graphql' | 'analytics_engine',
+  expectedAttemptCount: number,
   errorMessage: string
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE cf_analytics_snapshots
        SET status = 'error', updated_at = ?, error_message = ?
-       WHERE window_start = ? AND window_end = ? AND source = ?`
+       WHERE window_start = ? AND window_end = ? AND source = ?
+         AND attempt_count = ? AND status = 'running'`
     )
-    .bind(now, errorMessage, windowStart, windowEnd, source)
+    .bind(now, errorMessage, windowStart, windowEnd, source, expectedAttemptCount)
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function listCfAnalyticsSnapshots(
@@ -202,7 +219,7 @@ export async function claimSearchConsoleSnapshot(
   db: D1Database,
   windowStart: string,
   windowEnd: string
-): Promise<{ id: string } | null> {
+): Promise<SnapshotClaim | null> {
   const id = generateId();
   const now = nowIso();
   const cutoff = staleCutoffIso();
@@ -223,17 +240,21 @@ export async function claimSearchConsoleSnapshot(
            search_console_snapshots.status <> 'running'
            OR search_console_snapshots.updated_at < ?
          )
-       RETURNING id`
+       RETURNING id, attempt_count`
     )
     .bind(id, windowStart, windowEnd, now, now, cutoff)
-    .first<{ id: string }>();
-  return result ?? null;
+    .first<{ id: string; attempt_count: number }>();
+  if (!result) {
+    return null;
+  }
+  return { id: result.id, attemptCount: Number(result.attempt_count) };
 }
 
 export async function completeSearchConsoleSnapshot(
   db: D1Database,
   windowStart: string,
   windowEnd: string,
+  expectedAttemptCount: number,
   data: {
     blobKey: string;
     totalImpressions: number | null;
@@ -243,16 +264,17 @@ export async function completeSearchConsoleSnapshot(
     queriesCount: number | null;
     pagesCount: number | null;
   }
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE search_console_snapshots
        SET status = 'complete',
            completed_at = ?, updated_at = ?, error_message = NULL,
            blob_key = ?, total_impressions = ?, total_clicks = ?,
            avg_ctr = ?, avg_position = ?, queries_count = ?, pages_count = ?
-       WHERE window_start = ? AND window_end = ?`
+       WHERE window_start = ? AND window_end = ?
+         AND attempt_count = ? AND status = 'running'`
     )
     .bind(
       now,
@@ -265,26 +287,31 @@ export async function completeSearchConsoleSnapshot(
       data.queriesCount,
       data.pagesCount,
       windowStart,
-      windowEnd
+      windowEnd,
+      expectedAttemptCount
     )
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function failSearchConsoleSnapshot(
   db: D1Database,
   windowStart: string,
   windowEnd: string,
+  expectedAttemptCount: number,
   errorMessage: string
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE search_console_snapshots
        SET status = 'error', updated_at = ?, error_message = ?
-       WHERE window_start = ? AND window_end = ?`
+       WHERE window_start = ? AND window_end = ?
+         AND attempt_count = ? AND status = 'running'`
     )
-    .bind(now, errorMessage, windowStart, windowEnd)
+    .bind(now, errorMessage, windowStart, windowEnd, expectedAttemptCount)
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function listSearchConsoleSnapshots(
@@ -340,7 +367,7 @@ export async function claimCompetitorSnapshot(
   competitorSlug: string,
   windowStart: string,
   windowEnd: string
-): Promise<{ id: string } | null> {
+): Promise<SnapshotClaim | null> {
   const id = generateId();
   const now = nowIso();
   const cutoff = staleCutoffIso();
@@ -361,31 +388,36 @@ export async function claimCompetitorSnapshot(
            competitor_snapshots.status <> 'running'
            OR competitor_snapshots.updated_at < ?
          )
-       RETURNING id`
+       RETURNING id, attempt_count`
     )
     .bind(id, competitorSlug, windowStart, windowEnd, now, now, cutoff)
-    .first<{ id: string }>();
-  return result ?? null;
+    .first<{ id: string; attempt_count: number }>();
+  if (!result) {
+    return null;
+  }
+  return { id: result.id, attemptCount: Number(result.attempt_count) };
 }
 
 export async function completeCompetitorSnapshot(
   db: D1Database,
   competitorSlug: string,
   windowStart: string,
+  expectedAttemptCount: number,
   data: {
     blobKey: string;
     itemsCount: number;
     homepageHtmlHash: string | null;
   }
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE competitor_snapshots
        SET status = 'complete', completed_at = ?, updated_at = ?,
            error_message = NULL, blob_key = ?, items_count = ?,
            homepage_html_hash = ?
-       WHERE competitor_slug = ? AND window_start = ?`
+       WHERE competitor_slug = ? AND window_start = ?
+         AND attempt_count = ? AND status = 'running'`
     )
     .bind(
       now,
@@ -394,26 +426,31 @@ export async function completeCompetitorSnapshot(
       data.itemsCount,
       data.homepageHtmlHash,
       competitorSlug,
-      windowStart
+      windowStart,
+      expectedAttemptCount
     )
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function failCompetitorSnapshot(
   db: D1Database,
   competitorSlug: string,
   windowStart: string,
+  expectedAttemptCount: number,
   errorMessage: string
-): Promise<void> {
+): Promise<boolean> {
   const now = nowIso();
-  await db
+  const result = await db
     .prepare(
       `UPDATE competitor_snapshots
        SET status = 'error', updated_at = ?, error_message = ?
-       WHERE competitor_slug = ? AND window_start = ?`
+       WHERE competitor_slug = ? AND window_start = ?
+         AND attempt_count = ? AND status = 'running'`
     )
-    .bind(now, errorMessage, competitorSlug, windowStart)
+    .bind(now, errorMessage, competitorSlug, windowStart, expectedAttemptCount)
     .run();
+  return (result.meta?.changes ?? 0) > 0;
 }
 
 export async function listCompetitorSnapshots(
@@ -562,28 +599,10 @@ export async function upsertArticleViewRow(
     .run();
 }
 
-export async function listTopArticleViews(
-  db: D1Database,
-  sinceDate: string,
-  limit = 50
-): Promise<ArticleViewRow[]> {
-  const result = await db
-    .prepare(
-      `SELECT * FROM article_views
-       WHERE view_date >= ?
-       ORDER BY views DESC LIMIT ?`
-    )
-    .bind(sinceDate, limit)
-    .all();
-  return result.results.map((row) => ({
-    articleId: row.article_id as string,
-    viewDate: row.view_date as string,
-    views: Number(row.views ?? 0),
-    uniqueVisitors: Number(row.unique_visitors ?? 0),
-    topReferrer: (row.top_referrer as string | null) ?? null,
-    updatedAt: row.updated_at as string,
-  }));
-}
+// listTopArticleViews intentionally omitted in Phase 1. Phase 2 will need a
+// per-article aggregation (GROUP BY article_id, SUM(views)) keyed to the
+// consolidation window — adding it here without a caller would ship the
+// wrong shape (raw daily rows can repeat the same article).
 
 // -- source_candidates --
 
@@ -656,96 +675,19 @@ export async function listSourceCandidates(
 }
 
 // -- /ops/ingest/status --
-
-export async function getIngestStatus(
-  db: D1Database
-): Promise<IngestNamespaceStatus[]> {
-  // One most-recent row per namespace. Five namespaces are always present;
-  // any with no data yet appear as { status: 'never', windowStart: null }.
-  const queries: Array<{
-    namespace: IngestNamespaceStatus['namespace'];
-    sql: string;
-  }> = [
-    {
-      namespace: 'cf-analytics',
-      sql: `SELECT window_start, window_end, status, attempt_count,
-                   started_at, updated_at, completed_at, error_message
-            FROM cf_analytics_snapshots
-            ORDER BY window_start DESC LIMIT 1`,
-    },
-    {
-      namespace: 'search-console',
-      sql: `SELECT window_start, window_end, status, attempt_count,
-                   started_at, updated_at, completed_at, error_message
-            FROM search_console_snapshots
-            ORDER BY window_start DESC LIMIT 1`,
-    },
-    {
-      namespace: 'rankings',
-      sql: `SELECT window_start AS window_start,
-                   window_start AS window_end,
-                   'complete' AS status,
-                   1 AS attempt_count,
-                   checked_at AS started_at,
-                   checked_at AS updated_at,
-                   checked_at AS completed_at,
-                   NULL AS error_message
-            FROM keyword_rankings
-            ORDER BY checked_at DESC LIMIT 1`,
-    },
-    {
-      namespace: 'competitors',
-      sql: `SELECT window_start, window_end, status, attempt_count,
-                   started_at, updated_at, completed_at, error_message
-            FROM competitor_snapshots
-            ORDER BY window_start DESC LIMIT 1`,
-    },
-    {
-      namespace: 'article-views-rollup',
-      sql: `SELECT view_date AS window_start,
-                   view_date AS window_end,
-                   'complete' AS status,
-                   1 AS attempt_count,
-                   updated_at AS started_at,
-                   updated_at AS updated_at,
-                   updated_at AS completed_at,
-                   NULL AS error_message
-            FROM article_views
-            ORDER BY view_date DESC LIMIT 1`,
-    },
-  ];
-
-  const results: IngestNamespaceStatus[] = [];
-  for (const { namespace, sql } of queries) {
-    const row = await db.prepare(sql).first();
-    if (!row) {
-      results.push({
-        namespace,
-        windowStart: null,
-        windowEnd: null,
-        status: 'never',
-        attemptCount: 0,
-        startedAt: null,
-        updatedAt: null,
-        completedAt: null,
-        errorMessage: null,
-      });
-      continue;
-    }
-    results.push({
-      namespace,
-      windowStart: (row.window_start as string | null) ?? null,
-      windowEnd: (row.window_end as string | null) ?? null,
-      status: (row.status as SnapshotStatus) ?? 'never',
-      attemptCount: Number(row.attempt_count ?? 0),
-      startedAt: (row.started_at as string | null) ?? null,
-      updatedAt: (row.updated_at as string | null) ?? null,
-      completedAt: (row.completed_at as string | null) ?? null,
-      errorMessage: (row.error_message as string | null) ?? null,
-    });
-  }
-  return results;
-}
+//
+// Intentionally not implemented in Phase 1. The honest per-namespace status
+// requires aggregation that this layer can't express truthfully:
+//   - cf-analytics has two writers per window (graphql + analytics_engine)
+//   - competitors has N writers per window (one per competitor)
+//   - rankings and article-views-rollup have no run-level capture record;
+//     reading from data tables would fabricate a 'complete' status from the
+//     existence of data rows, which would lie about partial failures.
+//
+// Commit 7 introduces an `ingest_runs` table written by the IngestWorkflow
+// orchestrator (one row per namespace per window). At that point the status
+// query reads from a single source of truth and `/ops/ingest/status` can
+// return per-namespace state honestly.
 
 function nullableNumber(value: unknown): number | null {
   if (value === null || value === undefined) {

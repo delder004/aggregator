@@ -80,21 +80,6 @@ export interface SourceCandidate {
   promotedToSourceId: string | null;
 }
 
-export type IngestNamespace =
-  | 'cf-analytics'
-  | 'search-console'
-  | 'rankings'
-  | 'competitors'
-  | 'article-views-rollup';
-
-export interface IngestNamespaceStatus {
-  namespace: IngestNamespace;
-  windowStart: string | null;
-  windowEnd: string | null;
-  status: SnapshotStatus | 'never';
-  attemptCount: number;
-  startedAt: string | null;
-  updatedAt: string | null;
-  completedAt: string | null;
-  errorMessage: string | null;
-}
+// IngestNamespace / IngestNamespaceStatus types intentionally deferred to
+// commit 7, which introduces the ingest_runs orchestrator table. See the
+// note above getIngestStatus in src/analytics/db.ts.
