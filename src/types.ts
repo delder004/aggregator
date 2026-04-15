@@ -131,6 +131,10 @@ export interface Env {
   CF_ACCOUNT_ID?: string;
   CF_ANALYTICS_API_TOKEN?: string;
   CF_ZONE_ID?: string;
+  GSC_CLIENT_ID?: string;
+  GSC_CLIENT_SECRET?: string;
+  GSC_REFRESH_TOKEN?: string;
+  GSC_SITE_URL?: string;
 }
 
 // -- Insights Summary types --

@@ -13,9 +13,12 @@ import {
   writeArticleViewEvent,
 } from './analytics/analytics-engine';
 import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
+import { runSearchConsoleSnapshot } from './analytics/search-console';
 import {
   getCfAnalyticsSnapshotById,
+  getSearchConsoleSnapshotById,
   listCfAnalyticsSnapshots,
+  listSearchConsoleSnapshots,
 } from './analytics/db';
 import { readBlob } from './analytics/blob-store';
 
@@ -182,6 +185,79 @@ export default {
         if (toParam) options.windowEnd = toParam;
         if (zoneParam) options.zoneTag = zoneParam;
         const result = await runCfAnalyticsSnapshot(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
+    // Google Search Console: snapshot list / detail / manual trigger.
+    if (path === '/ops/search-console') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '20');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(100, Math.floor(limitParam)))
+        : 20;
+      const snapshots = await listSearchConsoleSnapshots(env.DB, limit);
+      return new Response(
+        JSON.stringify({ count: snapshots.length, snapshots }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    const gscSnapshotMatch = path.match(/^\/ops\/search-console\/([a-f0-9-]+)$/);
+    if (gscSnapshotMatch) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const snapshot = await getSearchConsoleSnapshotById(
+        env.DB,
+        gscSnapshotMatch[1]
+      );
+      if (!snapshot) {
+        return new Response('Not Found', { status: 404 });
+      }
+      const blob = snapshot.blobKey
+        ? await readBlob(env.KV, snapshot.blobKey)
+        : null;
+      return new Response(JSON.stringify({ snapshot, blob }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    if (
+      path === '/ops/cron/search-console-snapshot' &&
+      request.method === 'POST'
+    ) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const fromParam = url.searchParams.get('from');
+        const toParam = url.searchParams.get('to');
+        const siteParam = url.searchParams.get('site');
+        const options: {
+          windowStart?: string;
+          windowEnd?: string;
+          siteUrl?: string;
+        } = {};
+        if (fromParam) options.windowStart = fromParam;
+        if (toParam) options.windowEnd = toParam;
+        if (siteParam) options.siteUrl = siteParam;
+        const result = await runSearchConsoleSnapshot(env, options);
         return new Response(JSON.stringify({ status: 'ok', ...result }), {
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
         });

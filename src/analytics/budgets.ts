@@ -4,13 +4,14 @@
  * worst-case subrequest counts in one place.
  *
  * Worst-case weekly ingest subrequests:
- *   CF GraphQL                    1
- *   Analytics Engine SQL rollup   1
- *   Search Console queries+pages  2
- *   Rankings (30 keywords)       30
- *   Competitors (10 × 2 fetches) 20
- *   ----------------------------------
- *   Total                        54  (well under the 1000 ceiling)
+ *   CF GraphQL                              1
+ *   Analytics Engine SQL rollup             1
+ *   Search Console (OAuth + totals +
+ *     topQueries + topPages)                4
+ *   Rankings (30 keywords)                 30
+ *   Competitors (10 × 2 fetches)           20
+ *   -------------------------------------------
+ *   Total                                  56  (well under the 1000 ceiling)
  */
 
 export const STALE_RUN_THRESHOLD_MS = 10 * 60 * 1000;
