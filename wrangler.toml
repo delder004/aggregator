@@ -28,3 +28,7 @@ class_name = "CollectWorkflow"
 name = "agenticaiaccounting-process"
 binding = "PROCESS_WORKFLOW"
 class_name = "ProcessWorkflow"
+
+[[analytics_engine_datasets]]
+binding = "AE_EVENTS"
+dataset = "agenticaiaccounting_article_views"

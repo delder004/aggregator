@@ -8,6 +8,10 @@ import {
 } from './db/queries';
 import { layout, articleCard, escapeHtml, readTime } from './renderer/html';
 import { addSubscriberToButtondown } from './newsletter/buttondown';
+import {
+  runArticleViewsRollup,
+  writeArticleViewEvent,
+} from './analytics/analytics-engine';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
 
@@ -83,6 +87,93 @@ export default {
       });
     }
 
+    // Phase 1 capture layer: article-views rollup inspection + manual trigger.
+    if (path === '/ops/article-views') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '100');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(500, Math.floor(limitParam)))
+        : 100;
+      const offsetParam = Number(url.searchParams.get('offset') || '0');
+      const offset = Number.isFinite(offsetParam)
+        ? Math.max(0, Math.floor(offsetParam))
+        : 0;
+      const sinceDate =
+        url.searchParams.get('since') ||
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+      const result = await env.DB
+        .prepare(
+          `SELECT article_id, view_date, views, unique_visitors,
+                  top_referrer, updated_at
+           FROM article_views
+           WHERE view_date >= ?
+           ORDER BY view_date DESC, views DESC
+           LIMIT ? OFFSET ?`
+        )
+        .bind(sinceDate, limit, offset)
+        .all();
+      return new Response(
+        JSON.stringify({
+          since: sinceDate,
+          limit,
+          offset,
+          count: result.results.length,
+          rows: result.results,
+        }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    if (path === '/ops/cron/article-views-rollup' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const fromDateParam = url.searchParams.get('from_date');
+        const toDateParam = url.searchParams.get('to_date');
+        const daysParam = url.searchParams.get('days');
+        const options: {
+          fromDate?: string;
+          toDate?: string;
+          days?: number;
+        } = {};
+        if (fromDateParam) options.fromDate = fromDateParam;
+        if (toDateParam) options.toDate = toDateParam;
+        if (daysParam) {
+          const n = Number(daysParam);
+          if (!Number.isFinite(n)) {
+            return new Response(
+              JSON.stringify({ status: 'error', error: 'days must be a number' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              }
+            );
+          }
+          options.days = Math.floor(n);
+        }
+        const result = await runArticleViewsRollup(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
     // Manual cron trigger endpoint (authenticated via dedicated secret)
     if (path === '/cron') {
       if (!isOpsAuthorized(request, env)) {
@@ -143,6 +234,18 @@ export default {
       if (!article) {
         return new Response('Not Found', { status: 404 });
       }
+
+      // Best-effort Analytics Engine write. Sync-enqueue per CF docs, never
+      // awaited, never throws into the response path. The function itself
+      // already swallows binding errors — see analytics-engine.ts.
+      writeArticleViewEvent(env, {
+        articleId,
+        referer: request.headers.get('Referer'),
+        country:
+          (request as unknown as { cf?: { country?: string } }).cf?.country ??
+          null,
+        userAgent: request.headers.get('User-Agent'),
+      });
 
       const related = await getRelatedArticles(env.DB, article);
 

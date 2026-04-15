@@ -40,7 +40,10 @@ export const SEARCH_CONSOLE_BUDGET = {
 
 export const ANALYTICS_ENGINE_BUDGET = {
   rollupTimeoutMs: 15_000,
-  rollupRowLimit: 1_000,
+  // Headroom for 7 complete UTC days × ~1.4k articles/day. The rollup throws
+  // if rows_before_limit_at_least exceeds this, so growth fails loudly
+  // rather than silently truncating.
+  rollupRowLimit: 10_000,
 } as const;
 
 export const BLOB_NAMESPACES = {

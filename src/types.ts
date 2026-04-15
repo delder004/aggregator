@@ -126,6 +126,10 @@ export interface Env {
   PROCESS_WORKFLOW: Workflow;
   HEALTHCHECK_URL?: string;
   BUTTONDOWN_API_KEY?: string;
+  // Phase 1 consolidation loop: capture-layer bindings & secrets
+  AE_EVENTS?: AnalyticsEngineDataset;
+  CF_ACCOUNT_ID?: string;
+  CF_ANALYTICS_API_TOKEN?: string;
 }
 
 // -- Insights Summary types --
