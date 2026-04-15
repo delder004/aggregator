@@ -130,6 +130,7 @@ export interface Env {
   AE_EVENTS?: AnalyticsEngineDataset;
   CF_ACCOUNT_ID?: string;
   CF_ANALYTICS_API_TOKEN?: string;
+  CF_ZONE_ID?: string;
 }
 
 // -- Insights Summary types --

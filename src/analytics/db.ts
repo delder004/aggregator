@@ -97,6 +97,7 @@ export async function completeCfAnalyticsSnapshot(
     blobKey: string;
     totalRequests: number | null;
     totalPageViews: number | null;
+    totalVisits: number | null;
     uniqueVisitors: number | null;
     cachedPercentage: number | null;
     topPathsCount: number | null;
@@ -115,6 +116,7 @@ export async function completeCfAnalyticsSnapshot(
            blob_key = ?,
            total_requests = ?,
            total_page_views = ?,
+           total_visits = ?,
            unique_visitors = ?,
            cached_percentage = ?,
            top_paths_count = ?,
@@ -129,6 +131,7 @@ export async function completeCfAnalyticsSnapshot(
       data.blobKey,
       data.totalRequests,
       data.totalPageViews,
+      data.totalVisits,
       data.uniqueVisitors,
       data.cachedPercentage,
       data.topPathsCount,
@@ -205,6 +208,7 @@ function mapCfAnalyticsRow(row: Record<string, unknown>): CfAnalyticsSnapshot {
     blobKey: (row.blob_key as string | null) ?? null,
     totalRequests: nullableNumber(row.total_requests),
     totalPageViews: nullableNumber(row.total_page_views),
+    totalVisits: nullableNumber(row.total_visits),
     uniqueVisitors: nullableNumber(row.unique_visitors),
     cachedPercentage: nullableNumber(row.cached_percentage),
     topPathsCount: nullableNumber(row.top_paths_count),

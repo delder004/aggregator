@@ -180,6 +180,7 @@ CREATE TABLE IF NOT EXISTS cf_analytics_snapshots (
     blob_key TEXT,
     total_requests INTEGER,
     total_page_views INTEGER,
+    total_visits INTEGER,
     unique_visitors INTEGER,
     cached_percentage REAL,
     top_paths_count INTEGER,

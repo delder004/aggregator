@@ -12,6 +12,12 @@ import {
   runArticleViewsRollup,
   writeArticleViewEvent,
 } from './analytics/analytics-engine';
+import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
+import {
+  getCfAnalyticsSnapshotById,
+  listCfAnalyticsSnapshots,
+} from './analytics/db';
+import { readBlob } from './analytics/blob-store';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
 
@@ -126,6 +132,71 @@ export default {
         }),
         { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
       );
+    }
+
+    // CF GraphQL zone analytics: snapshot list / detail / manual trigger.
+    if (path === '/ops/cf-analytics') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '20');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(100, Math.floor(limitParam)))
+        : 20;
+      const snapshots = await listCfAnalyticsSnapshots(env.DB, limit);
+      return new Response(
+        JSON.stringify({ count: snapshots.length, snapshots }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    const cfSnapshotMatch = path.match(/^\/ops\/cf-analytics\/([a-f0-9-]+)$/);
+    if (cfSnapshotMatch) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const snapshot = await getCfAnalyticsSnapshotById(env.DB, cfSnapshotMatch[1]);
+      if (!snapshot) {
+        return new Response('Not Found', { status: 404 });
+      }
+      const blob = snapshot.blobKey ? await readBlob(env.KV, snapshot.blobKey) : null;
+      return new Response(JSON.stringify({ snapshot, blob }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    if (path === '/ops/cron/cf-analytics-snapshot' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const fromParam = url.searchParams.get('from');
+        const toParam = url.searchParams.get('to');
+        const zoneParam = url.searchParams.get('zone');
+        const options: {
+          windowStart?: string;
+          windowEnd?: string;
+          zoneTag?: string;
+        } = {};
+        if (fromParam) options.windowStart = fromParam;
+        if (toParam) options.windowEnd = toParam;
+        if (zoneParam) options.zoneTag = zoneParam;
+        const result = await runCfAnalyticsSnapshot(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
     }
 
     if (path === '/ops/cron/article-views-rollup' && request.method === 'POST') {

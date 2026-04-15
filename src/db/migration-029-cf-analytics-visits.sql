@@ -1,0 +1,15 @@
+-- Migration 029: Rename CF analytics pageview semantic to visits.
+--
+-- httpRequestsAdaptiveGroups.sum.visits is NOT the same as page views — one
+-- visit can contain multiple page views. The original migration-028 used
+-- total_page_views to store whatever the CF analytics query returned, but
+-- sourcing that from sum.visits writes the wrong semantic.
+--
+-- Adding a total_visits column that honestly reflects what the CF GraphQL
+-- adaptive groups node exposes. total_page_views stays (nullable, written
+-- as NULL in Phase 1) in case a true page-view source is added later.
+--
+-- SQLite doesn't support ADD COLUMN IF NOT EXISTS. Re-running on a DB that
+-- already has the column will error; this matches the convention in earlier
+-- migrations (see migration-017-transcript.sql).
+ALTER TABLE cf_analytics_snapshots ADD COLUMN total_visits INTEGER;

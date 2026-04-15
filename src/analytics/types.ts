@@ -16,7 +16,10 @@ export interface SnapshotBase {
 export interface CfAnalyticsSnapshot extends SnapshotBase {
   source: 'graphql' | 'analytics_engine';
   totalRequests: number | null;
+  /** Reserved for a future true pageview source; NULL in Phase 1. */
   totalPageViews: number | null;
+  /** From sum.visits on httpRequestsAdaptiveGroups. NOT the same as pageviews. */
+  totalVisits: number | null;
   uniqueVisitors: number | null;
   cachedPercentage: number | null;
   topPathsCount: number | null;
