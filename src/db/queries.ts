@@ -1,4 +1,21 @@
-import type { Article, SourceConfig, ScoredArticle, SourceType, InsightSummary, InsightPeriodType, CompanyInsight } from '../types';
+import type {
+  Article,
+  SourceConfig,
+  ScoredArticle,
+  SourceType,
+  InsightSummary,
+  InsightPeriodType,
+  CompanyInsight,
+  PipelineRun,
+  PipelineRunRetrospective,
+  PipelineRunStep,
+  RunStepReport,
+  RunStatus,
+  RunTriggerType,
+  RunWorkflowName,
+  RunWorkflowStatus,
+  RunRetrospectiveStatus,
+} from '../types';
 import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
 
 /** Escape SQL LIKE wildcards in user-provided values. */
@@ -566,4 +583,291 @@ function mapRowToCompanyInsight(row: Record<string, unknown>): CompanyInsight {
     articleCount: (row.article_count as number) || 0,
     generatedAt: row.generated_at as string,
   };
+}
+
+// -- Pipeline run telemetry queries --
+
+function workflowColumnPrefix(workflowName: RunWorkflowName): 'collect' | 'process' {
+  return workflowName === 'collect' ? 'collect' : 'process';
+}
+
+function parseJsonArray(value: unknown): string[] {
+  try {
+    const parsed = JSON.parse((value as string) || '[]');
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseJsonObject(value: unknown): Record<string, string | number | boolean | null> {
+  try {
+    const parsed = JSON.parse((value as string) || '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const entries = Object.entries(parsed).filter(([, entryValue]) => (
+      entryValue === null ||
+      typeof entryValue === 'string' ||
+      typeof entryValue === 'number' ||
+      typeof entryValue === 'boolean'
+    ));
+    return Object.fromEntries(entries) as Record<string, string | number | boolean | null>;
+  } catch {
+    return {};
+  }
+}
+
+function mapRowToPipelineRun(row: Record<string, unknown>): PipelineRun {
+  return {
+    id: row.id as string,
+    triggerType: row.trigger_type as RunTriggerType,
+    triggerSource: row.trigger_source as string,
+    startedAt: row.started_at as string,
+    completedAt: (row.completed_at as string) || null,
+    status: row.status as RunStatus,
+    collectWorkflowId: (row.collect_workflow_id as string) || null,
+    collectStartedAt: (row.collect_started_at as string) || null,
+    collectCompletedAt: (row.collect_completed_at as string) || null,
+    collectStatus: row.collect_status as RunWorkflowStatus,
+    processWorkflowId: (row.process_workflow_id as string) || null,
+    processStartedAt: (row.process_started_at as string) || null,
+    processCompletedAt: (row.process_completed_at as string) || null,
+    processStatus: row.process_status as RunWorkflowStatus,
+    retrospectiveStatus: row.retrospective_status as RunRetrospectiveStatus,
+    retrospectiveSummary: (row.retrospective_summary as string) || null,
+    retrospectiveWentWell: parseJsonArray(row.retrospective_went_well),
+    retrospectiveDidntGoWell: parseJsonArray(row.retrospective_didnt_go_well),
+    retrospectiveFollowUps: parseJsonArray(row.retrospective_follow_ups),
+    retrospectiveGeneratedAt: (row.retrospective_generated_at as string) || null,
+    retrospectiveError: (row.retrospective_error as string) || null,
+  };
+}
+
+function mapRowToPipelineRunStep(row: Record<string, unknown>): PipelineRunStep {
+  return {
+    pipelineRunId: row.pipeline_run_id as string,
+    workflowName: row.workflow_name as RunWorkflowName,
+    stepName: row.step_name as string,
+    status: row.status as RunStepReport['status'],
+    startedAt: row.started_at as string,
+    completedAt: row.completed_at as string,
+    metrics: parseJsonObject(row.metrics_json),
+    notes: parseJsonArray(row.notes_json),
+    errors: parseJsonArray(row.errors_json),
+  };
+}
+
+export async function markPipelineWorkflowStarted(
+  db: D1Database,
+  params: {
+    runId: string;
+    triggerType: RunTriggerType;
+    triggerSource: string;
+    runStartedAt: string;
+    workflowName: RunWorkflowName;
+    workflowId: string;
+    workflowStartedAt: string;
+  }
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO pipeline_runs
+       (id, trigger_type, trigger_source, started_at, status)
+       VALUES (?, ?, ?, ?, 'running')`
+    )
+    .bind(
+      params.runId,
+      params.triggerType,
+      params.triggerSource,
+      params.runStartedAt
+    )
+    .run();
+
+  const prefix = workflowColumnPrefix(params.workflowName);
+  await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET ${prefix}_workflow_id = COALESCE(${prefix}_workflow_id, ?),
+           ${prefix}_started_at = COALESCE(${prefix}_started_at, ?),
+           ${prefix}_status = 'running'
+       WHERE id = ?`
+    )
+    .bind(params.workflowId, params.workflowStartedAt, params.runId)
+    .run();
+}
+
+export async function recordPipelineRunStep(
+  db: D1Database,
+  runId: string,
+  workflowName: RunWorkflowName,
+  step: RunStepReport
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO pipeline_run_steps
+       (pipeline_run_id, workflow_name, step_name, status, started_at, completed_at, metrics_json, notes_json, errors_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(pipeline_run_id, workflow_name, step_name) DO UPDATE SET
+         status = excluded.status,
+         started_at = excluded.started_at,
+         completed_at = excluded.completed_at,
+         metrics_json = excluded.metrics_json,
+         notes_json = excluded.notes_json,
+         errors_json = excluded.errors_json`
+    )
+    .bind(
+      runId,
+      workflowName,
+      step.stepName,
+      step.status,
+      step.startedAt,
+      step.completedAt,
+      JSON.stringify(step.metrics ?? {}),
+      JSON.stringify(step.notes ?? []),
+      JSON.stringify(step.errors ?? [])
+    )
+    .run();
+}
+
+export async function finishPipelineWorkflow(
+  db: D1Database,
+  params: {
+    runId: string;
+    workflowName: RunWorkflowName;
+    status: RunWorkflowStatus;
+    completedAt: string;
+  }
+): Promise<void> {
+  const prefix = workflowColumnPrefix(params.workflowName);
+  await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET ${prefix}_status = ?, ${prefix}_completed_at = ?
+       WHERE id = ?`
+    )
+    .bind(params.status, params.completedAt, params.runId)
+    .run();
+}
+
+export async function updatePipelineRunStatus(
+  db: D1Database,
+  runId: string,
+  status: RunStatus,
+  completedAt?: string | null
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET status = ?, completed_at = COALESCE(?, completed_at)
+       WHERE id = ?`
+    )
+    .bind(status, completedAt ?? null, runId)
+    .run();
+}
+
+export async function getPipelineRunById(
+  db: D1Database,
+  id: string
+): Promise<PipelineRun | null> {
+  const row = await db
+    .prepare('SELECT * FROM pipeline_runs WHERE id = ?')
+    .bind(id)
+    .first();
+  return row ? mapRowToPipelineRun(row) : null;
+}
+
+export async function getPipelineRunSteps(
+  db: D1Database,
+  runId: string
+): Promise<PipelineRunStep[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM pipeline_run_steps
+       WHERE pipeline_run_id = ?
+       ORDER BY workflow_name ASC, completed_at ASC, step_name ASC`
+    )
+    .bind(runId)
+    .all();
+  return results.results.map(mapRowToPipelineRunStep);
+}
+
+export async function listPipelineRuns(
+  db: D1Database,
+  limit: number = 20
+): Promise<PipelineRun[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM pipeline_runs
+       ORDER BY started_at DESC
+       LIMIT ?`
+    )
+    .bind(limit)
+    .all();
+  return results.results.map(mapRowToPipelineRun);
+}
+
+export async function claimPipelineRunRetrospective(
+  db: D1Database,
+  runId: string
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET retrospective_status = 'generating', retrospective_error = NULL
+       WHERE id = ?
+         AND retrospective_status IN ('pending', 'failed')
+         AND collect_status IN ('complete', 'warning', 'error')
+         AND process_status IN ('complete', 'warning', 'error')`
+    )
+    .bind(runId)
+    .run();
+  return result.meta.changes > 0;
+}
+
+export async function savePipelineRunRetrospective(
+  db: D1Database,
+  runId: string,
+  retrospective: PipelineRunRetrospective
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET retrospective_status = 'complete',
+           retrospective_summary = ?,
+           retrospective_went_well = ?,
+           retrospective_didnt_go_well = ?,
+           retrospective_follow_ups = ?,
+           retrospective_generated_at = ?,
+           retrospective_error = NULL
+       WHERE id = ?`
+    )
+    .bind(
+      retrospective.summary,
+      JSON.stringify(retrospective.wentWell),
+      JSON.stringify(retrospective.didntGoWell),
+      JSON.stringify(retrospective.followUps),
+      retrospective.generatedAt,
+      runId
+    )
+    .run();
+}
+
+export async function failPipelineRunRetrospective(
+  db: D1Database,
+  runId: string,
+  error: string
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE pipeline_runs
+       SET retrospective_status = 'failed',
+           retrospective_error = ?
+       WHERE id = ?`
+    )
+    .bind(error, runId)
+    .run();
 }

@@ -1,9 +1,33 @@
-import type { Env } from './types';
-import { getArticleById, getRelatedArticles } from './db/queries';
+import type { Env, RunTriggerType, RunWorkflowParams } from './types';
+import {
+  getArticleById,
+  getPipelineRunById,
+  getPipelineRunSteps,
+  getRelatedArticles,
+  listPipelineRuns,
+} from './db/queries';
 import { layout, articleCard, escapeHtml, readTime } from './renderer/html';
 import { addSubscriberToButtondown } from './newsletter/buttondown';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
+
+function isOpsAuthorized(request: Request, env: Env): boolean {
+  return Boolean(env.CRON_SECRET && request.headers.get('X-Cron-Key') === env.CRON_SECRET);
+}
+
+async function startPipeline(env: Env, triggerType: RunTriggerType, triggerSource: string) {
+  const pipelineRunId = crypto.randomUUID();
+  const startedAt = new Date().toISOString();
+  const params: RunWorkflowParams = {
+    pipelineRunId,
+    triggerType,
+    triggerSource,
+    startedAt,
+  };
+  const collectInstance = await env.COLLECT_WORKFLOW.create({ params });
+  const processInstance = await env.PROCESS_WORKFLOW.create({ params });
+  return { pipelineRunId, collectInstance, processInstance };
+}
 
 export default {
   async fetch(
@@ -27,16 +51,51 @@ export default {
       );
     }
 
-    // Manual cron trigger endpoint (authenticated via dedicated secret)
-    if (path === '/cron') {
-      const cronSecret = env.CRON_SECRET;
-      if (!cronSecret || request.headers.get('X-Cron-Key') !== cronSecret) {
+    if (path === '/ops/runs') {
+      if (!isOpsAuthorized(request, env)) {
         return new Response('Unauthorized', { status: 401 });
       }
-      const collectInstance = await env.COLLECT_WORKFLOW.create();
-      const processInstance = await env.PROCESS_WORKFLOW.create();
+
+      const limitParam = Number(url.searchParams.get('limit') || '20');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(100, Math.floor(limitParam)))
+        : 20;
+      const runs = await listPipelineRuns(env.DB, limit);
+      return new Response(JSON.stringify({ runs }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    const runMatch = path.match(/^\/ops\/runs\/([a-f0-9-]+)$/);
+    if (runMatch) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      const runId = runMatch[1];
+      const run = await getPipelineRunById(env.DB, runId);
+      if (!run) {
+        return new Response('Not Found', { status: 404 });
+      }
+      const steps = await getPipelineRunSteps(env.DB, runId);
+      return new Response(JSON.stringify({ run, steps }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    // Manual cron trigger endpoint (authenticated via dedicated secret)
+    if (path === '/cron') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const { pipelineRunId, collectInstance, processInstance } = await startPipeline(
+        env,
+        'manual',
+        '/cron'
+      );
       return new Response(JSON.stringify({
         status: 'started',
+        pipelineRunId,
         collectInstanceId: collectInstance.id,
         processInstanceId: processInstance.id,
       }), {
@@ -278,8 +337,14 @@ export default {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    const collectInstance = await env.COLLECT_WORKFLOW.create();
-    const processInstance = await env.PROCESS_WORKFLOW.create();
-    console.log(`Collect workflow started: ${collectInstance.id}, Process workflow started: ${processInstance.id}`);
+    const { pipelineRunId, collectInstance, processInstance } = await startPipeline(
+      env,
+      'scheduled',
+      'cron'
+    );
+    console.log(
+      `Pipeline run ${pipelineRunId} started. ` +
+      `Collect workflow: ${collectInstance.id}, Process workflow: ${processInstance.id}`
+    );
   },
 };

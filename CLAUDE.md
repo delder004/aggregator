@@ -84,6 +84,9 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
   ```bash
   curl -H "X-Cron-Key: $CRON_SECRET" https://agenticaiccounting.com/cron
   ```
+- **Run telemetry API:**
+  - `GET /ops/runs` with `X-Cron-Key: $CRON_SECRET` returns recent pipeline runs
+  - `GET /ops/runs/<pipelineRunId>` returns step-level metrics plus the AI retrospective
 
 ## Workflow
 

@@ -153,3 +153,74 @@ export interface CompanyInsight {
   articleCount: number;
   generatedAt: string;
 }
+
+// -- Pipeline run telemetry types --
+
+export type RunTriggerType = 'scheduled' | 'manual';
+export type RunWorkflowName = 'collect' | 'process';
+export type RunStatus = 'running' | 'complete' | 'warning' | 'error';
+export type RunWorkflowStatus = 'pending' | 'running' | 'complete' | 'warning' | 'error';
+export type RunStepStatus = 'ok' | 'skipped' | 'warning' | 'error';
+export type RunRetrospectiveStatus = 'pending' | 'generating' | 'complete' | 'failed';
+export type RunMetricValue = string | number | boolean | null;
+
+export interface RunWorkflowParams {
+  pipelineRunId: string;
+  triggerType: RunTriggerType;
+  triggerSource: string;
+  startedAt: string;
+}
+
+export interface RunStepReport {
+  stepName: string;
+  status: RunStepStatus;
+  startedAt: string;
+  completedAt: string;
+  metrics?: Record<string, RunMetricValue>;
+  notes?: string[];
+  errors?: string[];
+}
+
+export interface PipelineRunRetrospective {
+  summary: string;
+  wentWell: string[];
+  didntGoWell: string[];
+  followUps: string[];
+  generatedAt: string;
+}
+
+export interface PipelineRun {
+  id: string;
+  triggerType: RunTriggerType;
+  triggerSource: string;
+  startedAt: string;
+  completedAt: string | null;
+  status: RunStatus;
+  collectWorkflowId: string | null;
+  collectStartedAt: string | null;
+  collectCompletedAt: string | null;
+  collectStatus: RunWorkflowStatus;
+  processWorkflowId: string | null;
+  processStartedAt: string | null;
+  processCompletedAt: string | null;
+  processStatus: RunWorkflowStatus;
+  retrospectiveStatus: RunRetrospectiveStatus;
+  retrospectiveSummary: string | null;
+  retrospectiveWentWell: string[];
+  retrospectiveDidntGoWell: string[];
+  retrospectiveFollowUps: string[];
+  retrospectiveGeneratedAt: string | null;
+  retrospectiveError: string | null;
+}
+
+export interface PipelineRunStep {
+  pipelineRunId: string;
+  workflowName: RunWorkflowName;
+  stepName: string;
+  status: RunStepStatus;
+  startedAt: string;
+  completedAt: string;
+  metrics: Record<string, RunMetricValue>;
+  notes: string[];
+  errors: string[];
+}
