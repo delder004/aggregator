@@ -85,6 +85,14 @@ export function parseConsolidationResponse(
   }
 
   const proposals = parseProposals(parsed.proposals);
+  if (proposals.length === 0) {
+    throw new Error(
+      'Consolidation response has zero valid proposals after filtering. ' +
+        'The prompt requests 3-8; if the AI returned proposals with invalid ' +
+        'type/action/confidence/priority or empty target/rationale, they were ' +
+        'dropped. Check the raw AI output blob for the unfiltered response.'
+    );
+  }
   const topicGaps = parseStringArray(parsed.topicGaps);
   const keywordOpportunities = parseStringArray(parsed.keywordOpportunities);
 

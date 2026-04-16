@@ -1,5 +1,6 @@
 import type { Env } from '../types';
 import type { WeeklyWindow } from '../analytics/window';
+import { getPreviousWeeklyWindow } from '../analytics/window';
 import type {
   CfAnalyticsSnapshot,
   KeywordRanking,
@@ -9,13 +10,13 @@ import type {
 import type { ConsolidationContext, ConsolidationInputRefs } from './types';
 import { readBlob } from '../analytics/blob-store';
 import {
-  listCfAnalyticsSnapshots,
-  listRecentKeywordRankings,
-  listSearchConsoleSnapshots,
-  listCompetitorSnapshots,
+  getCfAnalyticsSnapshotByWindow,
+  getSearchConsoleSnapshotByWindow,
+  listCompetitorSnapshotsByWindow,
+  listKeywordRankingsByWindow,
   listTopArticleViewsAggregated,
 } from '../analytics/db';
-import { listPipelineRuns } from '../db/queries';
+import { listPipelineRunsByDateRange } from '../db/queries';
 import type { PipelineRun } from '../types';
 
 /**
@@ -26,7 +27,6 @@ const CAPS = {
   maxPipelineRuns: 10,
   maxSearchConsoleQueries: 20,
   maxSearchConsolePages: 10,
-  maxKeywords: 30,
   maxCompetitorItems: 10,
   maxCompetitors: 5,
   maxArticlesByViews: 20,
@@ -67,13 +67,14 @@ export interface CompetitorBlob {
 /**
  * Assemble the full consolidation context from all six input families.
  *
- * Reads from D1 and KV, pre-aggregates each family to its cap, and
- * serializes into a single prompt string. Returns the prompt, a token
- * estimate, and refs to the input rows consumed (for traceability in
- * run_consolidations).
+ * All queries filter by the explicit window — no "fetch latest N and
+ * search in memory" patterns. This means backfills for older windows
+ * work correctly as long as the snapshot data exists in D1/KV.
  *
- * Each family is wrapped in a labeled section header so the AI can
- * attribute its proposals to specific inputs.
+ * Rankings use a two-window query: the consolidation's own window for
+ * "current" data, and the week before it for "previous" deltas. Missing
+ * data in either window is labeled honestly ("no data this week" or
+ * "no previous data") rather than fabricated into conclusions.
  */
 export async function assembleConsolidationContext(
   env: Env,
@@ -85,34 +86,34 @@ export async function assembleConsolidationContext(
   };
   const sections: string[] = [];
 
-  // 1. Pipeline run summaries (last 7 days)
-  const runs = await listPipelineRuns(env.DB, CAPS.maxPipelineRuns);
-  const recentRuns = runs.filter(
-    (r) => r.startedAt >= window.windowStart && r.startedAt < window.windowEnd
+  // 1. Pipeline runs — date-range query filtered to this window, then cap.
+  const allRunsInWindow = await listPipelineRunsByDateRange(
+    env.DB,
+    window.windowStart,
+    window.windowEnd,
+    CAPS.maxPipelineRuns
   );
-  inputRefs.pipelineRunIds = recentRuns.map((r) => r.id);
-  sections.push(formatPipelineRuns(recentRuns));
+  inputRefs.pipelineRunIds = allRunsInWindow.map((r) => r.id);
+  sections.push(formatPipelineRuns(allRunsInWindow));
 
-  // 2. CF analytics (this window)
-  const cfSnapshots = await listCfAnalyticsSnapshots(env.DB, 5);
-  const cfSnapshot = cfSnapshots.find(
-    (s) =>
-      s.windowStart === window.windowStart &&
-      s.status === 'complete'
+  // 2. CF analytics — direct window lookup.
+  const cfSnapshot = await getCfAnalyticsSnapshotByWindow(
+    env.DB,
+    window.windowStart
   );
   if (cfSnapshot) {
     inputRefs.snapshotIds['cf-analytics'] = [cfSnapshot.id];
     sections.push(formatCfAnalytics(cfSnapshot));
   } else {
-    sections.push('## Cloudflare Analytics\n\nNo data available for this window.');
+    sections.push(
+      '## Cloudflare Analytics\n\nNo data available for this window.'
+    );
   }
 
-  // 3. Search Console (this window)
-  const gscSnapshots = await listSearchConsoleSnapshots(env.DB, 5);
-  const gscSnapshot = gscSnapshots.find(
-    (s) =>
-      s.windowStart === window.windowStart &&
-      s.status === 'complete'
+  // 3. Search Console — direct window lookup.
+  const gscSnapshot = await getSearchConsoleSnapshotByWindow(
+    env.DB,
+    window.windowStart
   );
   if (gscSnapshot) {
     inputRefs.snapshotIds['search-console'] = [gscSnapshot.id];
@@ -127,22 +128,28 @@ export async function assembleConsolidationContext(
     );
   }
 
-  // 4. Rankings (current + previous window for deltas)
-  const allRankings = await listRecentKeywordRankings(env.DB, 100);
-  sections.push(formatRankings(allRankings, window));
-  if (allRankings.length > 0) {
-    inputRefs.snapshotIds['rankings'] = ['aggregated'];
+  // 4. Rankings — explicit current + previous window queries.
+  const prevWindow = getPreviousWeeklyWindow(new Date(window.windowStart));
+  const currentRankings = await listKeywordRankingsByWindow(
+    env.DB,
+    window.windowStart
+  );
+  const previousRankings = await listKeywordRankingsByWindow(
+    env.DB,
+    prevWindow.windowStart
+  );
+  if (currentRankings.length > 0) {
+    inputRefs.snapshotIds['rankings'] = ['current-window'];
   }
+  sections.push(formatRankings(currentRankings, previousRankings));
 
-  // 5. Competitors (this window, direct bucket only)
-  const compSnapshots = await listCompetitorSnapshots(env.DB, 50);
-  const windowCompSnapshots = compSnapshots.filter(
-    (s) =>
-      s.windowStart === window.windowStart &&
-      s.status === 'complete'
+  // 5. Competitors — direct window-filtered query, direct bucket only.
+  const compSnapshots = await listCompetitorSnapshotsByWindow(
+    env.DB,
+    window.windowStart
   );
   const compBlobs: CompetitorBlob[] = [];
-  for (const snap of windowCompSnapshots) {
+  for (const snap of compSnapshots) {
     if (snap.blobKey) {
       const blob = await readBlob<CompetitorBlob>(env.KV, snap.blobKey);
       if (blob && blob.bucket === 'direct') {
@@ -150,12 +157,12 @@ export async function assembleConsolidationContext(
       }
     }
   }
-  if (windowCompSnapshots.length > 0) {
-    inputRefs.snapshotIds['competitors'] = windowCompSnapshots.map((s) => s.id);
+  if (compSnapshots.length > 0) {
+    inputRefs.snapshotIds['competitors'] = compSnapshots.map((s) => s.id);
   }
   sections.push(formatCompetitors(compBlobs));
 
-  // 6. Top articles by views
+  // 6. Top articles by views.
   const fromDate = window.windowStart.slice(0, 10);
   const toDate = window.windowEnd.slice(0, 10);
   const topArticles = await listTopArticleViewsAggregated(
@@ -184,7 +191,9 @@ function formatPipelineRuns(runs: PipelineRun[]): string {
     lines.push(`### Run ${run.id.slice(0, 8)}`);
     lines.push(`- Status: ${run.status}`);
     lines.push(`- Started: ${run.startedAt}`);
-    lines.push(`- Collect: ${run.collectStatus}, Process: ${run.processStatus}`);
+    lines.push(
+      `- Collect: ${run.collectStatus}, Process: ${run.processStatus}`
+    );
     if (run.retrospectiveSummary) {
       lines.push(`- Retrospective: ${run.retrospectiveSummary}`);
     }
@@ -255,63 +264,51 @@ function formatSearchConsole(
 }
 
 function formatRankings(
-  allRankings: KeywordRanking[],
-  window: WeeklyWindow
+  currentRankings: KeywordRanking[],
+  previousRankings: KeywordRanking[]
 ): string {
   const lines = ['## Keyword Rankings', ''];
 
-  // Group by keyword, then find current and previous week's rank
-  const byKeyword = new Map<
-    string,
-    { current: KeywordRanking | null; previous: KeywordRanking | null }
-  >();
-  for (const r of allRankings) {
-    const entry = byKeyword.get(r.keyword) ?? {
-      current: null,
-      previous: null,
-    };
-    if (r.windowStart === window.windowStart) {
-      entry.current = r;
-    } else if (!entry.previous || r.windowStart > entry.previous.windowStart) {
-      entry.previous = r;
-    }
-    byKeyword.set(r.keyword, entry);
-  }
-
-  if (byKeyword.size === 0) {
-    lines.push('No keyword ranking data available.');
+  if (currentRankings.length === 0) {
+    lines.push('No keyword ranking data available for this window.');
     return lines.join('\n');
   }
 
-  lines.push(`${byKeyword.size} keywords tracked.`);
+  const previousByKeyword = new Map<string, KeywordRanking>();
+  for (const r of previousRankings) {
+    previousByKeyword.set(r.keyword, r);
+  }
+
+  lines.push(`${currentRankings.length} keywords tracked.`);
   lines.push('');
 
-  for (const [keyword, { current, previous }] of byKeyword) {
-    const currentRank = current?.rank;
-    const previousRank = previous?.rank;
+  for (const current of currentRankings) {
+    const previous = previousByKeyword.get(current.keyword);
+    const currentRank = current.rank;
 
     let delta = '';
-    if (currentRank !== null && currentRank !== undefined && previousRank !== null && previousRank !== undefined) {
-      const diff = previousRank - currentRank; // positive = improved
+    if (
+      currentRank !== null &&
+      previous?.rank !== null &&
+      previous?.rank !== undefined
+    ) {
+      const diff = previous.rank - currentRank; // positive = improved
       if (diff > 0) delta = ` (improved +${diff})`;
       else if (diff < 0) delta = ` (dropped ${diff})`;
       else delta = ' (unchanged)';
+    } else if (currentRank !== null && !previous) {
+      delta = ' (no previous data)';
     }
 
     const rankStr =
-      currentRank !== null && currentRank !== undefined
-        ? `#${currentRank}${delta}`
-        : 'not in top 10';
+      currentRank !== null ? `#${currentRank}${delta}` : 'not in top 10';
 
     const nearPageOne =
-      currentRank !== null &&
-      currentRank !== undefined &&
-      currentRank >= 8 &&
-      currentRank <= 12
-        ? ' ⚡ near page 1'
+      currentRank !== null && currentRank >= 8 && currentRank <= 12
+        ? ' -- near page 1'
         : '';
 
-    lines.push(`- "${keyword}": ${rankStr}${nearPageOne}`);
+    lines.push(`- "${current.keyword}": ${rankStr}${nearPageOne}`);
   }
 
   return lines.join('\n');
@@ -367,12 +364,12 @@ function formatTopArticles(articles: TopArticleByViews[]): string {
       a.relevanceScore >= 80 &&
       a.totalViews <= 5
     ) {
-      flag = ' ⚠️ high-score/low-views';
+      flag = ' -- high-score/low-views';
     } else if (
       (a.relevanceScore === null || a.relevanceScore < 50) &&
       a.totalViews >= 50
     ) {
-      flag = ' ⚠️ low-score/high-views';
+      flag = ' -- low-score/high-views';
     }
 
     lines.push(`- ${title}: ${a.totalViews} views (${meta})${flag}`);

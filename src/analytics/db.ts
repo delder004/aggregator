@@ -201,6 +201,22 @@ export async function getCfAnalyticsSnapshotById(
   return row ? mapCfAnalyticsRow(row) : null;
 }
 
+export async function getCfAnalyticsSnapshotByWindow(
+  db: D1Database,
+  windowStart: string,
+  source: 'graphql' | 'analytics_engine' = 'graphql'
+): Promise<CfAnalyticsSnapshot | null> {
+  const row = await db
+    .prepare(
+      `SELECT * FROM cf_analytics_snapshots
+       WHERE window_start = ? AND source = ? AND status = 'complete'
+       LIMIT 1`
+    )
+    .bind(windowStart, source)
+    .first();
+  return row ? mapCfAnalyticsRow(row) : null;
+}
+
 function mapCfAnalyticsRow(row: Record<string, unknown>): CfAnalyticsSnapshot {
   return {
     id: row.id as string,
@@ -351,6 +367,21 @@ export async function getSearchConsoleSnapshotById(
   return row ? mapSearchConsoleRow(row) : null;
 }
 
+export async function getSearchConsoleSnapshotByWindow(
+  db: D1Database,
+  windowStart: string
+): Promise<SearchConsoleSnapshot | null> {
+  const row = await db
+    .prepare(
+      `SELECT * FROM search_console_snapshots
+       WHERE window_start = ? AND status = 'complete'
+       LIMIT 1`
+    )
+    .bind(windowStart)
+    .first();
+  return row ? mapSearchConsoleRow(row) : null;
+}
+
 function mapSearchConsoleRow(row: Record<string, unknown>): SearchConsoleSnapshot {
   return {
     id: row.id as string,
@@ -490,6 +521,21 @@ export async function getCompetitorSnapshotById(
   return row ? mapCompetitorRow(row) : null;
 }
 
+export async function listCompetitorSnapshotsByWindow(
+  db: D1Database,
+  windowStart: string
+): Promise<CompetitorSnapshot[]> {
+  const result = await db
+    .prepare(
+      `SELECT * FROM competitor_snapshots
+       WHERE window_start = ? AND status = 'complete'
+       ORDER BY competitor_slug`
+    )
+    .bind(windowStart)
+    .all();
+  return result.results.map(mapCompetitorRow);
+}
+
 function mapCompetitorRow(row: Record<string, unknown>): CompetitorSnapshot {
   return {
     id: row.id as string,
@@ -557,6 +603,21 @@ export async function listRecentKeywordRankings(
        ORDER BY checked_at DESC, keyword LIMIT ?`
     )
     .bind(limit)
+    .all();
+  return result.results.map(mapKeywordRankingRow);
+}
+
+export async function listKeywordRankingsByWindow(
+  db: D1Database,
+  windowStart: string
+): Promise<KeywordRanking[]> {
+  const result = await db
+    .prepare(
+      `SELECT * FROM keyword_rankings
+       WHERE window_start = ?
+       ORDER BY keyword`
+    )
+    .bind(windowStart)
     .all();
   return result.results.map(mapKeywordRankingRow);
 }

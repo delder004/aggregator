@@ -810,6 +810,24 @@ export async function listPipelineRuns(
   return results.results.map(mapRowToPipelineRun);
 }
 
+export async function listPipelineRunsByDateRange(
+  db: D1Database,
+  from: string,
+  to: string,
+  limit: number = 200
+): Promise<PipelineRun[]> {
+  const results = await db
+    .prepare(
+      `SELECT * FROM pipeline_runs
+       WHERE started_at >= ? AND started_at < ?
+       ORDER BY started_at DESC
+       LIMIT ?`
+    )
+    .bind(from, to, limit)
+    .all();
+  return results.results.map(mapRowToPipelineRun);
+}
+
 export async function claimPipelineRunRetrospective(
   db: D1Database,
   runId: string

@@ -105,7 +105,7 @@ describe('parseConsolidationResponse', () => {
     );
   });
 
-  it('drops proposals with invalid type', () => {
+  it('throws when all proposals have invalid type (zero valid after filter)', () => {
     const input = JSON.stringify({
       summary: 'ok',
       whatWorked: ['x'],
@@ -121,11 +121,12 @@ describe('parseConsolidationResponse', () => {
         },
       ],
     });
-    const result = parseConsolidationResponse(input);
-    expect(result.proposals).toHaveLength(0);
+    expect(() => parseConsolidationResponse(input)).toThrow(
+      /zero valid proposals/
+    );
   });
 
-  it('drops proposals with invalid action', () => {
+  it('throws when all proposals have invalid action', () => {
     const input = JSON.stringify({
       summary: 'ok',
       whatWorked: ['x'],
@@ -141,11 +142,12 @@ describe('parseConsolidationResponse', () => {
         },
       ],
     });
-    const result = parseConsolidationResponse(input);
-    expect(result.proposals).toHaveLength(0);
+    expect(() => parseConsolidationResponse(input)).toThrow(
+      /zero valid proposals/
+    );
   });
 
-  it('drops proposals with empty target or rationale', () => {
+  it('throws when all proposals have empty target or rationale', () => {
     const input = JSON.stringify({
       summary: 'ok',
       whatWorked: ['x'],
@@ -169,20 +171,58 @@ describe('parseConsolidationResponse', () => {
         },
       ],
     });
-    const result = parseConsolidationResponse(input);
-    expect(result.proposals).toHaveLength(0);
+    expect(() => parseConsolidationResponse(input)).toThrow(
+      /zero valid proposals/
+    );
   });
 
-  it('accepts empty topicGaps and keywordOpportunities', () => {
+  it('throws when proposals array is empty', () => {
     const input = JSON.stringify({
       summary: 'ok',
       whatWorked: ['x'],
       whatDidnt: ['y'],
       proposals: [],
     });
+    expect(() => parseConsolidationResponse(input)).toThrow(
+      /zero valid proposals/
+    );
+  });
+
+  it('keeps valid proposals even when some are dropped', () => {
+    const input = JSON.stringify({
+      summary: 'ok',
+      whatWorked: ['x'],
+      whatDidnt: ['y'],
+      proposals: [
+        {
+          type: 'invalid',
+          action: 'add',
+          target: 't',
+          rationale: 'r',
+          confidence: 'high',
+          priority: 'high',
+        },
+        {
+          type: 'source',
+          action: 'add',
+          target: 'good target',
+          rationale: 'good reason',
+          confidence: 'medium',
+          priority: 'high',
+        },
+      ],
+    });
     const result = parseConsolidationResponse(input);
-    expect(result.topicGaps).toEqual([]);
-    expect(result.keywordOpportunities).toEqual([]);
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0].target).toBe('good target');
+  });
+
+  it('accepts empty topicGaps and keywordOpportunities when proposals exist', () => {
+    const result = parseConsolidationResponse(validResponse);
+    // validResponse has proposals, so it passes; check that empty optional
+    // arrays are also fine
+    expect(result.topicGaps).toBeDefined();
+    expect(result.keywordOpportunities).toBeDefined();
   });
 
   it('filters out empty strings from arrays', () => {
@@ -190,7 +230,16 @@ describe('parseConsolidationResponse', () => {
       summary: 'ok',
       whatWorked: ['x', '', '  ', 'y'],
       whatDidnt: ['a'],
-      proposals: [],
+      proposals: [
+        {
+          type: 'source',
+          action: 'add',
+          target: 'filler',
+          rationale: 'needed for valid response',
+          confidence: 'low',
+          priority: 'low',
+        },
+      ],
     });
     const result = parseConsolidationResponse(input);
     expect(result.whatWorked).toEqual(['x', 'y']);
