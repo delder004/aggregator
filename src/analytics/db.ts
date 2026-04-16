@@ -2,16 +2,20 @@ import type {
   ArticleViewRow,
   CfAnalyticsSnapshot,
   CompetitorSnapshot,
+  ConsolidationProposal,
+  ConsolidationStatus,
   IngestNamespace,
   IngestNamespaceStatus,
   IngestRun,
   IngestRunStatus,
   KeywordRanking,
+  RunConsolidation,
   SearchConsoleSnapshot,
   SnapshotStatus,
   SourceCandidate,
   SourceCandidateOrigin,
   SourceCandidateStatus,
+  TopArticleByViews,
 } from './types';
 import { STALE_RUN_THRESHOLD_MS } from './budgets';
 
@@ -790,6 +794,234 @@ export async function getIngestStatus(
     });
   }
   return results;
+}
+
+// -- run_consolidations --
+
+export async function claimConsolidation(
+  db: D1Database,
+  windowStart: string,
+  windowEnd: string
+): Promise<SnapshotClaim | null> {
+  const id = generateId();
+  const now = nowIso();
+  const cutoff = staleCutoffIso();
+  const result = await db
+    .prepare(
+      `INSERT INTO run_consolidations (
+         id, window_start, window_end, status,
+         attempt_count, started_at, updated_at, error_message
+       ) VALUES (?, ?, ?, 'running', 1, ?, ?, NULL)
+       ON CONFLICT (window_start, window_end) DO UPDATE SET
+         status = 'running',
+         attempt_count = run_consolidations.attempt_count + 1,
+         started_at = excluded.started_at,
+         updated_at = excluded.updated_at,
+         error_message = NULL
+       WHERE run_consolidations.status <> 'complete'
+         AND (
+           run_consolidations.status <> 'running'
+           OR run_consolidations.updated_at < ?
+         )
+       RETURNING id, attempt_count`
+    )
+    .bind(id, windowStart, windowEnd, now, now, cutoff)
+    .first<{ id: string; attempt_count: number }>();
+  if (!result) {
+    return null;
+  }
+  return { id: result.id, attemptCount: Number(result.attempt_count) };
+}
+
+export async function completeConsolidation(
+  db: D1Database,
+  windowStart: string,
+  windowEnd: string,
+  expectedAttemptCount: number,
+  data: {
+    inputRunIds: string[];
+    inputSnapshotIds: Record<string, string[]>;
+    contextBlobKey: string;
+    contextTokenEstimate: number;
+    aiModel: string;
+    aiOutputBlobKey: string;
+    aiSummary: string;
+    aiProposals: ConsolidationProposal[];
+    aiTokenUsage: Record<string, number>;
+  }
+): Promise<boolean> {
+  const now = nowIso();
+  const result = await db
+    .prepare(
+      `UPDATE run_consolidations
+       SET status = 'complete',
+           completed_at = ?, updated_at = ?, error_message = NULL,
+           input_run_ids_json = ?, input_snapshot_ids_json = ?,
+           context_blob_key = ?, context_token_estimate = ?,
+           ai_model = ?, ai_output_blob_key = ?,
+           ai_summary = ?, ai_proposals_json = ?,
+           ai_token_usage_json = ?
+       WHERE window_start = ? AND window_end = ?
+         AND attempt_count = ? AND status = 'running'`
+    )
+    .bind(
+      now,
+      now,
+      JSON.stringify(data.inputRunIds),
+      JSON.stringify(data.inputSnapshotIds),
+      data.contextBlobKey,
+      data.contextTokenEstimate,
+      data.aiModel,
+      data.aiOutputBlobKey,
+      data.aiSummary,
+      JSON.stringify(data.aiProposals),
+      JSON.stringify(data.aiTokenUsage),
+      windowStart,
+      windowEnd,
+      expectedAttemptCount
+    )
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
+
+export async function failConsolidation(
+  db: D1Database,
+  windowStart: string,
+  windowEnd: string,
+  expectedAttemptCount: number,
+  errorMessage: string
+): Promise<boolean> {
+  const now = nowIso();
+  const result = await db
+    .prepare(
+      `UPDATE run_consolidations
+       SET status = 'error', updated_at = ?, error_message = ?
+       WHERE window_start = ? AND window_end = ?
+         AND attempt_count = ? AND status = 'running'`
+    )
+    .bind(now, errorMessage, windowStart, windowEnd, expectedAttemptCount)
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
+
+export async function listConsolidations(
+  db: D1Database,
+  limit = 20
+): Promise<RunConsolidation[]> {
+  const result = await db
+    .prepare(
+      `SELECT * FROM run_consolidations
+       ORDER BY window_start DESC LIMIT ?`
+    )
+    .bind(limit)
+    .all();
+  return result.results.map(mapConsolidationRow);
+}
+
+export async function getConsolidationById(
+  db: D1Database,
+  id: string
+): Promise<RunConsolidation | null> {
+  const row = await db
+    .prepare(`SELECT * FROM run_consolidations WHERE id = ?`)
+    .bind(id)
+    .first();
+  return row ? mapConsolidationRow(row) : null;
+}
+
+function mapConsolidationRow(row: Record<string, unknown>): RunConsolidation {
+  let inputRunIds: string[] = [];
+  try {
+    const parsed = JSON.parse((row.input_run_ids_json as string) || '[]');
+    if (Array.isArray(parsed)) {
+      inputRunIds = parsed.filter((v): v is string => typeof v === 'string');
+    }
+  } catch { /* leave empty */ }
+
+  let inputSnapshotIds: Record<string, string[]> = {};
+  try {
+    const parsed = JSON.parse((row.input_snapshot_ids_json as string) || '{}');
+    if (typeof parsed === 'object' && parsed !== null) {
+      inputSnapshotIds = parsed as Record<string, string[]>;
+    }
+  } catch { /* leave empty */ }
+
+  let aiProposals: ConsolidationProposal[] = [];
+  try {
+    const parsed = JSON.parse((row.ai_proposals_json as string) || '[]');
+    if (Array.isArray(parsed)) {
+      aiProposals = parsed as ConsolidationProposal[];
+    }
+  } catch { /* leave empty */ }
+
+  let aiTokenUsage: Record<string, number> | null = null;
+  try {
+    const parsed = JSON.parse((row.ai_token_usage_json as string) || 'null');
+    if (typeof parsed === 'object' && parsed !== null) {
+      aiTokenUsage = parsed as Record<string, number>;
+    }
+  } catch { /* leave null */ }
+
+  return {
+    id: row.id as string,
+    windowStart: row.window_start as string,
+    windowEnd: row.window_end as string,
+    status: row.status as ConsolidationStatus,
+    attemptCount: Number(row.attempt_count ?? 0),
+    startedAt: row.started_at as string,
+    updatedAt: row.updated_at as string,
+    completedAt: (row.completed_at as string | null) ?? null,
+    errorMessage: (row.error_message as string | null) ?? null,
+    inputRunIds,
+    inputSnapshotIds,
+    contextBlobKey: (row.context_blob_key as string | null) ?? null,
+    contextTokenEstimate: nullableNumber(row.context_token_estimate),
+    aiModel: (row.ai_model as string | null) ?? null,
+    aiOutputBlobKey: (row.ai_output_blob_key as string | null) ?? null,
+    aiSummary: (row.ai_summary as string | null) ?? null,
+    aiProposals,
+    aiTokenUsage,
+  };
+}
+
+// -- top articles by views (Phase 2 aggregation) --
+
+export async function listTopArticleViewsAggregated(
+  db: D1Database,
+  fromDate: string,
+  toDate: string,
+  limit = 20
+): Promise<TopArticleByViews[]> {
+  const result = await db
+    .prepare(
+      `SELECT a.id, a.title, a.headline, a.relevance_score, a.tags,
+              SUM(av.views) AS total_views
+       FROM article_views av
+       JOIN articles a ON av.article_id = a.id
+       WHERE av.view_date >= ? AND av.view_date < ?
+       GROUP BY av.article_id
+       ORDER BY total_views DESC
+       LIMIT ?`
+    )
+    .bind(fromDate, toDate, limit)
+    .all();
+  return result.results.map((row) => {
+    let tags: string[] = [];
+    try {
+      const parsed = JSON.parse((row.tags as string) || '[]');
+      if (Array.isArray(parsed)) {
+        tags = parsed.filter((v): v is string => typeof v === 'string');
+      }
+    } catch { /* leave empty */ }
+    return {
+      articleId: row.id as string,
+      title: row.title as string,
+      headline: (row.headline as string | null) ?? null,
+      relevanceScore: nullableNumber(row.relevance_score),
+      tags,
+      totalViews: Number(row.total_views ?? 0),
+    };
+  });
 }
 
 function nullableNumber(value: unknown): number | null {

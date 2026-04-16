@@ -309,3 +309,29 @@ CREATE INDEX IF NOT EXISTS idx_ingest_runs_pipeline
     ON ingest_runs(pipeline_run_id);
 CREATE INDEX IF NOT EXISTS idx_ingest_runs_updated
     ON ingest_runs(updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS run_consolidations (
+    id TEXT PRIMARY KEY,
+    window_start TEXT NOT NULL,
+    window_end TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'running',
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT,
+    error_message TEXT,
+    input_run_ids_json TEXT NOT NULL DEFAULT '[]',
+    input_snapshot_ids_json TEXT NOT NULL DEFAULT '{}',
+    context_blob_key TEXT,
+    context_token_estimate INTEGER,
+    ai_model TEXT,
+    ai_output_blob_key TEXT,
+    ai_summary TEXT,
+    ai_proposals_json TEXT,
+    ai_token_usage_json TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_run_consolidations_window
+    ON run_consolidations(window_start, window_end);
+CREATE INDEX IF NOT EXISTS idx_run_consolidations_updated
+    ON run_consolidations(updated_at DESC);

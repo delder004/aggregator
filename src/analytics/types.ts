@@ -117,3 +117,61 @@ export interface IngestNamespaceStatus {
   errorMessage: string | null;
   metrics: Record<string, string | number | boolean | null>;
 }
+
+// -- Phase 2: Consolidation types --
+
+export type ConsolidationStatus = 'running' | 'complete' | 'error';
+
+export type ConsolidationProposalType =
+  | 'source'
+  | 'threshold'
+  | 'topic'
+  | 'keyword'
+  | 'competitor';
+
+export type ConsolidationProposalAction =
+  | 'add'
+  | 'remove'
+  | 'adjust'
+  | 'investigate';
+
+export type ConsolidationConfidence = 'high' | 'medium' | 'low';
+
+export interface ConsolidationProposal {
+  type: ConsolidationProposalType;
+  action: ConsolidationProposalAction;
+  target: string;
+  rationale: string;
+  confidence: ConsolidationConfidence;
+  priority: ConsolidationConfidence;
+}
+
+export interface RunConsolidation {
+  id: string;
+  windowStart: string;
+  windowEnd: string;
+  status: ConsolidationStatus;
+  attemptCount: number;
+  startedAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  errorMessage: string | null;
+  inputRunIds: string[];
+  inputSnapshotIds: Record<string, string[]>;
+  contextBlobKey: string | null;
+  contextTokenEstimate: number | null;
+  aiModel: string | null;
+  aiOutputBlobKey: string | null;
+  aiSummary: string | null;
+  aiProposals: ConsolidationProposal[];
+  aiTokenUsage: Record<string, number> | null;
+}
+
+export interface TopArticleByViews {
+  articleId: string;
+  title: string;
+  headline: string | null;
+  relevanceScore: number | null;
+  tags: string[];
+  totalViews: number;
+}
