@@ -9,13 +9,15 @@ import {
 import type { Env } from '../types';
 
 describe('buildAnalyticsQuery', () => {
-  it('queries httpRequests1dGroups with six aliased subqueries', () => {
+  it('queries httpRequests1dGroups with four aliased subqueries', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('totals: httpRequests1dGroups');
-    expect(q).toContain('cacheStatuses: httpRequests1dGroups');
     expect(q).toContain('paths: httpRequests1dGroups');
     expect(q).toContain('countries: httpRequests1dGroups');
     expect(q).toContain('statuses: httpRequests1dGroups');
+    // cacheStatus dimension not available on free/pro; cachedRequests
+    // comes from sum.cachedRequests in the totals row instead.
+    expect(q).not.toContain('cacheStatuses');
   });
 
   it('uses date_geq + date_lt half-open bounds (not datetime)', () => {
@@ -36,15 +38,15 @@ describe('buildAnalyticsQuery', () => {
     expect(q).toContain('dimensions { clientRequestPath }');
     expect(q).toContain('dimensions { clientCountryName }');
     expect(q).toContain('dimensions { edgeResponseStatus }');
-    expect(q).toContain('dimensions { cacheStatus }');
-    // clientRequestReferer is NOT available on httpRequests1dGroups for
-    // free/pro zones — referrer data comes from Analytics Engine instead.
+    // clientRequestReferer and cacheStatus dimensions are NOT available
+    // on httpRequests1dGroups for free/pro zones.
     expect(q).not.toContain('clientRequestReferer');
+    expect(q).not.toContain('cacheStatus');
   });
 
   it('orders top-N subqueries by sum_requests_DESC', () => {
     const q = buildAnalyticsQuery();
-    expect(q.match(/orderBy: \[sum_requests_DESC\]/g)?.length).toBe(4);
+    expect(q.match(/orderBy: \[sum_requests_DESC\]/g)?.length).toBe(3);
   });
 
   it('uses Date! variable types for the date filter', () => {
@@ -199,20 +201,6 @@ describe('parseAnalyticsResponse', () => {
                   uniq: { uniques: 2200 },
                 },
               ],
-              cacheStatuses: [
-                {
-                  sum: { requests: 8400 },
-                  dimensions: { cacheStatus: 'hit' },
-                },
-                {
-                  sum: { requests: 2600 },
-                  dimensions: { cacheStatus: 'miss' },
-                },
-                {
-                  sum: { requests: 1000 },
-                  dimensions: { cacheStatus: 'dynamic' },
-                },
-              ],
               paths: [
                 {
                   sum: { requests: 4000, pageViews: 4000 },
@@ -266,11 +254,6 @@ describe('parseAnalyticsResponse', () => {
       { key: '200', requests: 11500 },
       { key: '404', requests: 250 },
     ]);
-    expect(result.cacheStatuses).toEqual([
-      { key: 'hit', requests: 8400 },
-      { key: 'miss', requests: 2600 },
-      { key: 'dynamic', requests: 1000 },
-    ]);
   });
 
   it('returns zeroed totals and empty arrays when zone has no data', () => {
@@ -288,7 +271,6 @@ describe('parseAnalyticsResponse', () => {
     expect(result.topPaths).toEqual([]);
     expect(result.topCountries).toEqual([]);
     expect(result.statusCodes).toEqual([]);
-    expect(result.cacheStatuses).toEqual([]);
   });
 
   it('survives missing dimensions or sum sub-objects without throwing', () => {
@@ -507,16 +489,6 @@ describe('runCfAnalyticsSnapshot', () => {
                           cachedRequests: 700,
                         },
                         uniq: { uniques: 200 },
-                      },
-                    ],
-                    cacheStatuses: [
-                      {
-                        sum: { requests: 700 },
-                        dimensions: { cacheStatus: 'hit' },
-                      },
-                      {
-                        sum: { requests: 300 },
-                        dimensions: { cacheStatus: 'miss' },
                       },
                     ],
                     paths: [

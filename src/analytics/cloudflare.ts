@@ -48,22 +48,8 @@ const CF_GRAPHQL_DIMENSIONS = {
   path: 'clientRequestPath',
   country: 'clientCountryName',
   status: 'edgeResponseStatus',
-  cacheStatus: 'cacheStatus',
 } as const;
 
-/**
- * cacheStatus values that represent requests served from cache, per
- * https://developers.cloudflare.com/cache/concepts/cache-responses/ and
- * the 2025-12-18 cached-classification changelog.
- *
- * Lowercase because we normalize the dimension value before comparing.
- */
-const CACHED_STATUS_KEYS: ReadonlySet<string> = new Set([
-  'hit',
-  'stale',
-  'updating',
-  'revalidated',
-]);
 
 export interface CfAnalyticsSnapshotOptions {
   windowStart?: string;
@@ -100,7 +86,6 @@ export interface CfAnalyticsRawPayload {
   topPaths: CfAnalyticsTopRow[];
   topCountries: CfAnalyticsTopRow[];
   statusCodes: CfAnalyticsTopRow[];
-  cacheStatuses: CfAnalyticsTopRow[];
 }
 
 export interface SnapshotRunResult {
@@ -268,7 +253,6 @@ interface CfGraphQLResponse {
     viewer?: {
       zones?: Array<{
         totals?: CfGroupRow[];
-        cacheStatuses?: CfGroupRow[];
         paths?: CfGroupRow[];
         countries?: CfGroupRow[];
         statuses?: CfGroupRow[];
@@ -330,7 +314,10 @@ export async function fetchCfAnalytics(
 }
 
 export function buildAnalyticsQuery(): string {
-  const { path, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
+  const { path, country, status } = CF_GRAPHQL_DIMENSIONS;
+  // cacheStatus dimension is not available on httpRequests1dGroups for
+  // free/pro zones. cachedRequests is available directly via
+  // sum.cachedRequests in the totals row.
   return `query ZoneAnalytics(
   $zoneTag: String!
   $start: Date!
@@ -347,14 +334,6 @@ export function buildAnalyticsQuery(): string {
       ) {
         sum { requests pageViews bytes cachedRequests }
         uniq { uniques }
-      }
-      cacheStatuses: httpRequests1dGroups(
-        limit: 10
-        filter: { date_geq: $start, date_lt: $end }
-        orderBy: [sum_requests_DESC]
-      ) {
-        sum { requests }
-        dimensions { ${cacheStatus} }
       }
       paths: httpRequests1dGroups(
         limit: $pathLimit
@@ -391,14 +370,7 @@ export function parseAnalyticsResponse(
 ): CfAnalyticsRawPayload {
   const zone = json.data?.viewer?.zones?.[0];
   const totalsRow = zone?.totals?.[0];
-
-  const cacheStatusesRaw = zone?.cacheStatuses ?? [];
-  const { path, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
-
-  const cacheStatuses: CfAnalyticsTopRow[] = cacheStatusesRaw.map((row) => ({
-    key: String(row.dimensions?.[cacheStatus] ?? ''),
-    requests: numberOrZero(row.sum?.requests),
-  }));
+  const { path, country, status } = CF_GRAPHQL_DIMENSIONS;
 
   const totals: CfAnalyticsTotals = {
     requests: numberOrZero(totalsRow?.sum?.requests),
@@ -426,7 +398,6 @@ export function parseAnalyticsResponse(
       key: String(row.dimensions?.[status] ?? ''),
       requests: numberOrZero(row.sum?.requests),
     })),
-    cacheStatuses,
   };
 }
 
