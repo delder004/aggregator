@@ -2,7 +2,7 @@ import type { ConsolidationProposal } from '../analytics/types';
 import type { ConsolidationAIResult } from './types';
 import { extractJsonObject } from '../runs/retrospective';
 
-export const CONSOLIDATION_MODEL = 'claude-sonnet-4-6-20250514';
+export const CONSOLIDATION_MODEL = 'claude-sonnet-4-5-20241022';
 export const CONSOLIDATION_MAX_TOKENS = 2048;
 
 export const CONSOLIDATION_SYSTEM_PROMPT = `You are a strategic analyst for agenticaiaccounting.com, an automated news aggregator covering agentic AI in accounting.
