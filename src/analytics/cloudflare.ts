@@ -23,21 +23,20 @@ import {
  * snapshotted because it is still in progress; a mid-week snapshot would
  * never be overwritten by the next weekly run.
  *
- * Field-name facts (verified against CF docs for httpRequestsAdaptiveGroups):
- *   - total request volume is the top-level `count` field, NOT `sum.requests`
- *   - `sum.visits` is a VISIT count (session-like aggregation), NOT pageviews.
- *     One visit may contain multiple page views. We store this as `visits`
- *     end-to-end — the D1 total_page_views column stays NULL in Phase 1
- *     until a true page-view data source is wired up.
- *   - byte volume is `sum.edgeResponseBytes`, NOT `sum.bytes`
- *   - unique visitors are NOT supported on this node; the unique_visitors
- *     column in D1 stays NULL in Phase 1
- *   - cached counts are not a sum field; they come from a separate groupby
- *     on the `cacheStatus` dimension. A request is "served from cache" if
- *     its status is hit, stale, updating, or revalidated (per CF cache
- *     docs) — reducing cached to just `hit` undercounts stale-while-
- *     revalidate and synchronous-revalidate traffic.
- *   - sorting top-N uses `count_DESC`, NOT `sum_requests_DESC`
+ * Dataset: httpRequests1dGroups (daily rollups, supports weekly+ ranges
+ * on all plan tiers). The adaptive-groups dataset limits free/pro plans
+ * to 1-day queries, which doesn't work for weekly snapshots.
+ *
+ * Field-name facts for httpRequests1dGroups:
+ *   - total request volume: `sum.requests`
+ *   - page views: `sum.pageViews`
+ *   - unique visitors: `uniq.uniques`
+ *   - byte volume: `sum.bytes`
+ *   - cached requests: `sum.cachedRequests`
+ *   - sorting top-N: `sum_requests_DESC`
+ *   - filter: `date_geq` / `date_lt` (date strings, not datetime)
+ *   - cacheStatus breakdown comes from a dimension groupby using
+ *     CACHED_STATUS_KEYS (hit, stale, updating, revalidated)
  */
 
 const CF_GRAPHQL_ENDPOINT = 'https://api.cloudflare.com/client/v4/graphql';
@@ -71,28 +70,24 @@ export interface CfAnalyticsSnapshotOptions {
 }
 
 export interface CfAnalyticsTotals {
-  /** From top-level `count`. */
+  /** From `sum.requests`. */
   requests: number;
-  /**
-   * From `sum.visits`. A visit is a session-like aggregation and is NOT
-   * the same as a page view; one visit can span multiple page views.
-   */
-  visits: number;
-  /** From `sum.edgeResponseBytes`. */
+  /** From `sum.pageViews`. */
+  pageViews: number;
+  /** From `uniq.uniques`. */
+  uniqueVisitors: number;
+  /** From `sum.bytes`. */
   bytes: number;
-  /**
-   * Computed: sum of `count` across rows where cacheStatus is one of
-   * CACHED_STATUS_KEYS (hit, stale, updating, revalidated).
-   */
+  /** From `sum.cachedRequests`. */
   cachedRequests: number;
 }
 
 export interface CfAnalyticsTopRow {
   key: string;
-  /** From top-level `count`. */
+  /** From `sum.requests`. */
   requests: number;
-  /** From `sum.visits` (present on the paths subquery only). */
-  visits?: number;
+  /** From `sum.pageViews` (present on the paths subquery only). */
+  pageViews?: number;
 }
 
 export interface CfAnalyticsRawPayload {
@@ -173,13 +168,9 @@ export async function runCfAnalyticsSnapshot(
       {
         blobKey: blob.key,
         totalRequests: payload.totals.requests,
-        // total_page_views stays NULL in Phase 1 — sum.visits is a VISIT
-        // count, not a pageview count. A future migration can backfill
-        // this column from a true pageview source.
-        totalPageViews: null,
-        totalVisits: payload.totals.visits,
-        // httpRequestsAdaptiveGroups does not support unique visitors.
-        uniqueVisitors: null,
+        totalPageViews: payload.totals.pageViews,
+        totalVisits: null,
+        uniqueVisitors: payload.totals.uniqueVisitors,
         cachedPercentage,
         topPathsCount: payload.topPaths.length,
         topReferrersCount: payload.topReferrers.length,
@@ -261,8 +252,13 @@ interface FetchInput {
 }
 
 interface CfGroupRow {
-  count?: number;
-  sum?: { visits?: number; edgeResponseBytes?: number };
+  sum?: {
+    requests?: number;
+    pageViews?: number;
+    bytes?: number;
+    cachedRequests?: number;
+  };
+  uniq?: { uniques?: number };
   dimensions?: Record<string, string | number>;
 }
 
@@ -287,10 +283,11 @@ export async function fetchCfAnalytics(
   input: FetchInput
 ): Promise<CfAnalyticsRawPayload> {
   const query = buildAnalyticsQuery();
+  // httpRequests1dGroups uses date_geq/date_lt with YYYY-MM-DD date strings.
   const variables = {
     zoneTag: input.zoneTag,
-    start: input.windowStart,
-    end: input.windowEnd,
+    start: input.windowStart.slice(0, 10),
+    end: input.windowEnd.slice(0, 10),
     pathLimit: CF_ANALYTICS_BUDGET.topPathsLimit,
     refererLimit: CF_ANALYTICS_BUDGET.topReferrersLimit,
     countryLimit: CF_ANALYTICS_BUDGET.topCountriesLimit,
@@ -335,13 +332,10 @@ export async function fetchCfAnalytics(
 
 export function buildAnalyticsQuery(): string {
   const { path, referer, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
-  // NOTE: see the file header for the documented facts about which fields
-  // exist on httpRequestsAdaptiveGroups. Do not add `sum.requests`,
-  // `sum.pageViews`, or `uniq.uniques` — those are not part of the schema.
   return `query ZoneAnalytics(
   $zoneTag: String!
-  $start: String!
-  $end: String!
+  $start: Date!
+  $end: Date!
   $pathLimit: Int!
   $refererLimit: Int!
   $countryLimit: Int!
@@ -349,52 +343,51 @@ export function buildAnalyticsQuery(): string {
 ) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
-      totals: httpRequestsAdaptiveGroups(
+      totals: httpRequests1dGroups(
         limit: 1
-        filter: { datetime_geq: $start, datetime_lt: $end }
+        filter: { date_geq: $start, date_lt: $end }
       ) {
-        count
-        sum { visits edgeResponseBytes }
+        sum { requests pageViews bytes cachedRequests }
+        uniq { uniques }
       }
-      cacheStatuses: httpRequestsAdaptiveGroups(
+      cacheStatuses: httpRequests1dGroups(
         limit: 10
-        filter: { datetime_geq: $start, datetime_lt: $end }
-        orderBy: [count_DESC]
+        filter: { date_geq: $start, date_lt: $end }
+        orderBy: [sum_requests_DESC]
       ) {
-        count
+        sum { requests }
         dimensions { ${cacheStatus} }
       }
-      paths: httpRequestsAdaptiveGroups(
+      paths: httpRequests1dGroups(
         limit: $pathLimit
-        filter: { datetime_geq: $start, datetime_lt: $end }
-        orderBy: [count_DESC]
+        filter: { date_geq: $start, date_lt: $end }
+        orderBy: [sum_requests_DESC]
       ) {
-        count
+        sum { requests pageViews }
         dimensions { ${path} }
-        sum { visits }
       }
-      referrers: httpRequestsAdaptiveGroups(
+      referrers: httpRequests1dGroups(
         limit: $refererLimit
-        filter: { datetime_geq: $start, datetime_lt: $end }
-        orderBy: [count_DESC]
+        filter: { date_geq: $start, date_lt: $end }
+        orderBy: [sum_requests_DESC]
       ) {
-        count
+        sum { requests }
         dimensions { ${referer} }
       }
-      countries: httpRequestsAdaptiveGroups(
+      countries: httpRequests1dGroups(
         limit: $countryLimit
-        filter: { datetime_geq: $start, datetime_lt: $end }
-        orderBy: [count_DESC]
+        filter: { date_geq: $start, date_lt: $end }
+        orderBy: [sum_requests_DESC]
       ) {
-        count
+        sum { requests }
         dimensions { ${country} }
       }
-      statuses: httpRequestsAdaptiveGroups(
+      statuses: httpRequests1dGroups(
         limit: $statusLimit
-        filter: { datetime_geq: $start, datetime_lt: $end }
-        orderBy: [count_DESC]
+        filter: { date_geq: $start, date_lt: $end }
+        orderBy: [sum_requests_DESC]
       ) {
-        count
+        sum { requests }
         dimensions { ${status} }
       }
     }
@@ -414,17 +407,15 @@ export function parseAnalyticsResponse(
 
   const cacheStatuses: CfAnalyticsTopRow[] = cacheStatusesRaw.map((row) => ({
     key: String(row.dimensions?.[cacheStatus] ?? ''),
-    requests: numberOrZero(row.count),
+    requests: numberOrZero(row.sum?.requests),
   }));
-  const cachedRequests = cacheStatuses
-    .filter((row) => CACHED_STATUS_KEYS.has(row.key.toLowerCase()))
-    .reduce((acc, row) => acc + row.requests, 0);
 
   const totals: CfAnalyticsTotals = {
-    requests: numberOrZero(totalsRow?.count),
-    visits: numberOrZero(totalsRow?.sum?.visits),
-    bytes: numberOrZero(totalsRow?.sum?.edgeResponseBytes),
-    cachedRequests,
+    requests: numberOrZero(totalsRow?.sum?.requests),
+    pageViews: numberOrZero(totalsRow?.sum?.pageViews),
+    uniqueVisitors: numberOrZero(totalsRow?.uniq?.uniques),
+    bytes: numberOrZero(totalsRow?.sum?.bytes),
+    cachedRequests: numberOrZero(totalsRow?.sum?.cachedRequests),
   };
 
   return {
@@ -434,20 +425,20 @@ export function parseAnalyticsResponse(
     totals,
     topPaths: (zone?.paths ?? []).map((row) => ({
       key: String(row.dimensions?.[path] ?? ''),
-      requests: numberOrZero(row.count),
-      visits: numberOrZero(row.sum?.visits),
+      requests: numberOrZero(row.sum?.requests),
+      pageViews: numberOrZero(row.sum?.pageViews),
     })),
     topReferrers: (zone?.referrers ?? []).map((row) => ({
       key: String(row.dimensions?.[referer] ?? ''),
-      requests: numberOrZero(row.count),
+      requests: numberOrZero(row.sum?.requests),
     })),
     topCountries: (zone?.countries ?? []).map((row) => ({
       key: String(row.dimensions?.[country] ?? ''),
-      requests: numberOrZero(row.count),
+      requests: numberOrZero(row.sum?.requests),
     })),
     statusCodes: (zone?.statuses ?? []).map((row) => ({
       key: String(row.dimensions?.[status] ?? ''),
-      requests: numberOrZero(row.count),
+      requests: numberOrZero(row.sum?.requests),
     })),
     cacheStatuses,
   };
