@@ -135,6 +135,8 @@ export interface Env {
   GSC_CLIENT_SECRET?: string;
   GSC_REFRESH_TOKEN?: string;
   GSC_SITE_URL?: string;
+  SERPER_API_KEY?: string;
+  SITE_HOSTNAME?: string;
 }
 
 // -- Insights Summary types --

@@ -14,10 +14,12 @@ import {
 } from './analytics/analytics-engine';
 import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
 import { runSearchConsoleSnapshot } from './analytics/search-console';
+import { runRankingsSweep } from './analytics/rankings';
 import {
   getCfAnalyticsSnapshotById,
   getSearchConsoleSnapshotById,
   listCfAnalyticsSnapshots,
+  listRecentKeywordRankings,
   listSearchConsoleSnapshots,
 } from './analytics/db';
 import { readBlob } from './analytics/blob-store';
@@ -258,6 +260,53 @@ export default {
         if (toParam) options.windowEnd = toParam;
         if (siteParam) options.siteUrl = siteParam;
         const result = await runSearchConsoleSnapshot(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
+    // Serper rankings sweep: inspection + manual trigger.
+    if (path === '/ops/rankings') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '100');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(500, Math.floor(limitParam)))
+        : 100;
+      const rankings = await listRecentKeywordRankings(env.DB, limit);
+      return new Response(
+        JSON.stringify({ count: rankings.length, rankings }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    if (path === '/ops/cron/rankings-sweep' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const windowParam = url.searchParams.get('window');
+        const hostnameParam = url.searchParams.get('hostname');
+        const options: {
+          windowStart?: string;
+          hostname?: string;
+        } = {};
+        if (windowParam) options.windowStart = windowParam;
+        if (hostnameParam) options.hostname = hostnameParam;
+        const result = await runRankingsSweep(env, options);
         return new Response(JSON.stringify({ status: 'ok', ...result }), {
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
         });
