@@ -2,9 +2,7 @@ import type { ConsolidationProposal } from '../analytics/types';
 import type { ConsolidationAIResult } from './types';
 import { extractJsonObject } from '../runs/retrospective';
 
-// Ideally Sonnet for richer reasoning, but falls back to Haiku if
-// the API key doesn't have Sonnet access. Upgrade when available.
-export const CONSOLIDATION_MODEL = 'claude-haiku-4-5-20251001';
+export const CONSOLIDATION_MODEL = 'claude-opus-4-0-20250514';
 export const CONSOLIDATION_MAX_TOKENS = 2048;
 
 export const CONSOLIDATION_SYSTEM_PROMPT = `You are a strategic analyst for agenticaiaccounting.com, an automated news aggregator covering agentic AI in accounting.
