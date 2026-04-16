@@ -15,12 +15,16 @@ import {
 import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
 import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runRankingsSweep } from './analytics/rankings';
+import { runCompetitorSnapshots } from './competitors/snapshot';
 import {
   getCfAnalyticsSnapshotById,
+  getCompetitorSnapshotById,
   getSearchConsoleSnapshotById,
   listCfAnalyticsSnapshots,
+  listCompetitorSnapshots,
   listRecentKeywordRankings,
   listSearchConsoleSnapshots,
+  listSourceCandidates,
 } from './analytics/db';
 import { readBlob } from './analytics/blob-store';
 
@@ -322,6 +326,94 @@ export default {
           }
         );
       }
+    }
+
+    // Competitor snapshots: inspection + manual trigger.
+    if (path === '/ops/competitors') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '50');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(200, Math.floor(limitParam)))
+        : 50;
+      const snapshots = await listCompetitorSnapshots(env.DB, limit);
+      return new Response(
+        JSON.stringify({ count: snapshots.length, snapshots }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    const compSnapshotMatch = path.match(/^\/ops\/competitors\/([a-f0-9-]+)$/);
+    if (compSnapshotMatch) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const snapshot = await getCompetitorSnapshotById(
+        env.DB,
+        compSnapshotMatch[1]
+      );
+      if (!snapshot) {
+        return new Response('Not Found', { status: 404 });
+      }
+      const blob = snapshot.blobKey
+        ? await readBlob(env.KV, snapshot.blobKey)
+        : null;
+      return new Response(JSON.stringify({ snapshot, blob }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    if (path === '/ops/cron/competitor-snapshots' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const windowParam = url.searchParams.get('window');
+        const options: { windowStart?: string } = {};
+        if (windowParam) options.windowStart = windowParam;
+        const result = await runCompetitorSnapshots(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
+    // Source candidates inspection.
+    if (path === '/ops/source-candidates') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const statusParam = url.searchParams.get('status') as
+        | 'new'
+        | 'approved'
+        | 'rejected'
+        | 'shipped'
+        | null;
+      const limitParam = Number(url.searchParams.get('limit') || '100');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(500, Math.floor(limitParam)))
+        : 100;
+      const candidates = await listSourceCandidates(
+        env.DB,
+        statusParam ?? undefined,
+        limit
+      );
+      return new Response(
+        JSON.stringify({ count: candidates.length, candidates }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
     }
 
     if (path === '/ops/cron/article-views-rollup' && request.method === 'POST') {
