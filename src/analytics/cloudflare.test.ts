@@ -14,7 +14,6 @@ describe('buildAnalyticsQuery', () => {
     expect(q).toContain('totals: httpRequests1dGroups');
     expect(q).toContain('cacheStatuses: httpRequests1dGroups');
     expect(q).toContain('paths: httpRequests1dGroups');
-    expect(q).toContain('referrers: httpRequests1dGroups');
     expect(q).toContain('countries: httpRequests1dGroups');
     expect(q).toContain('statuses: httpRequests1dGroups');
   });
@@ -35,15 +34,17 @@ describe('buildAnalyticsQuery', () => {
   it('selects the right dimensions for each grouped subquery', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('dimensions { clientRequestPath }');
-    expect(q).toContain('dimensions { clientRequestReferer }');
     expect(q).toContain('dimensions { clientCountryName }');
     expect(q).toContain('dimensions { edgeResponseStatus }');
     expect(q).toContain('dimensions { cacheStatus }');
+    // clientRequestReferer is NOT available on httpRequests1dGroups for
+    // free/pro zones — referrer data comes from Analytics Engine instead.
+    expect(q).not.toContain('clientRequestReferer');
   });
 
   it('orders top-N subqueries by sum_requests_DESC', () => {
     const q = buildAnalyticsQuery();
-    expect(q.match(/orderBy: \[sum_requests_DESC\]/g)?.length).toBe(5);
+    expect(q.match(/orderBy: \[sum_requests_DESC\]/g)?.length).toBe(4);
   });
 
   it('uses Date! variable types for the date filter', () => {
@@ -222,14 +223,6 @@ describe('parseAnalyticsResponse', () => {
                   dimensions: { clientRequestPath: '/article/abc' },
                 },
               ],
-              referrers: [
-                {
-                  sum: { requests: 600 },
-                  dimensions: {
-                    clientRequestReferer: 'https://news.ycombinator.com/',
-                  },
-                },
-              ],
               countries: [
                 {
                   sum: { requests: 7500 },
@@ -266,9 +259,6 @@ describe('parseAnalyticsResponse', () => {
       { key: '/', requests: 4000, pageViews: 4000 },
       { key: '/article/abc', requests: 800, pageViews: 800 },
     ]);
-    expect(result.topReferrers).toEqual([
-      { key: 'https://news.ycombinator.com/', requests: 600 },
-    ]);
     expect(result.topCountries).toEqual([
       { key: 'United States', requests: 7500 },
     ]);
@@ -296,7 +286,6 @@ describe('parseAnalyticsResponse', () => {
       cachedRequests: 0,
     });
     expect(result.topPaths).toEqual([]);
-    expect(result.topReferrers).toEqual([]);
     expect(result.topCountries).toEqual([]);
     expect(result.statusCodes).toEqual([]);
     expect(result.cacheStatuses).toEqual([]);
@@ -536,7 +525,6 @@ describe('runCfAnalyticsSnapshot', () => {
                         dimensions: { clientRequestPath: '/' },
                       },
                     ],
-                    referrers: [],
                     countries: [],
                     statuses: [],
                   },

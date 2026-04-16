@@ -41,9 +41,11 @@ import {
 
 const CF_GRAPHQL_ENDPOINT = 'https://api.cloudflare.com/client/v4/graphql';
 
+// clientRequestReferer is NOT available on httpRequests1dGroups for
+// free/pro plan zones. Referrer data comes from Analytics Engine
+// (per-article, commit 2) instead.
 const CF_GRAPHQL_DIMENSIONS = {
   path: 'clientRequestPath',
-  referer: 'clientRequestReferer',
   country: 'clientCountryName',
   status: 'edgeResponseStatus',
   cacheStatus: 'cacheStatus',
@@ -96,7 +98,6 @@ export interface CfAnalyticsRawPayload {
   zoneTag: string;
   totals: CfAnalyticsTotals;
   topPaths: CfAnalyticsTopRow[];
-  topReferrers: CfAnalyticsTopRow[];
   topCountries: CfAnalyticsTopRow[];
   statusCodes: CfAnalyticsTopRow[];
   cacheStatuses: CfAnalyticsTopRow[];
@@ -173,7 +174,7 @@ export async function runCfAnalyticsSnapshot(
         uniqueVisitors: payload.totals.uniqueVisitors,
         cachedPercentage,
         topPathsCount: payload.topPaths.length,
-        topReferrersCount: payload.topReferrers.length,
+        topReferrersCount: null,
         topCountriesCount: payload.topCountries.length,
       }
     );
@@ -269,7 +270,6 @@ interface CfGraphQLResponse {
         totals?: CfGroupRow[];
         cacheStatuses?: CfGroupRow[];
         paths?: CfGroupRow[];
-        referrers?: CfGroupRow[];
         countries?: CfGroupRow[];
         statuses?: CfGroupRow[];
       }>;
@@ -289,7 +289,6 @@ export async function fetchCfAnalytics(
     start: input.windowStart.slice(0, 10),
     end: input.windowEnd.slice(0, 10),
     pathLimit: CF_ANALYTICS_BUDGET.topPathsLimit,
-    refererLimit: CF_ANALYTICS_BUDGET.topReferrersLimit,
     countryLimit: CF_ANALYTICS_BUDGET.topCountriesLimit,
     statusLimit: 25,
   };
@@ -331,13 +330,12 @@ export async function fetchCfAnalytics(
 }
 
 export function buildAnalyticsQuery(): string {
-  const { path, referer, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
+  const { path, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
   return `query ZoneAnalytics(
   $zoneTag: String!
   $start: Date!
   $end: Date!
   $pathLimit: Int!
-  $refererLimit: Int!
   $countryLimit: Int!
   $statusLimit: Int!
 ) {
@@ -365,14 +363,6 @@ export function buildAnalyticsQuery(): string {
       ) {
         sum { requests pageViews }
         dimensions { ${path} }
-      }
-      referrers: httpRequests1dGroups(
-        limit: $refererLimit
-        filter: { date_geq: $start, date_lt: $end }
-        orderBy: [sum_requests_DESC]
-      ) {
-        sum { requests }
-        dimensions { ${referer} }
       }
       countries: httpRequests1dGroups(
         limit: $countryLimit
@@ -403,7 +393,7 @@ export function parseAnalyticsResponse(
   const totalsRow = zone?.totals?.[0];
 
   const cacheStatusesRaw = zone?.cacheStatuses ?? [];
-  const { path, referer, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
+  const { path, country, status, cacheStatus } = CF_GRAPHQL_DIMENSIONS;
 
   const cacheStatuses: CfAnalyticsTopRow[] = cacheStatusesRaw.map((row) => ({
     key: String(row.dimensions?.[cacheStatus] ?? ''),
@@ -427,10 +417,6 @@ export function parseAnalyticsResponse(
       key: String(row.dimensions?.[path] ?? ''),
       requests: numberOrZero(row.sum?.requests),
       pageViews: numberOrZero(row.sum?.pageViews),
-    })),
-    topReferrers: (zone?.referrers ?? []).map((row) => ({
-      key: String(row.dimensions?.[referer] ?? ''),
-      requests: numberOrZero(row.sum?.requests),
     })),
     topCountries: (zone?.countries ?? []).map((row) => ({
       key: String(row.dimensions?.[country] ?? ''),
