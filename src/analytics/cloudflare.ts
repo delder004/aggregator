@@ -41,14 +41,11 @@ import {
 
 const CF_GRAPHQL_ENDPOINT = 'https://api.cloudflare.com/client/v4/graphql';
 
-// clientRequestReferer is NOT available on httpRequests1dGroups for
-// free/pro plan zones. Referrer data comes from Analytics Engine
-// (per-article, commit 2) instead.
-const CF_GRAPHQL_DIMENSIONS = {
-  path: 'clientRequestPath',
-  country: 'clientCountryName',
-  status: 'edgeResponseStatus',
-} as const;
+// httpRequests1dGroups on free/pro plans exposes very few dimensions.
+// clientRequestPath, clientRequestReferer, clientCountryName,
+// edgeResponseStatus, and cacheStatus are all unavailable. We query
+// totals only; top-N breakdowns (paths, referrers, countries) come from
+// Analytics Engine or will be added when the zone upgrades.
 
 
 export interface CfAnalyticsSnapshotOptions {
@@ -83,9 +80,6 @@ export interface CfAnalyticsRawPayload {
   windowEnd: string;
   zoneTag: string;
   totals: CfAnalyticsTotals;
-  topPaths: CfAnalyticsTopRow[];
-  topCountries: CfAnalyticsTopRow[];
-  statusCodes: CfAnalyticsTopRow[];
 }
 
 export interface SnapshotRunResult {
@@ -158,9 +152,9 @@ export async function runCfAnalyticsSnapshot(
         totalVisits: null,
         uniqueVisitors: payload.totals.uniqueVisitors,
         cachedPercentage,
-        topPathsCount: payload.topPaths.length,
+        topPathsCount: null,
         topReferrersCount: null,
-        topCountriesCount: payload.topCountries.length,
+        topCountriesCount: null,
       }
     );
     if (!ok) {
@@ -253,9 +247,6 @@ interface CfGraphQLResponse {
     viewer?: {
       zones?: Array<{
         totals?: CfGroupRow[];
-        paths?: CfGroupRow[];
-        countries?: CfGroupRow[];
-        statuses?: CfGroupRow[];
       }>;
     };
   };
@@ -267,14 +258,10 @@ export async function fetchCfAnalytics(
   input: FetchInput
 ): Promise<CfAnalyticsRawPayload> {
   const query = buildAnalyticsQuery();
-  // httpRequests1dGroups uses date_geq/date_lt with YYYY-MM-DD date strings.
   const variables = {
     zoneTag: input.zoneTag,
     start: input.windowStart.slice(0, 10),
     end: input.windowEnd.slice(0, 10),
-    pathLimit: CF_ANALYTICS_BUDGET.topPathsLimit,
-    countryLimit: CF_ANALYTICS_BUDGET.topCountriesLimit,
-    statusLimit: 25,
   };
 
   const controller = new AbortController();
@@ -314,50 +301,19 @@ export async function fetchCfAnalytics(
 }
 
 export function buildAnalyticsQuery(): string {
-  const { path, country, status } = CF_GRAPHQL_DIMENSIONS;
-  // cacheStatus dimension is not available on httpRequests1dGroups for
-  // free/pro zones. cachedRequests is available directly via
-  // sum.cachedRequests in the totals row.
   return `query ZoneAnalytics(
   $zoneTag: String!
   $start: Date!
   $end: Date!
-  $pathLimit: Int!
-  $countryLimit: Int!
-  $statusLimit: Int!
 ) {
   viewer {
     zones(filter: { zoneTag: $zoneTag }) {
       totals: httpRequests1dGroups(
-        limit: 1
+        limit: 10000
         filter: { date_geq: $start, date_lt: $end }
       ) {
         sum { requests pageViews bytes cachedRequests }
         uniq { uniques }
-      }
-      paths: httpRequests1dGroups(
-        limit: $pathLimit
-        filter: { date_geq: $start, date_lt: $end }
-        orderBy: [sum_requests_DESC]
-      ) {
-        sum { requests pageViews }
-        dimensions { ${path} }
-      }
-      countries: httpRequests1dGroups(
-        limit: $countryLimit
-        filter: { date_geq: $start, date_lt: $end }
-        orderBy: [sum_requests_DESC]
-      ) {
-        sum { requests }
-        dimensions { ${country} }
-      }
-      statuses: httpRequests1dGroups(
-        limit: $statusLimit
-        filter: { date_geq: $start, date_lt: $end }
-        orderBy: [sum_requests_DESC]
-      ) {
-        sum { requests }
-        dimensions { ${status} }
       }
     }
   }
@@ -369,35 +325,27 @@ export function parseAnalyticsResponse(
   input: FetchInput
 ): CfAnalyticsRawPayload {
   const zone = json.data?.viewer?.zones?.[0];
-  const totalsRow = zone?.totals?.[0];
-  const { path, country, status } = CF_GRAPHQL_DIMENSIONS;
-
-  const totals: CfAnalyticsTotals = {
-    requests: numberOrZero(totalsRow?.sum?.requests),
-    pageViews: numberOrZero(totalsRow?.sum?.pageViews),
-    uniqueVisitors: numberOrZero(totalsRow?.uniq?.uniques),
-    bytes: numberOrZero(totalsRow?.sum?.bytes),
-    cachedRequests: numberOrZero(totalsRow?.sum?.cachedRequests),
-  };
+  // httpRequests1dGroups returns one row per day; sum across all rows
+  // for the weekly totals.
+  const totalsRows = zone?.totals ?? [];
+  let requests = 0;
+  let pageViews = 0;
+  let uniqueVisitors = 0;
+  let bytes = 0;
+  let cachedRequests = 0;
+  for (const row of totalsRows) {
+    requests += numberOrZero(row.sum?.requests);
+    pageViews += numberOrZero(row.sum?.pageViews);
+    uniqueVisitors += numberOrZero(row.uniq?.uniques);
+    bytes += numberOrZero(row.sum?.bytes);
+    cachedRequests += numberOrZero(row.sum?.cachedRequests);
+  }
 
   return {
     windowStart: input.windowStart,
     windowEnd: input.windowEnd,
     zoneTag: input.zoneTag,
-    totals,
-    topPaths: (zone?.paths ?? []).map((row) => ({
-      key: String(row.dimensions?.[path] ?? ''),
-      requests: numberOrZero(row.sum?.requests),
-      pageViews: numberOrZero(row.sum?.pageViews),
-    })),
-    topCountries: (zone?.countries ?? []).map((row) => ({
-      key: String(row.dimensions?.[country] ?? ''),
-      requests: numberOrZero(row.sum?.requests),
-    })),
-    statusCodes: (zone?.statuses ?? []).map((row) => ({
-      key: String(row.dimensions?.[status] ?? ''),
-      requests: numberOrZero(row.sum?.requests),
-    })),
+    totals: { requests, pageViews, uniqueVisitors, bytes, cachedRequests },
   };
 }
 

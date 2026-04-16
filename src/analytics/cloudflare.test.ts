@@ -9,47 +9,26 @@ import {
 import type { Env } from '../types';
 
 describe('buildAnalyticsQuery', () => {
-  it('queries httpRequests1dGroups with four aliased subqueries', () => {
+  it('queries httpRequests1dGroups for totals only', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('totals: httpRequests1dGroups');
-    expect(q).toContain('paths: httpRequests1dGroups');
-    expect(q).toContain('countries: httpRequests1dGroups');
-    expect(q).toContain('statuses: httpRequests1dGroups');
-    // cacheStatus dimension not available on free/pro; cachedRequests
-    // comes from sum.cachedRequests in the totals row instead.
-    expect(q).not.toContain('cacheStatuses');
+    // No dimension-based subqueries — all dimensions are unavailable
+    // on httpRequests1dGroups for free/pro zones.
+    expect(q).not.toContain('dimensions');
   });
 
-  it('uses date_geq + date_lt half-open bounds (not datetime)', () => {
+  it('uses date_geq + date_lt half-open bounds', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('date_geq: $start, date_lt: $end');
-    expect(q).not.toContain('datetime_geq');
   });
 
-  it('uses httpRequests1dGroups fields: sum.requests, sum.pageViews, uniq.uniques', () => {
+  it('fetches sum.requests, sum.pageViews, sum.bytes, sum.cachedRequests, uniq.uniques', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('sum { requests pageViews bytes cachedRequests }');
     expect(q).toContain('uniq { uniques }');
-    expect(q).toMatch(/paths:[\s\S]*sum \{ requests pageViews \}/);
   });
 
-  it('selects the right dimensions for each grouped subquery', () => {
-    const q = buildAnalyticsQuery();
-    expect(q).toContain('dimensions { clientRequestPath }');
-    expect(q).toContain('dimensions { clientCountryName }');
-    expect(q).toContain('dimensions { edgeResponseStatus }');
-    // clientRequestReferer and cacheStatus dimensions are NOT available
-    // on httpRequests1dGroups for free/pro zones.
-    expect(q).not.toContain('clientRequestReferer');
-    expect(q).not.toContain('cacheStatus');
-  });
-
-  it('orders top-N subqueries by sum_requests_DESC', () => {
-    const q = buildAnalyticsQuery();
-    expect(q.match(/orderBy: \[sum_requests_DESC\]/g)?.length).toBe(3);
-  });
-
-  it('uses Date! variable types for the date filter', () => {
+  it('uses Date! variable types', () => {
     const q = buildAnalyticsQuery();
     expect(q).toContain('$start: Date!');
     expect(q).toContain('$end: Date!');
@@ -184,55 +163,31 @@ describe('parseAnalyticsResponse', () => {
     zoneTag: 'zone-abc',
   };
 
-  it('extracts totals from sum.requests / sum.pageViews / uniq.uniques', () => {
-    const json = {
-      data: {
-        viewer: {
-          zones: [
-            {
-              totals: [
-                {
-                  sum: {
-                    requests: 12000,
-                    pageViews: 9500,
-                    bytes: 5_000_000,
-                    cachedRequests: 8400,
+  it('extracts totals from a single daily row', () => {
+    const result = parseAnalyticsResponse(
+      {
+        data: {
+          viewer: {
+            zones: [
+              {
+                totals: [
+                  {
+                    sum: {
+                      requests: 12000,
+                      pageViews: 9500,
+                      bytes: 5_000_000,
+                      cachedRequests: 8400,
+                    },
+                    uniq: { uniques: 2200 },
                   },
-                  uniq: { uniques: 2200 },
-                },
-              ],
-              paths: [
-                {
-                  sum: { requests: 4000, pageViews: 4000 },
-                  dimensions: { clientRequestPath: '/' },
-                },
-                {
-                  sum: { requests: 800, pageViews: 800 },
-                  dimensions: { clientRequestPath: '/article/abc' },
-                },
-              ],
-              countries: [
-                {
-                  sum: { requests: 7500 },
-                  dimensions: { clientCountryName: 'United States' },
-                },
-              ],
-              statuses: [
-                {
-                  sum: { requests: 11500 },
-                  dimensions: { edgeResponseStatus: '200' },
-                },
-                {
-                  sum: { requests: 250 },
-                  dimensions: { edgeResponseStatus: '404' },
-                },
-              ],
-            },
-          ],
+                ],
+              },
+            ],
+          },
         },
       },
-    };
-    const result = parseAnalyticsResponse(json, input);
+      input
+    );
     expect(result.windowStart).toBe(input.windowStart);
     expect(result.windowEnd).toBe(input.windowEnd);
     expect(result.zoneTag).toBe(input.zoneTag);
@@ -243,20 +198,32 @@ describe('parseAnalyticsResponse', () => {
       bytes: 5_000_000,
       cachedRequests: 8400,
     });
-    expect(result.topPaths).toEqual([
-      { key: '/', requests: 4000, pageViews: 4000 },
-      { key: '/article/abc', requests: 800, pageViews: 800 },
-    ]);
-    expect(result.topCountries).toEqual([
-      { key: 'United States', requests: 7500 },
-    ]);
-    expect(result.statusCodes).toEqual([
-      { key: '200', requests: 11500 },
-      { key: '404', requests: 250 },
-    ]);
   });
 
-  it('returns zeroed totals and empty arrays when zone has no data', () => {
+  it('sums across multiple daily rows for a weekly window', () => {
+    const result = parseAnalyticsResponse(
+      {
+        data: {
+          viewer: {
+            zones: [
+              {
+                totals: [
+                  { sum: { requests: 100 }, uniq: { uniques: 10 } },
+                  { sum: { requests: 200 }, uniq: { uniques: 20 } },
+                  { sum: { requests: 300 }, uniq: { uniques: 30 } },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      input
+    );
+    expect(result.totals.requests).toBe(600);
+    expect(result.totals.uniqueVisitors).toBe(60);
+  });
+
+  it('returns zeroed totals when zone has no data', () => {
     const result = parseAnalyticsResponse(
       { data: { viewer: { zones: [] } } },
       input
@@ -268,31 +235,6 @@ describe('parseAnalyticsResponse', () => {
       bytes: 0,
       cachedRequests: 0,
     });
-    expect(result.topPaths).toEqual([]);
-    expect(result.topCountries).toEqual([]);
-    expect(result.statusCodes).toEqual([]);
-  });
-
-  it('survives missing dimensions or sum sub-objects without throwing', () => {
-    const result = parseAnalyticsResponse(
-      {
-        data: {
-          viewer: {
-            zones: [
-              {
-                paths: [{}, { dimensions: {} }, { sum: { requests: 5 } }],
-              },
-            ],
-          },
-        },
-      },
-      input
-    );
-    expect(result.topPaths).toEqual([
-      { key: '', requests: 0, pageViews: 0 },
-      { key: '', requests: 0, pageViews: 0 },
-      { key: '', requests: 5, pageViews: 0 },
-    ]);
   });
 
   it('coerces numeric strings', () => {
@@ -491,14 +433,6 @@ describe('runCfAnalyticsSnapshot', () => {
                         uniq: { uniques: 200 },
                       },
                     ],
-                    paths: [
-                      {
-                        sum: { requests: 500, pageViews: 500 },
-                        dimensions: { clientRequestPath: '/' },
-                      },
-                    ],
-                    countries: [],
-                    statuses: [],
                   },
                 ],
               },
