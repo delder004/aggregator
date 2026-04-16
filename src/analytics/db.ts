@@ -952,27 +952,37 @@ function mapConsolidationRow(row: Record<string, unknown>): RunConsolidation {
     }
   } catch { /* leave empty */ }
 
+  const VALID_PROPOSAL_TYPES = new Set(['source', 'threshold', 'topic', 'keyword', 'competitor']);
+  const VALID_PROPOSAL_ACTIONS = new Set(['add', 'remove', 'adjust', 'investigate']);
+  const VALID_CONFIDENCE = new Set(['high', 'medium', 'low']);
+
   let aiProposals: ConsolidationProposal[] = [];
   try {
     const parsed = JSON.parse((row.ai_proposals_json as string) || '[]');
     if (Array.isArray(parsed)) {
-      aiProposals = parsed
-        .filter(
-          (p): p is Record<string, unknown> =>
-            typeof p === 'object' && p !== null
-        )
-        .map((p) => ({
-          type: String(p.type ?? '') as ConsolidationProposal['type'],
-          action: String(p.action ?? '') as ConsolidationProposal['action'],
+      for (const p of parsed) {
+        if (typeof p !== 'object' || p === null) continue;
+        const type = String(p.type ?? '');
+        const action = String(p.action ?? '');
+        const confidence = String(p.confidence ?? '');
+        const priority = String(p.priority ?? '');
+        if (
+          !VALID_PROPOSAL_TYPES.has(type) ||
+          !VALID_PROPOSAL_ACTIONS.has(action) ||
+          !VALID_CONFIDENCE.has(confidence) ||
+          !VALID_CONFIDENCE.has(priority)
+        ) {
+          continue; // drop proposals with invalid discriminants
+        }
+        aiProposals.push({
+          type: type as ConsolidationProposal['type'],
+          action: action as ConsolidationProposal['action'],
           target: String(p.target ?? ''),
           rationale: String(p.rationale ?? ''),
-          confidence: String(
-            p.confidence ?? 'low'
-          ) as ConsolidationProposal['confidence'],
-          priority: String(
-            p.priority ?? 'low'
-          ) as ConsolidationProposal['priority'],
-        }));
+          confidence: confidence as ConsolidationProposal['confidence'],
+          priority: priority as ConsolidationProposal['priority'],
+        });
+      }
     }
   } catch { /* leave empty */ }
 
