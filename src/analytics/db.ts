@@ -941,8 +941,14 @@ function mapConsolidationRow(row: Record<string, unknown>): RunConsolidation {
   let inputSnapshotIds: Record<string, string[]> = {};
   try {
     const parsed = JSON.parse((row.input_snapshot_ids_json as string) || '{}');
-    if (typeof parsed === 'object' && parsed !== null) {
-      inputSnapshotIds = parsed as Record<string, string[]>;
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      for (const [key, val] of Object.entries(parsed)) {
+        if (Array.isArray(val)) {
+          inputSnapshotIds[key] = val.filter(
+            (v): v is string => typeof v === 'string'
+          );
+        }
+      }
     }
   } catch { /* leave empty */ }
 
@@ -950,15 +956,38 @@ function mapConsolidationRow(row: Record<string, unknown>): RunConsolidation {
   try {
     const parsed = JSON.parse((row.ai_proposals_json as string) || '[]');
     if (Array.isArray(parsed)) {
-      aiProposals = parsed as ConsolidationProposal[];
+      aiProposals = parsed
+        .filter(
+          (p): p is Record<string, unknown> =>
+            typeof p === 'object' && p !== null
+        )
+        .map((p) => ({
+          type: String(p.type ?? '') as ConsolidationProposal['type'],
+          action: String(p.action ?? '') as ConsolidationProposal['action'],
+          target: String(p.target ?? ''),
+          rationale: String(p.rationale ?? ''),
+          confidence: String(
+            p.confidence ?? 'low'
+          ) as ConsolidationProposal['confidence'],
+          priority: String(
+            p.priority ?? 'low'
+          ) as ConsolidationProposal['priority'],
+        }));
     }
   } catch { /* leave empty */ }
 
   let aiTokenUsage: Record<string, number> | null = null;
   try {
     const parsed = JSON.parse((row.ai_token_usage_json as string) || 'null');
-    if (typeof parsed === 'object' && parsed !== null) {
-      aiTokenUsage = parsed as Record<string, number>;
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      const normalized: Record<string, number> = {};
+      for (const [key, val] of Object.entries(parsed)) {
+        const n = Number(val);
+        if (Number.isFinite(n)) {
+          normalized[key] = n;
+        }
+      }
+      aiTokenUsage = normalized;
     }
   } catch { /* leave null */ }
 
@@ -1000,7 +1029,7 @@ export async function listTopArticleViewsAggregated(
        JOIN articles a ON av.article_id = a.id
        WHERE av.view_date >= ? AND av.view_date < ?
        GROUP BY av.article_id
-       ORDER BY total_views DESC
+       ORDER BY total_views DESC, a.id ASC
        LIMIT ?`
     )
     .bind(fromDate, toDate, limit)
