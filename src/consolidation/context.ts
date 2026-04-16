@@ -64,6 +64,26 @@ export interface CompetitorBlob {
   items: Array<{ title: string; url: string | null }>;
 }
 
+export interface AssembleContextOptions {
+  /**
+   * The analysis window for most input families (pipeline runs, CF
+   * analytics, Search Console, competitors, article views).
+   */
+  window: WeeklyWindow;
+  /**
+   * The window to use for the "current" keyword rankings. Rankings are
+   * a point-in-time snapshot taken DURING a week (current week), while
+   * the analysis window is the PREVIOUS complete week. In the weekly
+   * cron flow, step 3 writes rankings for currentWeek and step 6 runs
+   * the consolidation for prevWeek — so the rankings window must be
+   * passed separately to pick up the fresh data the same run produced.
+   *
+   * Defaults to the analysis window if not provided (for manual
+   * backfills where the distinction doesn't apply).
+   */
+  rankingsWindow?: WeeklyWindow;
+}
+
 /**
  * Assemble the full consolidation context from all six input families.
  *
@@ -71,15 +91,17 @@ export interface CompetitorBlob {
  * search in memory" patterns. This means backfills for older windows
  * work correctly as long as the snapshot data exists in D1/KV.
  *
- * Rankings use a two-window query: the consolidation's own window for
- * "current" data, and the week before it for "previous" deltas. Missing
- * data in either window is labeled honestly ("no data this week" or
- * "no previous data") rather than fabricated into conclusions.
+ * Rankings use a two-window query: rankingsWindow for "current" data,
+ * and the week before it for "previous" deltas. Missing data in either
+ * window is labeled honestly ("no data this week" or "no previous
+ * data") rather than fabricated into conclusions.
  */
 export async function assembleConsolidationContext(
   env: Env,
-  window: WeeklyWindow
+  options: AssembleContextOptions
 ): Promise<ConsolidationContext> {
+  const { window } = options;
+  const rankingsWindow = options.rankingsWindow ?? window;
   const inputRefs: ConsolidationInputRefs = {
     pipelineRunIds: [],
     snapshotIds: {},
@@ -128,18 +150,24 @@ export async function assembleConsolidationContext(
     );
   }
 
-  // 4. Rankings — explicit current + previous window queries.
-  const prevWindow = getPreviousWeeklyWindow(new Date(window.windowStart));
+  // 4. Rankings — query the explicit rankings window (which may differ
+  // from the analysis window; see AssembleContextOptions.rankingsWindow).
+  const rankingsPrevWindow = getPreviousWeeklyWindow(
+    new Date(rankingsWindow.windowStart)
+  );
   const currentRankings = await listKeywordRankingsByWindow(
     env.DB,
-    window.windowStart
+    rankingsWindow.windowStart
   );
   const previousRankings = await listKeywordRankingsByWindow(
     env.DB,
-    prevWindow.windowStart
+    rankingsPrevWindow.windowStart
   );
-  if (currentRankings.length > 0) {
-    inputRefs.snapshotIds['rankings'] = ['current-window'];
+  if (currentRankings.length > 0 || previousRankings.length > 0) {
+    inputRefs.snapshotIds['rankings'] = [
+      ...currentRankings.map((r) => r.id),
+      ...previousRankings.map((r) => r.id),
+    ];
   }
   sections.push(formatRankings(currentRankings, previousRankings));
 

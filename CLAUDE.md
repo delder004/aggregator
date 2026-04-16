@@ -101,6 +101,11 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
     - `GET /ops/cf-analytics[/:id]`, `GET /ops/search-console[/:id]`
     - `GET /ops/rankings`, `GET /ops/competitors[/:id]`
     - `GET /ops/article-views`, `GET /ops/source-candidates`
+- **Weekly consolidation (Phase 2 dry-run):**
+  - Runs as step 6 of `IngestWorkflow` after capture completes (gated on >= 3/5 namespaces succeeding)
+  - Manual trigger: `POST /ops/cron/consolidate` with `X-Cron-Key` (accepts `?window=` for backfill)
+  - Inspection: `GET /ops/consolidations` (list), `GET /ops/consolidations/:id` (detail + KV blobs)
+  - Uses Sonnet for the AI call; context is assembled from all Phase 1 inputs
   - Required secrets (set via `wrangler secret put`):
     - `CF_ACCOUNT_ID`, `CF_ANALYTICS_API_TOKEN`, `CF_ZONE_ID`
     - `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `GSC_REFRESH_TOKEN`, `GSC_SITE_URL`

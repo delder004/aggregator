@@ -950,17 +950,31 @@ export async function failConsolidation(
   windowStart: string,
   windowEnd: string,
   expectedAttemptCount: number,
-  errorMessage: string
+  errorMessage: string,
+  blobKeys?: {
+    contextBlobKey?: string;
+    aiOutputBlobKey?: string;
+  }
 ): Promise<boolean> {
   const now = nowIso();
   const result = await db
     .prepare(
       `UPDATE run_consolidations
-       SET status = 'error', updated_at = ?, error_message = ?
+       SET status = 'error', updated_at = ?, error_message = ?,
+           context_blob_key = COALESCE(?, context_blob_key),
+           ai_output_blob_key = COALESCE(?, ai_output_blob_key)
        WHERE window_start = ? AND window_end = ?
          AND attempt_count = ? AND status = 'running'`
     )
-    .bind(now, errorMessage, windowStart, windowEnd, expectedAttemptCount)
+    .bind(
+      now,
+      errorMessage,
+      blobKeys?.contextBlobKey ?? null,
+      blobKeys?.aiOutputBlobKey ?? null,
+      windowStart,
+      windowEnd,
+      expectedAttemptCount
+    )
     .run();
   return (result.meta?.changes ?? 0) > 0;
 }

@@ -16,13 +16,16 @@ import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
 import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
+import { runWeeklyConsolidation } from './consolidation/service';
 import {
   getCfAnalyticsSnapshotById,
   getCompetitorSnapshotById,
+  getConsolidationById,
   getIngestStatus,
   getSearchConsoleSnapshotById,
   listCfAnalyticsSnapshots,
   listCompetitorSnapshots,
+  listConsolidations,
   listRecentKeywordRankings,
   listSearchConsoleSnapshots,
   listSourceCandidates,
@@ -416,6 +419,74 @@ export default {
         JSON.stringify({ count: candidates.length, candidates }),
         { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
       );
+    }
+
+    // Weekly consolidation: list / detail / manual trigger.
+    if (path === '/ops/consolidations') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '20');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(100, Math.floor(limitParam)))
+        : 20;
+      const consolidations = await listConsolidations(env.DB, limit);
+      return new Response(
+        JSON.stringify({ count: consolidations.length, consolidations }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    const consolidationMatch = path.match(
+      /^\/ops\/consolidations\/([a-f0-9-]+)$/
+    );
+    if (consolidationMatch) {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const consolidation = await getConsolidationById(
+        env.DB,
+        consolidationMatch[1]
+      );
+      if (!consolidation) {
+        return new Response('Not Found', { status: 404 });
+      }
+      const contextBlob = consolidation.contextBlobKey
+        ? await readBlob(env.KV, consolidation.contextBlobKey)
+        : null;
+      const aiOutputBlob = consolidation.aiOutputBlobKey
+        ? await readBlob(env.KV, consolidation.aiOutputBlobKey)
+        : null;
+      return new Response(
+        JSON.stringify({ consolidation, contextBlob, aiOutputBlob }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    if (path === '/ops/cron/consolidate' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const windowParam = url.searchParams.get('window');
+        const options: { windowStart?: string } = {};
+        if (windowParam) options.windowStart = windowParam;
+        const result = await runWeeklyConsolidation(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
     }
 
     // Ingest workflow: per-namespace status + manual trigger.

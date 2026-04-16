@@ -8,6 +8,7 @@ import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runArticleViewsRollup, resolveRollupWindow } from './analytics/analytics-engine';
 import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
+import { runWeeklyConsolidation } from './consolidation/service';
 
 /**
  * IngestWorkflow — weekly capture-layer orchestrator.
@@ -175,12 +176,41 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     const errorCount = results.filter((r) => r.status === 'error').length;
     const skippedCount = results.filter((r) => r.status === 'skipped').length;
 
+    // Step 6: Weekly consolidation — only runs if at least 3 of 5
+    // capture namespaces completed. Partial data is better than no
+    // consolidation, but near-total capture failure should skip.
+    let consolidationResult: { written: boolean; summary?: string } | null = null;
+    if (completedCount >= 3) {
+      await step.sleep('pre-consolidation-pause', '5 seconds');
+      consolidationResult = await step.do('consolidation', async () => {
+        try {
+          const r = await runWeeklyConsolidation(this.env, {
+            windowStart: prevWeek.windowStart,
+            rankingsWindowStart: currentWeek.windowStart,
+          });
+          return {
+            written: r.written,
+            summary: r.aiSummary ?? r.reason ?? undefined,
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`Consolidation failed: ${msg}`);
+          return { written: false, summary: `error: ${msg}` };
+        }
+      });
+    } else {
+      console.log(
+        `Skipping consolidation: only ${completedCount}/5 namespaces completed (need >= 3)`
+      );
+    }
+
     console.log(
       `IngestWorkflow finished. completed=${completedCount}, ` +
-      `errors=${errorCount}, skipped=${skippedCount}`
+      `errors=${errorCount}, skipped=${skippedCount}, ` +
+      `consolidation=${consolidationResult?.written ?? 'skipped'}`
     );
 
-    return { pipelineRunId, results, completedCount, errorCount, skippedCount };
+    return { pipelineRunId, results, completedCount, errorCount, skippedCount, consolidationResult };
   }
 
   private async runNamespace(
