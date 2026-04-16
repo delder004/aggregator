@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2025-03-14"
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "0 13 * * 1"]
 
 [[d1_databases]]
 binding = "DB"
@@ -28,6 +28,11 @@ class_name = "CollectWorkflow"
 name = "agenticaiaccounting-process"
 binding = "PROCESS_WORKFLOW"
 class_name = "ProcessWorkflow"
+
+[[workflows]]
+name = "agenticaiaccounting-ingest"
+binding = "INGEST_WORKFLOW"
+class_name = "IngestWorkflow"
 
 [[analytics_engine_datasets]]
 binding = "AE_EVENTS"

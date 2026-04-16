@@ -124,6 +124,7 @@ export interface Env {
   SUPADATA_API_KEY?: string;
   COLLECT_WORKFLOW: Workflow;
   PROCESS_WORKFLOW: Workflow;
+  INGEST_WORKFLOW: Workflow;
   HEALTHCHECK_URL?: string;
   BUTTONDOWN_API_KEY?: string;
   // Phase 1 consolidation loop: capture-layer bindings & secrets

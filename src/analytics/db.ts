@@ -2,6 +2,10 @@ import type {
   ArticleViewRow,
   CfAnalyticsSnapshot,
   CompetitorSnapshot,
+  IngestNamespace,
+  IngestNamespaceStatus,
+  IngestRun,
+  IngestRunStatus,
   KeywordRanking,
   SearchConsoleSnapshot,
   SnapshotStatus,
@@ -678,20 +682,115 @@ export async function listSourceCandidates(
   }));
 }
 
-// -- /ops/ingest/status --
-//
-// Intentionally not implemented in Phase 1. The honest per-namespace status
-// requires aggregation that this layer can't express truthfully:
-//   - cf-analytics has two writers per window (graphql + analytics_engine)
-//   - competitors has N writers per window (one per competitor)
-//   - rankings and article-views-rollup have no run-level capture record;
-//     reading from data tables would fabricate a 'complete' status from the
-//     existence of data rows, which would lie about partial failures.
-//
-// Commit 7 introduces an `ingest_runs` table written by the IngestWorkflow
-// orchestrator (one row per namespace per window). At that point the status
-// query reads from a single source of truth and `/ops/ingest/status` can
-// return per-namespace state honestly.
+// -- ingest_runs --
+
+const ALL_INGEST_NAMESPACES: readonly IngestNamespace[] = [
+  'cf-analytics',
+  'search-console',
+  'rankings',
+  'competitors',
+  'article-views-rollup',
+];
+
+export async function upsertIngestRun(
+  db: D1Database,
+  run: {
+    id: string;
+    pipelineRunId: string;
+    namespace: IngestNamespace;
+    windowStart: string;
+    windowEnd: string;
+    status: IngestRunStatus;
+    startedAt: string | null;
+    completedAt: string | null;
+    errorMessage: string | null;
+    metrics: Record<string, string | number | boolean | null>;
+  }
+): Promise<void> {
+  const now = nowIso();
+  await db
+    .prepare(
+      `INSERT INTO ingest_runs (
+         id, pipeline_run_id, namespace, window_start, window_end,
+         status, started_at, completed_at, updated_at, error_message, metrics_json
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (namespace, window_start) DO UPDATE SET
+         pipeline_run_id = excluded.pipeline_run_id,
+         status = excluded.status,
+         started_at = COALESCE(excluded.started_at, ingest_runs.started_at),
+         completed_at = excluded.completed_at,
+         updated_at = excluded.updated_at,
+         error_message = excluded.error_message,
+         metrics_json = excluded.metrics_json`
+    )
+    .bind(
+      run.id,
+      run.pipelineRunId,
+      run.namespace,
+      run.windowStart,
+      run.windowEnd,
+      run.status,
+      run.startedAt,
+      run.completedAt,
+      now,
+      run.errorMessage,
+      JSON.stringify(run.metrics)
+    )
+    .run();
+}
+
+export async function getIngestStatus(
+  db: D1Database
+): Promise<IngestNamespaceStatus[]> {
+  const results: IngestNamespaceStatus[] = [];
+  for (const namespace of ALL_INGEST_NAMESPACES) {
+    const row = await db
+      .prepare(
+        `SELECT namespace, window_start, window_end, status,
+                started_at, completed_at, updated_at, error_message, metrics_json
+         FROM ingest_runs
+         WHERE namespace = ?
+         ORDER BY window_start DESC LIMIT 1`
+      )
+      .bind(namespace)
+      .first();
+    if (!row) {
+      results.push({
+        namespace,
+        windowStart: null,
+        windowEnd: null,
+        status: 'never',
+        startedAt: null,
+        completedAt: null,
+        updatedAt: null,
+        errorMessage: null,
+        metrics: {},
+      });
+      continue;
+    }
+    let metrics: Record<string, string | number | boolean | null> = {};
+    try {
+      const parsed = JSON.parse((row.metrics_json as string) || '{}');
+      if (typeof parsed === 'object' && parsed !== null) {
+        metrics = parsed as Record<string, string | number | boolean | null>;
+      }
+    } catch {
+      // leave empty
+    }
+    results.push({
+      namespace,
+      windowStart: (row.window_start as string | null) ?? null,
+      windowEnd: (row.window_end as string | null) ?? null,
+      status: (row.status as IngestRunStatus) ?? 'pending',
+      startedAt: (row.started_at as string | null) ?? null,
+      completedAt: (row.completed_at as string | null) ?? null,
+      updatedAt: (row.updated_at as string | null) ?? null,
+      errorMessage: (row.error_message as string | null) ?? null,
+      metrics,
+    });
+  }
+  return results;
+}
 
 function nullableNumber(value: unknown): number | null {
   if (value === null || value === undefined) {

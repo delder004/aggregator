@@ -87,6 +87,25 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 - **Run telemetry API:**
   - `GET /ops/runs` with `X-Cron-Key: $CRON_SECRET` returns recent pipeline runs
   - `GET /ops/runs/<pipelineRunId>` returns step-level metrics plus the AI retrospective
+- **Weekly ingest (Phase 1 capture layer):**
+  - Cron: `0 13 * * 1` (Monday 13:00 UTC) triggers `IngestWorkflow`
+  - Manual trigger: `POST /ops/cron/ingest` with `X-Cron-Key`
+  - Per-namespace status: `GET /ops/ingest/status`
+  - Individual namespace triggers:
+    - `POST /ops/cron/cf-analytics-snapshot`
+    - `POST /ops/cron/search-console-snapshot`
+    - `POST /ops/cron/rankings-sweep`
+    - `POST /ops/cron/competitor-snapshots`
+    - `POST /ops/cron/article-views-rollup`
+  - Inspection endpoints:
+    - `GET /ops/cf-analytics[/:id]`, `GET /ops/search-console[/:id]`
+    - `GET /ops/rankings`, `GET /ops/competitors[/:id]`
+    - `GET /ops/article-views`, `GET /ops/source-candidates`
+  - Required secrets (set via `wrangler secret put`):
+    - `CF_ACCOUNT_ID`, `CF_ANALYTICS_API_TOKEN`, `CF_ZONE_ID`
+    - `GSC_CLIENT_ID`, `GSC_CLIENT_SECRET`, `GSC_REFRESH_TOKEN`, `GSC_SITE_URL`
+    - `SERPER_API_KEY`
+  - Optional: `SITE_HOSTNAME` (default: `agenticaiccounting.com`)
 
 ## Workflow
 

@@ -19,6 +19,7 @@ import { runCompetitorSnapshots } from './competitors/snapshot';
 import {
   getCfAnalyticsSnapshotById,
   getCompetitorSnapshotById,
+  getIngestStatus,
   getSearchConsoleSnapshotById,
   listCfAnalyticsSnapshots,
   listCompetitorSnapshots,
@@ -29,6 +30,7 @@ import {
 import { readBlob } from './analytics/blob-store';
 
 export { CollectWorkflow, ProcessWorkflow } from './workflow';
+export { IngestWorkflow } from './ingest';
 
 function isOpsAuthorized(request: Request, env: Env): boolean {
   return Boolean(env.CRON_SECRET && request.headers.get('X-Cron-Key') === env.CRON_SECRET);
@@ -416,6 +418,43 @@ export default {
       );
     }
 
+    // Ingest workflow: per-namespace status + manual trigger.
+    if (path === '/ops/ingest/status') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const namespaces = await getIngestStatus(env.DB);
+      return new Response(JSON.stringify({ namespaces }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+
+    if (path === '/ops/cron/ingest' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const pipelineRunId = crypto.randomUUID();
+      const instance = await env.INGEST_WORKFLOW.create({
+        params: {
+          pipelineRunId,
+          triggerType: 'manual',
+          triggerSource: '/ops/cron/ingest',
+          startedAt: new Date().toISOString(),
+        },
+      });
+      return new Response(
+        JSON.stringify({
+          status: 'started',
+          pipelineRunId,
+          instanceId: instance.id,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        }
+      );
+    }
+
     if (path === '/ops/cron/article-views-rollup' && request.method === 'POST') {
       if (!isOpsAuthorized(request, env)) {
         return new Response('Unauthorized', { status: 401 });
@@ -724,10 +763,29 @@ export default {
   },
 
   async scheduled(
-    _event: ScheduledEvent,
+    event: ScheduledEvent,
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
+    // Weekly ingest cron (Monday 13:00 UTC): dispatch IngestWorkflow.
+    // Hourly cron: dispatch Collect + Process pipeline as before.
+    // ScheduledEvent.cron is always provided by the Workers runtime.
+    if (event.cron === '0 13 * * 1') {
+      const pipelineRunId = crypto.randomUUID();
+      const instance = await env.INGEST_WORKFLOW.create({
+        params: {
+          pipelineRunId,
+          triggerType: 'scheduled',
+          triggerSource: 'weekly-ingest-cron',
+          startedAt: new Date().toISOString(),
+        },
+      });
+      console.log(
+        `Ingest workflow ${instance.id} started for pipeline run ${pipelineRunId}`
+      );
+      return;
+    }
+
     const { pipelineRunId, collectInstance, processInstance } = await startPipeline(
       env,
       'scheduled',
