@@ -276,3 +276,8 @@ Phase 3 adds human-in-the-loop mutation via ops endpoints:
 - No auto-PRs — human clicks approve, code applies the change
 
 Phase 4 (much later) adds auto-PR creation, scoped only to data/config files.
+
+After Monday's run, you'll check the output with:
+
+  curl -H "X-Cron-Key: $CRON_SECRET" \
+    https://agenticaiaccounting.dmelder.workers.dev/ops/consolidations
