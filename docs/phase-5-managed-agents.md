@@ -24,8 +24,8 @@ What's still missing is the actor — something that *uses* the proposals, picks
 - Phases 1 and 2 have been running stably for 4+ weeks (live)
 - Phase 3 D1 override pattern is in production (gates this phase)
 - Phase 4 auto-PR system has opened ≥10 PRs against the three-file allowlist with no allowlist violations (gates the agent's write access)
-- A `target_queries` table exists and is populated with the queries we want to win (see *Measurement*, below)
-- A weekly per-pillar share-of-voice metric is being computed and stored
+- A `target_queries` table exists and is populated with the queries we want to win (see *Metrics*, below)
+- Weekly per-pillar `share_of_voice_snapshots` and `pillar_health_snapshots` are being computed and stored
 
 The agent is the last piece, not the first. If Phases 3 and 4 are not yet shipped, Phase 5 cannot start.
 
@@ -57,9 +57,53 @@ The agent is the last piece, not the first. If Phases 3 and 4 are not yet shippe
 
 The allowlist is enforced twice: once in the agent's system prompt (guidance), once in a CI check on the PR (security boundary). The system prompt is not a security boundary.
 
-## Measurement
+## Metrics
 
-Before the agent ships, the site needs to know whether it's #1. Phase 1 already tracks rankings for hardcoded keywords, but there's no per-pillar measurement and no notion of "the queries we want to win."
+The agent needs a tiered metric framework: one north star that defines winning, leading indicators it can move directly, outcome metrics it tracks but cannot chase, and guardrails that must never regress. Phase 1 already tracks raw SERP rankings for hardcoded keywords, but there is no per-pillar measurement and no notion of "the queries we want to win."
+
+### North star (one metric)
+
+**Share of voice across `target_queries`, aggregated as the percentage of target queries where `agenticaiccounting.com` ranks in the top 3 SERP positions.** Decomposed per-pillar for diagnosis, reported as a single number for the goal-achieved check.
+
+### Leading indicators (the agent optimizes these directly)
+
+The agent has three levers — `thresholds.ts`, `topic-hints.ts`, `prompt-config.ts` — and each maps to a group of leading indicators:
+
+**Coverage** (moved by source, topic, and threshold changes)
+- Unique source-types contributing ≥1 published article per week, per pillar
+- Median hours-since-publish for homepage articles (freshness)
+- % of tracked companies with ≥1 article in the last 30 days
+- Jobs pillar only: active listings count, companies with ≥1 open role, distinct job boards represented
+
+**Quality** (moved by threshold and prompt tuning)
+- Median relevance score on published articles
+- % of published articles scoring ≥70 (featured-eligible)
+- Rejection rate (articles scoring <50) — expected stable, not trending
+
+**Topical focus** (moved by topic-hints)
+- Distribution of published articles across the 4 pillars (no pillar starves)
+- Coverage of named competitor companies and entities readers search for
+
+### Outcome metrics (agent tracks, does not chase)
+
+These lag leading-indicator moves by 2–8 weeks and come from Phase 1's existing snapshots. The agent reads them in the briefing to evaluate whether its prior changes worked.
+
+- Average SERP position per pillar (from `keyword_rankings`)
+- Search Console impressions and CTR per pillar (from `search_console_snapshots`)
+- Indexed page count
+- Unique visitors per week, per pillar landing page (from `cf_analytics_snapshots` + `article_views`)
+- Referring domains / backlinks
+- Branded search volume ("agentic AI accounting" and close variants)
+
+### Guardrails (must not regress)
+
+A PR that moves the north star but violates a guardrail should be rejected at review. Each is checked against the following week's snapshot.
+
+- **Off-topic rate**: % of a random 20-article sample per week that a human rater marks "not about agentic AI in accounting." Rising off-topic rate indicates thresholds went too loose.
+- **Near-duplicate rate**: % of published articles within cosine similarity >0.9 of another published that week.
+- **Page weight** stays <50KB (hard constraint from CLAUDE.md).
+- **Cron success rate** ≥95%.
+- **Classifier cost per cron run** within ±25% of baseline.
 
 ### New schema
 
@@ -86,9 +130,25 @@ CREATE TABLE IF NOT EXISTS share_of_voice_snapshots (
     raw_data_kv_key TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_sov_pillar_date ON share_of_voice_snapshots(pillar, snapshot_date);
+
+CREATE TABLE IF NOT EXISTS pillar_health_snapshots (
+    id TEXT PRIMARY KEY,
+    snapshot_date TEXT NOT NULL,
+    pillar TEXT NOT NULL CHECK(pillar IN ('news', 'research', 'analysis', 'jobs')),
+    published_count INTEGER NOT NULL,
+    featured_count INTEGER NOT NULL,
+    median_relevance_score REAL,
+    unique_sources INTEGER NOT NULL,
+    median_freshness_hours REAL,
+    off_topic_rate REAL,
+    near_duplicate_rate REAL
+);
+CREATE INDEX IF NOT EXISTS idx_health_pillar_date ON pillar_health_snapshots(pillar, snapshot_date);
 ```
 
-`target_queries` is operator-managed (seeded by hand, edited rarely). `share_of_voice_snapshots` is computed weekly from the existing `keyword_rankings` data, joined to `target_queries`. The snapshot is the agent's primary signal: *for each pillar, are we gaining or losing ground?*
+`target_queries` is operator-managed (seeded by hand, edited rarely). `share_of_voice_snapshots` is computed weekly from the existing `keyword_rankings` data joined to `target_queries`. `pillar_health_snapshots` is computed weekly from `articles` + `sources` + `company_jobs` and aggregates all the leading indicators in one row per pillar.
+
+Together these two snapshots are the agent's primary signal: *for each pillar, what is the gap to goal, and which leading indicator is moving in the wrong direction?*
 
 ### Definition of #1
 
@@ -98,7 +158,7 @@ For each pillar, the site is "#1" when:
 - Average rank across the pillar's target queries is ≤2.5
 - Both conditions hold for 4 consecutive weekly snapshots
 
-This is a goal post the agent can navigate toward. It is also a stop condition: when met for a pillar, the agent stops proposing changes for that pillar and reports "achieved."
+This is a goal post the agent can navigate toward. It is also a stop condition: when met for a pillar, the agent stops proposing changes for that pillar and shifts to defensive monitoring (propose only if rank degrades by ≥2 positions across the pillar).
 
 ## Architecture
 
@@ -184,11 +244,12 @@ A new GitHub Actions workflow (`.github/workflows/agent-pr-allowlist.yml`) runs 
 ## Phased rollout
 
 **Phase 5a — Measurement (no agent yet)**
-1. Add `target_queries` and `share_of_voice_snapshots` schema + migration
+1. Add `target_queries`, `share_of_voice_snapshots`, and `pillar_health_snapshots` schema + migration
 2. Seed `target_queries` by hand (operator picks the queries that matter per pillar)
-3. Compute share-of-voice weekly inside `IngestWorkflow`
-4. Surface at `GET /ops/share-of-voice` and on the existing consolidation page
-5. Run for 4 weeks to confirm the metric is stable and meaningful
+3. Compute share-of-voice and pillar-health weekly inside `IngestWorkflow`
+4. Stand up the off-topic sampling job: pick 20 articles/week per pillar, store in a `manual_review_queue` table for human rating; feed results back into `pillar_health_snapshots.off_topic_rate`
+5. Surface at `GET /ops/share-of-voice` and `GET /ops/pillar-health`, linked from the existing consolidation page
+6. Run for 4 weeks to confirm both metrics are stable and the guardrails trigger correctly on synthetic regressions
 
 **Phase 5b — Read-only agent**
 1. Create the Managed Agent and environment
