@@ -23,7 +23,7 @@ What's still missing is the actor — something that *uses* the proposals, picks
 
 - Phases 1 and 2 have been running stably for 4+ weeks (live)
 - Phase 3 D1 override pattern is in production (gates this phase)
-- Phase 4 auto-PR system has opened ≥10 PRs against the three-file allowlist with no allowlist violations (gates the agent's write access)
+- Phase 4 auto-PR system has been running in production for ≥8 weeks and ≥5 of its PRs have been reviewed and merged by the operator with no manual rewrites (gates the agent's write access)
 - A `target_queries` table exists and is populated with the queries we want to win (see *Metrics*, below)
 - Weekly per-pillar `share_of_voice_snapshots` and `pillar_health_snapshots` are being computed and stored
 
@@ -33,15 +33,26 @@ The agent is the last piece, not the first. If Phases 3 and 4 are not yet shippe
 
 ### What the agent IS allowed to do
 
-- Read all D1 tables, KV blobs, and `/ops/*` endpoints (via custom tools — see *Architecture*)
+- Read a pre-assembled `briefing.json` containing D1 snapshots, pending proposals, and last-4-PRs status (see *Architecture*). The agent has no live `/ops/*` access because the Worker disconnects after kickoff.
 - Read any file in the repo
 - Edit only the files in the Phase 4 allowlist:
   - `src/scoring/thresholds.ts`
   - `src/scoring/topic-hints.ts`
   - `src/scoring/prompt-config.ts`
-- Run `npx tsc --noEmit` and `npx vitest run` in its container
-- Open one PR per session against `main` from a branch named `agent/phase-5-<session-id>`
-- Use the GitHub MCP server only for: creating a branch, committing, opening a PR, and reading PR/CI status
+- Run `npm install`, `npx tsc --noEmit`, and `npx vitest run` in its container
+- Use `bash` + the mounted GitHub repo (with Anthropic's git proxy) to create a branch, commit, and push
+- Use the GitHub MCP server to open the PR and read PR/CI status (only)
+- Call the Phase 3 approval endpoint (`POST /ops/proposals/:consolidationId/:proposalIndex/approve`) via `web_fetch` with the cron key — this is the only write action that doesn't go through a PR, and it's how the agent influences pillars whose levers aren't in the code allowlist (notably Jobs and Competitors, which move via D1 mutations to tracked companies / sources, not code edits)
+- Open at most one PR *and* at most one Phase 3 approval per session
+
+### Jobs pillar: how the agent actually moves it
+
+The code allowlist is scoring-only, so the agent cannot directly change `src/collectors/jobs.ts` or add new job boards. Jobs coverage moves through Phase 3 D1 mutations:
+
+- New tracked companies (a Phase 3 proposal action approved by the agent)
+- New sources / competitor entries that surface job-posting accounts
+
+The agent's briefing therefore includes the list of pending Phase 3 proposals, and the agent is expected to approve a proposal when the gap is in a pillar (Jobs, Competitors) that its code levers can't reach. This is the only write path to those pillars until/unless Phase 4's allowlist is broadened in a future phase.
 
 ### What the agent is NOT allowed to do
 
@@ -53,7 +64,7 @@ The agent is the last piece, not the first. If Phases 3 and 4 are not yet shippe
 - Call `wrangler deploy` or any other deployment command
 - Add new dependencies
 - Add or modify GitHub workflows or CI configuration
-- Open more than one PR per session
+- Perform more than one write action per session (one PR or one Phase 3 approval, not both)
 
 The allowlist is enforced twice: once in the agent's system prompt (guidance), once in a CI check on the PR (security boundary). The system prompt is not a security boundary.
 
@@ -103,7 +114,7 @@ A PR that moves the north star but violates a guardrail should be rejected at re
 - **Near-duplicate rate**: % of published articles within cosine similarity >0.9 of another published that week.
 - **Page weight** stays <50KB (hard constraint from CLAUDE.md).
 - **Cron success rate** ≥95%.
-- **Classifier cost per cron run** within ±25% of baseline.
+- **Classifier cost per cron run** within ±25% of the rolling 4-week baseline measured at the time of the agent's most recent merged PR. The baseline is stored in D1 (`agent_config.baseline_classifier_cost_usd`) and re-snapshotted whenever the operator merges a Phase 5c PR.
 
 ### New schema
 
@@ -144,6 +155,44 @@ CREATE TABLE IF NOT EXISTS pillar_health_snapshots (
     near_duplicate_rate REAL
 );
 CREATE INDEX IF NOT EXISTS idx_health_pillar_date ON pillar_health_snapshots(pillar, snapshot_date);
+
+CREATE TABLE IF NOT EXISTS manual_review_queue (
+    id TEXT PRIMARY KEY,
+    article_id TEXT NOT NULL,
+    pillar TEXT NOT NULL,
+    sampled_at TEXT NOT NULL,
+    rated_at TEXT,
+    rating TEXT CHECK(rating IN ('on_topic', 'off_topic', 'duplicate')),
+    rater TEXT,
+    notes TEXT,
+    FOREIGN KEY (article_id) REFERENCES articles(id)
+);
+CREATE INDEX IF NOT EXISTS idx_review_queue_pending ON manual_review_queue(rated_at) WHERE rated_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS agent_sessions (
+    session_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    completed_at TEXT,
+    status TEXT NOT NULL CHECK(status IN ('running', 'succeeded', 'failed', 'timeout', 'killed')),
+    pr_url TEXT,
+    proposal_approved_id TEXT,
+    target_pillar TEXT,
+    briefing_kv_key TEXT,
+    input_tokens INTEGER,
+    output_tokens INTEGER,
+    cost_usd REAL,
+    notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_agent_sessions_created ON agent_sessions(created_at);
+
+CREATE TABLE IF NOT EXISTS agent_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    agent_enabled INTEGER NOT NULL DEFAULT 0,
+    baseline_classifier_cost_usd REAL,
+    baseline_set_at TEXT,
+    updated_at TEXT NOT NULL
+);
+INSERT OR IGNORE INTO agent_config (id, agent_enabled, updated_at) VALUES (1, 0, datetime('now'));
 ```
 
 `target_queries` is operator-managed (seeded by hand, edited rarely). `share_of_voice_snapshots` is computed weekly from the existing `keyword_rankings` data joined to `target_queries`. `pillar_health_snapshots` is computed weekly from `articles` + `sources` + `company_jobs` and aggregates all the leading indicators in one row per pillar.
@@ -152,11 +201,7 @@ Together these two snapshots are the agent's primary signal: *for each pillar, w
 
 ### Definition of #1
 
-For each pillar, the site is "#1" when:
-
-- ≥80% of `target_queries` for that pillar are in top 3 SERP positions
-- Average rank across the pillar's target queries is ≤2.5
-- Both conditions hold for 4 consecutive weekly snapshots
+For each pillar, the site is "#1" when **≥80% of `target_queries` for that pillar are in top 3 SERP positions for 4 consecutive weekly snapshots.** (A secondary avg-rank check was considered and dropped — it correlated ~1.0 with the top-3 percentage on synthetic data and added no diagnostic value.)
 
 This is a goal post the agent can navigate toward. It is also a stop condition: when met for a pillar, the agent stops proposing changes for that pillar and shifts to defensive monitoring (propose only if rank degrades by ≥2 positions across the pillar).
 
@@ -165,33 +210,48 @@ This is a goal post the agent can navigate toward. It is also a stop condition: 
 The agent runs as a Claude Managed Agent session, triggered weekly after Phase 2 consolidation completes. Anthropic hosts the container and the agent loop; the Worker only kicks off the session and audits results at the next cron tick.
 
 ```
-Weekly cron (Mon 13:00 UTC, after Phase 2)
+Weekly cron (Mon 14:00 UTC, one hour after Phase 2)
+  └─ Worker checks `agent_enabled` flag in D1 — if false, abort (kill switch)
   └─ Worker assembles briefing.json from:
        ├─ Latest share_of_voice_snapshots (per pillar)
+       ├─ Latest pillar_health_snapshots (per pillar)
        ├─ Latest run_consolidations.ai_proposals
        ├─ Last 4 weeks of pipeline_runs metrics
-       └─ Pending proposal_actions (from Phase 3)
+       ├─ Pending Phase 3 proposal_actions
+       └─ Last 4 agent_sessions: PR URL, merge status, reviewer comments
+            (so the agent can learn from what the operator accepted or rejected)
   └─ Worker uploads briefing.json via Files API
   └─ Worker creates Managed Agent session:
        ├─ agent: AGENT_ID (one-time, stored in Worker secret)
-       ├─ environment_id: ENV_ID (one-time)
+       ├─ environment_id: ENV_ID (pre-baked with node_modules to skip npm install)
        ├─ resources:
-       │    ├─ github_repository (mounted on agent/phase-5-<session-id> branch)
+       │    ├─ github_repository (default branch; agent creates its own
+       │    │    agent/phase-5-<session-id> branch inside the container)
        │    └─ file: briefing.json mounted at /workspace/briefing.json
-       └─ vault_ids: [GITHUB_MCP_VAULT_ID]
+       ├─ vault_ids: [GITHUB_MCP_VAULT_ID]
+       └─ task_budget: 500_000 tokens (hard cap)
+  └─ Worker persists session_id in agent_sessions (status=running)
   └─ Worker sends one user.message and disconnects
        (Cloudflare Workers cannot hold long-lived SSE streams)
   └─ Agent runs on Anthropic infrastructure:
        ├─ Reads briefing.json
-       ├─ Reads recent commits + open PRs (via GitHub MCP)
        ├─ Identifies the weakest pillar by share of voice
-       ├─ Picks the highest-confidence proposal addressing it
-       ├─ Edits files in the allowlist
-       ├─ Runs npx tsc --noEmit && npx vitest run
-       ├─ Iterates until tests pass
-       ├─ Commits, pushes, opens PR via GitHub MCP
+       ├─ Picks the highest-leverage action:
+       │    • Code change if the lever is in the allowlist
+       │    • Phase 3 approval if the lever is Jobs/Competitors/Sources
+       ├─ If code change:
+       │    ├─ git checkout -b agent/phase-5-<session-id>
+       │    ├─ Edits files in the allowlist
+       │    ├─ Runs `npm install` (if node_modules not pre-baked)
+       │    ├─ Runs `npx tsc --noEmit && npx vitest run`
+       │    ├─ Iterates until tests pass
+       │    ├─ Commits and pushes (via git proxy)
+       │    └─ Opens PR via GitHub MCP with structured description
+       ├─ If Phase 3 approval:
+       │    └─ POST /ops/proposals/:cid/:idx/approve via web_fetch
        └─ Stops
-  └─ Next cron tick: Worker calls events.list(session_id) for audit
+  └─ Next cron tick (week+1): Worker calls events.list on last session_id,
+     reads PR merge/comment state via GitHub MCP, updates agent_sessions row
 ```
 
 ### Why Managed Agents over Claude API + tool use
@@ -207,26 +267,63 @@ Weekly cron (Mon 13:00 UTC, after Phase 2)
 
 Done by hand or via the `ant` CLI from version-controlled YAML, once:
 
-1. Create environment: `client.beta.environments.create({name, config: {type: "cloud", networking: {type: "unrestricted"}}})`
-2. Create vault: `client.beta.vaults.create({name})` then add the GitHub MCP OAuth credential
-3. Create agent: `client.beta.agents.create({name, model: "claude-opus-4-7", system: <prompt>, tools: [agent_toolset_20260401, mcp_toolset], mcp_servers: [github MCP], skills: []})`
-4. Store `AGENT_ID`, `ENV_ID`, `VAULT_ID`, `GITHUB_REPO_TOKEN` as Worker secrets
+1. Create environment: `client.beta.environments.create({ name, config: { type: "cloud", networking: { type: "unrestricted" } } })`. Consider pre-baking `node_modules` into the environment so the agent skips a 30–60s `npm install` on every run.
+2. Create vault: `client.beta.vaults.create({ name })`, then add the GitHub MCP OAuth credential via `client.beta.vaults.credentials.create(...)`.
+3. Create agent:
+   ```ts
+   client.beta.agents.create({
+     name: "site-manager",
+     model: "claude-opus-4-7",
+     system: <prompt>,
+     tools: [
+       { type: "agent_toolset_20260401", default_config: { enabled: true } },
+       { type: "mcp_toolset", mcp_server_name: "github" },
+     ],
+     mcp_servers: [
+       { type: "url", name: "github", url: "https://api.githubcopilot.com/mcp/" },
+     ],
+   })
+   ```
+4. Store `AGENT_ID`, `ENV_ID`, `VAULT_ID`, and a `GITHUB_REPO_TOKEN` (fine-grained PAT with Contents: read/write on this repo only, used for `github_repository.authorization_token`) as Worker secrets. Note this is distinct from the MCP OAuth credential in the vault — the PAT handles clone/push via the git proxy; the MCP handles PR creation.
 
-The system prompt names the four pillars, the goal, the allowlist, the test commands, and the hard rules ("open exactly one PR, never push to main, do not edit anything outside the allowlist").
+The system prompt names the four pillars, the goal, the allowlist, the test commands, and the hard rules: "open at most one PR, perform at most one Phase 3 approval, never push to main, do not edit anything outside the allowlist, stop when the budget warns low."
 
 ### Worker changes
 
 Minimal new code in the Worker:
 
-- `src/agent/briefing.ts` — assembles the briefing JSON
-- `src/agent/runner.ts` — uploads briefing, creates session, sends kickoff message
-- `src/agent/audit.ts` — at next cron tick, calls `events.list(session_id)` and writes telemetry to a new `agent_sessions` table
+- `src/agent/briefing.ts` — assembles the briefing JSON (SoV + pillar health + pending proposals + last 4 agent_sessions)
+- `src/agent/runner.ts` — checks `agent_enabled`, uploads briefing, creates session, persists `session_id` in `agent_sessions`, sends kickoff message
+- `src/agent/audit.ts` — at next cron tick, reads the most recent running row from `agent_sessions`, calls `events.list(session_id)` + GitHub MCP to get PR state, updates the row
 - New cron entry in `wrangler.toml`: `0 14 * * 1` (Monday 14:00 UTC, one hour after consolidation)
-- New ops endpoint: `POST /ops/cron/agent-run` for manual triggers
+- New ops endpoints: `POST /ops/cron/agent-run` (manual trigger), `GET /ops/agent-sessions` (list + detail), `GET /ops/review-queue` + `POST /ops/review-queue/:id/rate` (operator rates off-topic samples)
 
 ### CI safeguard
 
 A new GitHub Actions workflow (`.github/workflows/agent-pr-allowlist.yml`) runs on every PR opened by the agent's branch prefix and fails if any file outside the Phase 4 allowlist is touched. This is the actual security boundary.
+
+### PR description spec
+
+Every PR the agent opens must include, in this order:
+
+1. **Pillar targeted** (news / research / analysis / jobs)
+2. **Diagnosis from the briefing** (which leading indicator moved in the wrong direction, or which gap this closes)
+3. **Proposal ID** from `run_consolidations.ai_proposals` the change is acting on (or "direct read of briefing" if not proposal-driven)
+4. **Expected metric delta** ("share of voice for pillar X should move from Y to Z over 2–4 weeks")
+5. **Files changed + one-line rationale per file**
+6. **Agent session link**: `/ops/agent-sessions/<session_id>`
+7. **Guardrail confirmations**: which guardrails were checked pre-merge, which require next-week snapshot
+
+Template is committed at `docs/agent-pr-template.md` and referenced from the system prompt. The operator reviews against this template — PRs missing sections get rejected as malformed regardless of code quality.
+
+### Kill switch
+
+Two independent ways to stop the agent, either of which is sufficient:
+
+1. **D1 flag**: `UPDATE agent_config SET agent_enabled = 0` — the cron checks this first and aborts if false. Fast; no API calls.
+2. **Agent archive**: `client.beta.agents.archive(AGENT_ID)` — permanently read-only, new sessions reject. Use only for terminal shutdown; there is no unarchive.
+
+A runaway *in-flight* session is bounded by the `task_budget` (500K tokens) passed at session creation. If that's exceeded the session terminates on its own.
 
 ## Failure modes and mitigations
 
@@ -244,10 +341,10 @@ A new GitHub Actions workflow (`.github/workflows/agent-pr-allowlist.yml`) runs 
 ## Phased rollout
 
 **Phase 5a — Measurement (no agent yet)**
-1. Add `target_queries`, `share_of_voice_snapshots`, and `pillar_health_snapshots` schema + migration
+1. Add `target_queries`, `share_of_voice_snapshots`, `pillar_health_snapshots`, `manual_review_queue`, and `agent_sessions` schema + migration (the last is unused until 5b but ships now to avoid a second migration later)
 2. Seed `target_queries` by hand (operator picks the queries that matter per pillar)
 3. Compute share-of-voice and pillar-health weekly inside `IngestWorkflow`
-4. Stand up the off-topic sampling job: pick 20 articles/week per pillar, store in a `manual_review_queue` table for human rating; feed results back into `pillar_health_snapshots.off_topic_rate`
+4. Stand up the off-topic sampling job: pick 20 articles/week per pillar, insert into `manual_review_queue`; the operator rates pending rows via a new `/ops/review-queue` endpoint; ratings flow back into `pillar_health_snapshots.off_topic_rate`
 5. Surface at `GET /ops/share-of-voice` and `GET /ops/pillar-health`, linked from the existing consolidation page
 6. Run for 4 weeks to confirm both metrics are stable and the guardrails trigger correctly on synthetic regressions
 
@@ -260,10 +357,11 @@ A new GitHub Actions workflow (`.github/workflows/agent-pr-allowlist.yml`) runs 
 
 **Phase 5c — Write-enabled agent (gated on Phase 4)**
 1. Allowlist enforcement CI check shipped
-2. Agent system prompt updated to permit edits + PR creation
-3. First 4 weeks: every PR requires two human reviewers
-4. After 4 weeks of clean PRs: drop to one reviewer
-5. Auto-merge stays off indefinitely
+2. `agent_config.agent_enabled` flag + `GET /ops/agent-sessions` endpoint shipped
+3. Agent system prompt updated to permit edits + PR creation + Phase 3 approvals
+4. First 4 weeks: every PR requires two reviewers (the operator plus one other named reviewer — any engineer with repo write access)
+5. After 4 weeks of clean PRs: drop to one reviewer (the operator)
+6. Auto-merge stays off indefinitely
 
 ## Cost estimate
 
