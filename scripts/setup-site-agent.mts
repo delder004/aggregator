@@ -1,87 +1,36 @@
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "node:fs";
 import path from "node:path";
-
-const required = (name: string): string => {
-  const v = process.env[name];
-  if (!v) {
-    console.error(`Missing env var: ${name}`);
-    process.exit(1);
-  }
-  return v;
-};
+import {
+  AGENT_DESCRIPTION,
+  AGENT_MCP_SERVERS,
+  AGENT_MODEL,
+  AGENT_NAME,
+  AGENT_TOOLS,
+} from "./lib/agent-config.mts";
 
 const client = new Anthropic();
 
-const systemPromptPath = path.join(process.cwd(), "docs/agent-system-prompt.md");
-const SYSTEM_PROMPT = fs.readFileSync(systemPromptPath, "utf-8");
+const SYSTEM_PROMPT = fs.readFileSync(
+  path.join(process.cwd(), "docs/agent-system-prompt.md"),
+  "utf-8",
+);
 
 const environment = await client.beta.environments.create({
   name: "aggregator-env",
   config: { type: "cloud", networking: { type: "unrestricted" } },
 });
 
-const vault = await client.beta.vaults.create({
-  display_name: "aggregator-vault",
-});
-
-await client.beta.vaults.credentials.create(vault.id, {
-  display_name: "GitHub MCP",
-  auth: {
-    type: "static_bearer",
-    mcp_server_url: "https://api.githubcopilot.com/mcp/",
-    token: required("GITHUB_MCP_PAT"),
-  },
-});
-
 const agent = await client.beta.agents.create({
-  name: "aggregator-agent",
-  model: "claude-haiku-4-5",
+  name: AGENT_NAME,
+  model: AGENT_MODEL,
   system: SYSTEM_PROMPT,
-  description:
-    "Goal-directed coding agent for agenticaiccounting.com. Observes site state via a cf_api custom tool and GitHub MCP, makes one code change, opens a PR.",
-  tools: [
-    { type: "agent_toolset_20260401", default_config: { enabled: true } },
-    { type: "mcp_toolset", mcp_server_name: "github" },
-    {
-      type: "custom",
-      name: "cf_api",
-      description:
-        "Call the Cloudflare REST API. Use for D1 queries, Workers logs, Analytics Engine, and account metadata. Auth is handled host-side.",
-      input_schema: {
-        type: "object",
-        properties: {
-          method: {
-            type: "string",
-            enum: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-            description: "HTTP method.",
-          },
-          path: {
-            type: "string",
-            description:
-              "API path starting with '/'. Example: '/accounts/{account_id}/d1/database/{database_id}/query'. Substitute {account_id} with the account_id from the kickoff message.",
-          },
-          query: {
-            type: "object",
-            description: "Query-string params (optional).",
-            additionalProperties: { type: "string" },
-          },
-          body: {
-            description:
-              "Request body for POST/PUT/PATCH (optional). Will be JSON-serialized.",
-          },
-        },
-        required: ["method", "path"],
-      },
-    },
-  ],
-  mcp_servers: [
-    { type: "url", name: "github", url: "https://api.githubcopilot.com/mcp/" },
-  ],
+  description: AGENT_DESCRIPTION,
+  tools: AGENT_TOOLS,
+  mcp_servers: AGENT_MCP_SERVERS,
 });
 
 console.log("Save these to your shell profile:");
 console.log(`export AGGREGATOR_ENV_ID=${environment.id}`);
-console.log(`export AGGREGATOR_VAULT_ID=${vault.id}`);
 console.log(`export AGGREGATOR_AGENT_ID=${agent.id}`);
 console.log(`export AGGREGATOR_AGENT_VERSION=${agent.version}`);

@@ -18,11 +18,21 @@ const required = (name: string): string => {
 
 const AGENT_ID = required("AGGREGATOR_AGENT_ID");
 const ENV_ID = required("AGGREGATOR_ENV_ID");
-const VAULT_ID = required("AGGREGATOR_VAULT_ID");
 const GITHUB_REPO_TOKEN = required("GITHUB_REPO_TOKEN");
 const GITHUB_REPO_URL = required("GITHUB_REPO_URL");
 const CF_API_TOKEN = required("CF_API_TOKEN");
 const CF_ACCOUNT_ID = required("CF_ACCOUNT_ID");
+
+// Derive owner/repo from repo URL for use in the kickoff and as the
+// github_api token's implicit scope.
+const ownerRepo = new URL(GITHUB_REPO_URL).pathname
+  .replace(/^\//, "")
+  .replace(/\.git$/, "");
+const [OWNER, REPO] = ownerRepo.split("/");
+if (!OWNER || !REPO) {
+  console.error(`Cannot parse owner/repo from GITHUB_REPO_URL=${GITHUB_REPO_URL}`);
+  process.exit(1);
+}
 
 const GOAL = process.argv[2];
 if (!GOAL) {
@@ -33,16 +43,22 @@ if (!GOAL) {
 const client = new Anthropic();
 
 const MAX_RESPONSE_CHARS = 50_000;
-async function handleCfApi(input: unknown): Promise<{
-  text: string;
-  isError: boolean;
-}> {
-  const i = input as {
-    method?: string;
-    path?: string;
-    query?: Record<string, string>;
-    body?: unknown;
-  };
+
+type HandlerResult = { text: string; isError: boolean };
+
+type ApiInput = {
+  method?: string;
+  path?: string;
+  query?: Record<string, string>;
+  body?: unknown;
+};
+
+async function callHttpApi(
+  origin: string,
+  input: unknown,
+  extraHeaders: Record<string, string>,
+): Promise<HandlerResult> {
+  const i = input as ApiInput;
   const method = (i.method ?? "GET").toUpperCase();
   const apiPath = i.path ?? "";
   if (!apiPath.startsWith("/")) {
@@ -51,7 +67,7 @@ async function handleCfApi(input: unknown): Promise<{
       isError: true,
     };
   }
-  const url = new URL(`https://api.cloudflare.com/client/v4${apiPath}`);
+  const url = new URL(`${origin}${apiPath}`);
   if (i.query) {
     for (const [k, v] of Object.entries(i.query)) url.searchParams.set(k, v);
   }
@@ -59,8 +75,8 @@ async function handleCfApi(input: unknown): Promise<{
   const resp = await fetch(url, {
     method,
     headers: {
-      authorization: `Bearer ${CF_API_TOKEN}`,
       "content-type": "application/json",
+      ...extraHeaders,
     },
     body: i.body !== undefined ? JSON.stringify(i.body) : undefined,
   });
@@ -76,11 +92,23 @@ async function handleCfApi(input: unknown): Promise<{
   };
 }
 
+const handleCfApi = (input: unknown): Promise<HandlerResult> =>
+  callHttpApi("https://api.cloudflare.com/client/v4", input, {
+    authorization: `Bearer ${CF_API_TOKEN}`,
+  });
+
+const handleGithubApi = (input: unknown): Promise<HandlerResult> =>
+  callHttpApi("https://api.github.com", input, {
+    authorization: `Bearer ${GITHUB_REPO_TOKEN}`,
+    accept: "application/vnd.github+json",
+    "x-github-api-version": "2022-11-28",
+    "user-agent": "aggregator-agent/0.1",
+  });
+
 const session = await client.beta.sessions.create({
   agent: AGENT_ID,
   environment_id: ENV_ID,
   title: `site-agent: ${GOAL.slice(0, 60)}`,
-  vault_ids: [VAULT_ID],
   resources: [
     {
       type: "github_repository",
@@ -97,9 +125,13 @@ const kickoff = `Goal for this session:
 
 ${GOAL}
 
-Your repo is mounted at /workspace/aggregator. Your Cloudflare account_id is \`${CF_ACCOUNT_ID}\`; use it when calling the \`cf_api\` tool. The D1 database_id is in /workspace/aggregator/wrangler.toml.
+Your repo is mounted at /workspace/aggregator.
 
-Observe current state via \`cf_api\` and the GitHub MCP as you see fit. Make one code change toward the goal, validate with tsc + vitest, and open a PR. Report the PR URL as your final message.`;
+Context for the custom tools:
+- \`cf_api\`: your Cloudflare account_id is \`${CF_ACCOUNT_ID}\`. The D1 database_id is in /workspace/aggregator/wrangler.toml.
+- \`github_api\`: this repo is \`${OWNER}/${REPO}\`. Use that in any '/repos/{owner}/{repo}/...' path.
+
+Make one code change toward the goal, validate with tsc + vitest, and open a PR via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message.`;
 
 const [, stream] = await Promise.all([
   client.beta.sessions.events.send(session.id, {
@@ -133,35 +165,30 @@ try {
         break;
       case "agent.custom_tool_use": {
         process.stdout.write(`\n[custom] ${event.name}\n`);
+        let result: HandlerResult;
         if (event.name === "cf_api") {
-          const { text, isError } = await handleCfApi(event.input);
-          await client.beta.sessions.events.send(session.id, {
-            events: [
-              {
-                type: "user.custom_tool_result",
-                custom_tool_use_id: event.id,
-                content: [{ type: "text", text }],
-                is_error: isError,
-              },
-            ],
-          });
-          process.stdout.write(
-            `[custom] cf_api result sent (${isError ? "error" : "ok"}, ${text.length} chars)\n`,
-          );
+          result = await handleCfApi(event.input);
+        } else if (event.name === "github_api") {
+          result = await handleGithubApi(event.input);
         } else {
-          await client.beta.sessions.events.send(session.id, {
-            events: [
-              {
-                type: "user.custom_tool_result",
-                custom_tool_use_id: event.id,
-                content: [
-                  { type: "text", text: `Unknown custom tool: ${event.name}` },
-                ],
-                is_error: true,
-              },
-            ],
-          });
+          result = {
+            text: `Unknown custom tool: ${event.name}`,
+            isError: true,
+          };
         }
+        await client.beta.sessions.events.send(session.id, {
+          events: [
+            {
+              type: "user.custom_tool_result",
+              custom_tool_use_id: event.id,
+              content: [{ type: "text", text: result.text }],
+              is_error: result.isError,
+            },
+          ],
+        });
+        process.stdout.write(
+          `[custom] ${event.name} result sent (${result.isError ? "error" : "ok"}, ${result.text.length} chars)\n`,
+        );
         break;
       }
       case "span.model_request_end":
