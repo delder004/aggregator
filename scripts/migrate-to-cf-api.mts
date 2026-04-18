@@ -1,45 +1,30 @@
+// One-off migration: update the existing aggregator-agent to drop CF MCP
+// servers/tools and add the cf_api custom tool instead. Also archives the
+// two CF MCP vault credentials (keeps the GitHub MCP credential).
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "node:fs";
 import path from "node:path";
 
-const required = (name: string): string => {
-  const v = process.env[name];
-  if (!v) {
-    console.error(`Missing env var: ${name}`);
-    process.exit(1);
-  }
-  return v;
-};
-
 const client = new Anthropic();
 
-const systemPromptPath = path.join(process.cwd(), "docs/agent-system-prompt.md");
-const SYSTEM_PROMPT = fs.readFileSync(systemPromptPath, "utf-8");
+const agentId = process.env.AGGREGATOR_AGENT_ID;
+const vaultId = process.env.AGGREGATOR_VAULT_ID;
+if (!agentId || !vaultId) {
+  console.error("Missing AGGREGATOR_AGENT_ID or AGGREGATOR_VAULT_ID");
+  process.exit(1);
+}
 
-const environment = await client.beta.environments.create({
-  name: "aggregator-env",
-  config: { type: "cloud", networking: { type: "unrestricted" } },
-});
+const SYSTEM_PROMPT = fs.readFileSync(
+  path.join(process.cwd(), "docs/agent-system-prompt.md"),
+  "utf-8",
+);
 
-const vault = await client.beta.vaults.create({
-  display_name: "aggregator-vault",
-});
+const current = await client.beta.agents.retrieve(agentId);
+console.log(`current agent version: ${current.version}`);
 
-await client.beta.vaults.credentials.create(vault.id, {
-  display_name: "GitHub MCP",
-  auth: {
-    type: "static_bearer",
-    mcp_server_url: "https://api.githubcopilot.com/mcp/",
-    token: required("GITHUB_MCP_PAT"),
-  },
-});
-
-const agent = await client.beta.agents.create({
-  name: "aggregator-agent",
-  model: "claude-haiku-4-5",
+const updated = await client.beta.agents.update(agentId, {
+  version: current.version,
   system: SYSTEM_PROMPT,
-  description:
-    "Goal-directed coding agent for agenticaiccounting.com. Observes site state via a cf_api custom tool and GitHub MCP, makes one code change, opens a PR.",
   tools: [
     { type: "agent_toolset_20260401", default_config: { enabled: true } },
     { type: "mcp_toolset", mcp_server_name: "github" },
@@ -79,9 +64,19 @@ const agent = await client.beta.agents.create({
     { type: "url", name: "github", url: "https://api.githubcopilot.com/mcp/" },
   ],
 });
+console.log(`updated agent to v${updated.version}`);
 
-console.log("Save these to your shell profile:");
-console.log(`export AGGREGATOR_ENV_ID=${environment.id}`);
-console.log(`export AGGREGATOR_VAULT_ID=${vault.id}`);
-console.log(`export AGGREGATOR_AGENT_ID=${agent.id}`);
-console.log(`export AGGREGATOR_AGENT_VERSION=${agent.version}`);
+// Archive the two CF MCP vault credentials (keep GitHub).
+for await (const cred of client.beta.vaults.credentials.list(vaultId)) {
+  if (
+    cred.auth.type === "mcp_oauth" &&
+    cred.auth.mcp_server_url.includes(".mcp.cloudflare.com")
+  ) {
+    console.log(`archiving ${cred.display_name} (${cred.id})`);
+    await client.beta.vaults.credentials.archive(cred.id, {
+      vault_id: vaultId,
+    });
+  }
+}
+
+console.log("migration done");
