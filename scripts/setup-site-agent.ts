@@ -38,13 +38,13 @@ await client.beta.vaults.credentials.create(vault.id, {
   display_name: "Cloudflare Observability MCP",
   auth: {
     type: "mcp_oauth",
-    mcp_server_url: "https://observability.mcp.cloudflare.com/sse",
+    mcp_server_url: "https://observability.mcp.cloudflare.com/mcp",
     access_token: required("CF_OBS_ACCESS_TOKEN"),
     expires_at: required("CF_OBS_EXPIRES_AT"),
     refresh: {
       refresh_token: required("CF_OBS_REFRESH_TOKEN"),
-      client_id: required("CF_MCP_CLIENT_ID"),
-      token_endpoint: "https://dash.cloudflare.com/oauth2/token",
+      client_id: required("CF_OBS_CLIENT_ID"),
+      token_endpoint: "https://observability.mcp.cloudflare.com/token",
       token_endpoint_auth: { type: "none" },
     },
   },
@@ -54,13 +54,13 @@ await client.beta.vaults.credentials.create(vault.id, {
   display_name: "Cloudflare Workers Bindings MCP",
   auth: {
     type: "mcp_oauth",
-    mcp_server_url: "https://bindings.mcp.cloudflare.com/sse",
+    mcp_server_url: "https://bindings.mcp.cloudflare.com/mcp",
     access_token: required("CF_BIND_ACCESS_TOKEN"),
     expires_at: required("CF_BIND_EXPIRES_AT"),
     refresh: {
       refresh_token: required("CF_BIND_REFRESH_TOKEN"),
-      client_id: required("CF_MCP_CLIENT_ID"),
-      token_endpoint: "https://dash.cloudflare.com/oauth2/token",
+      client_id: required("CF_BIND_CLIENT_ID"),
+      token_endpoint: "https://bindings.mcp.cloudflare.com/token",
       token_endpoint_auth: { type: "none" },
     },
   },
@@ -83,12 +83,12 @@ const agent = await client.beta.agents.create({
     {
       type: "url",
       name: "cloudflare-observability",
-      url: "https://observability.mcp.cloudflare.com/sse",
+      url: "https://observability.mcp.cloudflare.com/mcp",
     },
     {
       type: "url",
       name: "cloudflare-bindings",
-      url: "https://bindings.mcp.cloudflare.com/sse",
+      url: "https://bindings.mcp.cloudflare.com/mcp",
     },
   ],
 });
