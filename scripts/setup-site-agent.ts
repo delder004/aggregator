@@ -28,19 +28,9 @@ const vault = await client.beta.vaults.create({
 await client.beta.vaults.credentials.create(vault.id, {
   display_name: "GitHub MCP",
   auth: {
-    type: "mcp_oauth",
+    type: "static_bearer",
     mcp_server_url: "https://api.githubcopilot.com/mcp/",
-    access_token: required("GITHUB_MCP_ACCESS_TOKEN"),
-    expires_at: required("GITHUB_MCP_EXPIRES_AT"),
-    refresh: {
-      refresh_token: required("GITHUB_MCP_REFRESH_TOKEN"),
-      client_id: required("GITHUB_MCP_CLIENT_ID"),
-      token_endpoint: "https://github.com/login/oauth/access_token",
-      token_endpoint_auth: {
-        type: "client_secret_post",
-        client_secret: required("GITHUB_MCP_CLIENT_SECRET"),
-      },
-    },
+    token: required("GITHUB_MCP_PAT"),
   },
 });
 
