@@ -949,6 +949,48 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Clean up malformed titles that contain concatenated metadata like read time, author names, etc.
+ * Examples:
+ *   "4-minute read An Introduction to Agentic Financial OperationsJWJon Wolf, CPASenior Solutions..."
+ *   "ARTICLE 5 MINUTE READHow to Catch the AI Wave: A Guide for Accounting Firms..."
+ * Returns the original string if no obvious malformation is detected.
+ */
+export function cleanMalformedTitle(title: string): string {
+  let cleaned = title;
+  
+  // Step 1: Remove common metadata prefixes
+  const hasPrefix = /^(ARTICLE|MINUTE\s+READ|\d+[-\s]*minute\s+read|\d+[-\s]*min\s+read)/i.test(cleaned);
+  if (hasPrefix) {
+    cleaned = cleaned
+      .replace(/^ARTICLE\s*\d*\s*/i, '')
+      .replace(/^\d+[-\s]*minute\s+read\s+/i, '')
+      .replace(/^\d+[-\s]*min\s+read\s+/i, '')
+      .replace(/^MINUTE\s+READ\s*/i, '')
+      .trim();
+  }
+  
+  // Step 2: Handle author initials concatenated to title
+  // Pattern 1: Double capital letters immediately followed by capital+lowercase (e.g., "JWJon", "PJPaul")
+  // This handles: "TitleJWJon Wolf, CPASenior..." → "Title"
+  cleaned = cleaned.replace(/([a-z])([A-Z]{2}[A-Z][a-z]+)(\s|,|$).*$/, '$1');
+  
+  // Pattern 2: Single capital letter from author's first name (e.g., "Wave Katie" → "Wave")
+  // Only if it looks like "WaveCapital Name" where Name is a normal word
+  // This handles: "How to Catch the AI WaveKatie Minion, CPA" → "How to Catch the AI Wave"
+  cleaned = cleaned.replace(/([a-z])([A-Z][a-z]{2,})(\s+[A-Z][a-z]+)?(\s*,)?.*$/, (match, lastChar, nameStart, rest) => {
+    // Only trim if "nameStart" looks like a name (3+ letters starting with capital)
+    // and we're not in the middle of a normal title word
+    if (nameStart && nameStart.match(/^[A-Z][a-z]{2,}/)) {
+      // Check if the character before was lowercase (likely word boundary)
+      return lastChar;
+    }
+    return match;
+  });
+  
+  return cleaned || title;
+}
+
 /** Format company employee count range as a human-readable label. */
 export function companySizeLabel(min: number | null, max: number | null): string {
   if (min == null && max == null) return '';
@@ -1100,7 +1142,8 @@ export function setCompanyLinkMap(map: Map<string, string>): void {
 
 /** Render a single article card (standard list form). */
 export function articleCard(article: Article): string {
-  const title = escapeHtml(article.headline || article.title);
+  const displayTitle = article.headline || cleanMalformedTitle(article.title);
+  const title = escapeHtml(displayTitle);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
   const ago = timeAgo(article.publishedAt);
   const badge = sourceBadge(article.sourceType);
@@ -1136,7 +1179,8 @@ export function articleCard(article: Article): string {
 
 /** Render a featured article card (larger, with background). */
 export function featuredCard(article: Article): string {
-  const title = escapeHtml(article.headline || article.title);
+  const displayTitle = article.headline || cleanMalformedTitle(article.title);
+  const title = escapeHtml(displayTitle);
   const summary = article.aiSummary ? escapeHtml(article.aiSummary) : '';
   const ago = timeAgo(article.publishedAt);
   const badge = sourceBadge(article.sourceType);
