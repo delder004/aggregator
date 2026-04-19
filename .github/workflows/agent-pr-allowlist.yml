@@ -1,0 +1,37 @@
+name: agent-pr-allowlist
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  check:
+    # Only enforce on PRs from agent/* branches. Other PRs are authored by
+    # humans and should pass without running this check.
+    if: startsWith(github.head_ref, 'agent/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce file allowlist
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          changed=$(git diff --name-only origin/main...HEAD)
+          echo "Files changed in this PR:"
+          echo "$changed"
+          echo "---"
+          forbidden=$(echo "$changed" | grep -E '^(wrangler\.toml|CLAUDE\.md|\.github/.*|src/db/.*\.sql)$' || true)
+          if [ -n "$forbidden" ]; then
+            echo "::error::Agent PRs cannot modify infra files. Forbidden paths touched:"
+            echo "$forbidden"
+            echo ""
+            echo "If this change genuinely needs to land, a human should open a new PR from a non-agent/* branch."
+            exit 1
+          fi
+          echo "OK — PR stays within allowed paths."
