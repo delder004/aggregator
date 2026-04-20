@@ -84,6 +84,13 @@ export function sanitizeTitle(raw: string): string {
     .replace(/(\S)(?:Team|Staff|Editor|Admin|Blog)$/i, '$1')
     .trim();
 
+  // Remove "Read more" and similar common junk trailing phrases
+  title = title
+    .replace(/\s*Read\s+more\s*$/i, '')
+    .replace(/\s*Learn\s+more\s*$/i, '')
+    .replace(/\s*More\s+information\s*$/i, '')
+    .trim();
+
   // Truncate at the first natural sentence boundary if title is > 120 chars
   if (title.length > 120) {
     const breakPoints = [

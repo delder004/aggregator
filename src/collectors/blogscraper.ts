@@ -21,9 +21,17 @@ const SNIPPET_FETCH_TIMEOUT_MS = 3000;
 // Match <a> tags, capturing href and inner text
 const LINK_REGEX = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
 
-// Strip HTML tags from a string
+// Strip HTML tags from a string, including script and style content
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').trim();
+  let text = html;
+  // Remove script, style, nav, header, footer tags and their content
+  text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
+  text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ');
+  // Strip remaining HTML tags
+  text = text.replace(/<[^>]*>/g, ' ');
+  // Collapse multiple whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  return text;
 }
 
 /**
