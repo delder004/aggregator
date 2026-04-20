@@ -529,7 +529,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
                 article.relevanceScore,
                 article.aiSummary,
                 JSON.stringify(article.tags),
-                article.relevanceScore >= MIN_PUBLISH_SCORE ? 1 : 0,
+                (article.relevanceScore >= MIN_PUBLISH_SCORE && (article.qualityScore === null || article.qualityScore >= 30)) ? 1 : 0,
                 scoredAt,
                 article.qualityScore ?? null,
                 article.companyMentions ? JSON.stringify(article.companyMentions) : null,
