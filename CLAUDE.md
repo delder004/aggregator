@@ -129,3 +129,50 @@ When spawning agents for parallel work in this repo:
 - **Merge worktree branches sequentially** after all agents complete (`git merge <branch> --no-edit`).
 - **Run `npx tsc --noEmit`** after merging to catch integration issues.
 - Every agent prompt should include: "You are writing TypeScript for a Cloudflare Worker. Use only Web APIs — no Node.js built-ins. Export functions matching the shared interfaces in `src/types.ts`. Handle all errors gracefully. Do not modify files outside your designated list."
+
+## Automated site agent
+
+An Anthropic **Managed Agent** (`aggregator-agent`) runs weekly against this repo, diagnoses one content-accuracy or data-quality issue, makes a targeted code fix, and opens a PR. All PRs require human review before merge.
+
+### Running it
+
+- **Automatic:** GH Actions cron `0 14 * * 1` (Monday 14:00 UTC). Workflow: `.github/workflows/agent-schedule.yml`.
+- **Manual dispatch:** GitHub → Actions → `agent-schedule` → **Run workflow** (optional `goal` input overrides the default).
+- **Local ad-hoc:** `npx tsx --env-file=scripts/.env scripts/run-site-agent.mts "<goal>"` from the repo root.
+
+### Layout
+
+- `scripts/setup-site-agent.mts` — one-time: create environment + agent. Returns IDs to persist as secrets.
+- `scripts/migrate-agent.mts` — re-apply the current `lib/agent-config.mts` + system prompt to the live agent. Idempotent; run after changing either.
+- `scripts/run-site-agent.mts` — per-session runner. Handles `cf_api` and `github_api` custom tool calls host-side; the agent never sees the underlying tokens.
+- `scripts/lib/agent-config.mts` — shared source of truth for agent model, tools, MCP servers. Both setup and migrate import from here.
+- `scripts/inspect-session.mts` / `cleanup-orphans.mts` / `update-agent-model.mts` — debugging helpers.
+- `docs/agent-system-prompt.md` — the system prompt the agent loads.
+- `.github/workflows/agent-pr-allowlist.yml` — CI guard that fails PRs from `agent/*` branches if they touch `wrangler.toml`, `CLAUDE.md`, `.github/**`, or `src/db/**.sql`. This is the hard safety rail; the system prompt is soft rail.
+
+### Secrets
+
+Stored in GH repo Secrets (used by the scheduled workflow) and mirrored in local `scripts/.env` (used by local/manual runs):
+
+| Key | What it is |
+|---|---|
+| `ANTHROPIC_API_KEY` | Anthropic API — creates sessions on Managed Agents |
+| `CF_API_TOKEN` | Cloudflare API token, scoped Account: D1/Workers Scripts/Analytics/Observability (Read) |
+| `CF_ACCOUNT_ID` | Cloudflare account ID |
+| `AGGREGATOR_AGENT_ID` | Managed Agent ID (from `setup-site-agent.mts`) |
+| `AGGREGATOR_ENV_ID` | Managed Agent environment ID |
+| `AGENT_GITHUB_PAT` / `GITHUB_REPO_TOKEN` | Fine-grained GH PAT with Contents/PRs/Issues/Metadata/Actions/Commit-statuses on this repo. Used both for the session's `github_repository` mount (via Anthropic's git proxy) and for the `github_api` custom tool. Same value under both names (GH Actions secret uses `AGENT_GITHUB_PAT`; local `.env` uses `GITHUB_REPO_TOKEN`). |
+| `GITHUB_REPO_URL` | `https://github.com/<owner>/<repo>` — derived from `${{ github.repository }}` in CI; explicit in local `.env`. |
+
+### Architecture in one line
+
+GH Actions (or local script) → `sessions.create()` → Anthropic hosts the container + agent loop → agent calls `cf_api` / `github_api` → runner fulfills them host-side with our tokens → agent opens a PR on `agent/*` branch → allowlist CI + human review → merge.
+
+No MCP servers (Anthropic's MCP proxy was unreliable for both CF and GitHub MCPs during initial setup). The `cf_api` / `github_api` custom tools keep auth on our side and sidestep the proxy entirely.
+
+### Changing the agent
+
+- **System prompt:** edit `docs/agent-system-prompt.md`, then `npx tsx --env-file=scripts/.env scripts/migrate-agent.mts`. Creates a new immutable agent version; next session picks it up.
+- **Model / tools / description:** edit `scripts/lib/agent-config.mts`, then run `migrate-agent.mts`.
+- **Schedule / goal:** edit `.github/workflows/agent-schedule.yml`.
+- **Allowlist:** edit `.github/workflows/agent-pr-allowlist.yml`.
