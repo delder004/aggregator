@@ -6,6 +6,10 @@
  */
 
 import type { Company, CompanyJob, JobsBoardType } from '../types';
+import {
+  isAccountingFocusedCompany,
+  isAccountingRelevantRole,
+} from './jobs-filter';
 
 /** Max companies to scrape per cron run (to stay within subrequest budget). */
 const MAX_COMPANIES_PER_RUN = 30;
@@ -198,7 +202,10 @@ export async function collectAllJobs(
   let companiesProcessed = 0;
 
   for (const company of toFetch) {
-    const jobs = await fetchJobsForCompany(company);
+    const rawJobs = await fetchJobsForCompany(company);
+    const jobs = isAccountingFocusedCompany(company)
+      ? rawJobs
+      : rawJobs.filter((j) => isAccountingRelevantRole(j.title, j.department));
     if (jobs.length === 0) {
       // Even if 0 jobs, clear stale entries
       try {
