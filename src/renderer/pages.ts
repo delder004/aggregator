@@ -1008,11 +1008,6 @@ function generateCompanyDetailPages(
       companyJsonLd['knowsAbout'] = [company.category, 'Agentic AI', 'AI Accounting'];
     }
 
-    // Include article mention count as knowledge signal
-    if (articles.length > 0) {
-      companyJsonLd['award'] = `Featured in ${articles.length} article${articles.length !== 1 ? 's' : ''}`;
-    }
-
     pages[path] = layout(body, {
       title: `${company.name} — Feed`,
       description: `Latest news and articles about ${company.name} in AI-powered accounting.`,
