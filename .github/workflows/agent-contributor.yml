@@ -1,0 +1,44 @@
+name: agent-contributor
+
+on:
+  schedule:
+    # 45 min after the janitor (0 14 * * *) to avoid overlap.
+    - cron: '45 14 * * *'
+  workflow_dispatch:
+    inputs:
+      goal:
+        description: 'Goal override (leave blank to use the default contributor goal)'
+        required: false
+        type: string
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: agent-contributor
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run contributor agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          # Contributor-specific agent ID. Janitor uses AGGREGATOR_AGENT_ID.
+          AGGREGATOR_AGENT_ID: ${{ secrets.AGGREGATOR_CONTRIBUTOR_AGENT_ID }}
+          AGGREGATOR_ENV_ID: ${{ secrets.AGGREGATOR_ENV_ID }}
+          GITHUB_REPO_TOKEN: ${{ secrets.AGENT_GITHUB_PAT }}
+          GITHUB_REPO_URL: https://github.com/${{ github.repository }}
+          GOAL_INPUT: ${{ inputs.goal }}
+        run: |
+          GOAL="${GOAL_INPUT:-Pick one investigation lens from your system prompt (SEO gaps, content depth, internal linking, structured data, competitor parity, or a new surface from existing data). Use cf_api to inspect the relevant D1 tables (search_console_snapshots, keyword_rankings, competitor_snapshots, companies, articles, etc.) and web_fetch to inspect live pages. Find one concrete improvement that plausibly moves us toward higher search rank for agentic-AI-accounting queries or a stickier reading experience. Ship it with tsc+vitest validation and open a PR via github_api citing the lens, the data you observed, and the expected impact. If no high-confidence improvement surfaces this week, say so clearly and stop.}"
+          npx tsx scripts/run-site-agent.mts "$GOAL"

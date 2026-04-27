@@ -1,40 +1,45 @@
-// Apply the current `lib/agent-config.mts` settings + system prompt to the
-// live agent. Idempotent: run whenever the config or system prompt changes.
+// Apply the current per-variant config + system prompt to a live agent.
+// Idempotent: run whenever the config or system prompt changes.
+//
+// Usage:
+//   npx tsx --env-file=scripts/.env scripts/migrate-agent.mts janitor
+//   npx tsx --env-file=scripts/.env scripts/migrate-agent.mts contributor
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "node:fs";
 import path from "node:path";
 import {
-  AGENT_DESCRIPTION,
   AGENT_MCP_SERVERS,
   AGENT_MODEL,
   AGENT_TOOLS,
+  variantFromArgv,
 } from "./lib/agent-config.mts";
 
+const variant = variantFromArgv();
 const client = new Anthropic();
 
-const agentId = process.env.AGGREGATOR_AGENT_ID;
+const agentId = process.env[variant.agentIdEnvVar];
 if (!agentId) {
-  console.error("Missing AGGREGATOR_AGENT_ID");
+  console.error(`Missing ${variant.agentIdEnvVar}`);
   process.exit(1);
 }
 
 const SYSTEM_PROMPT = fs.readFileSync(
-  path.join(process.cwd(), "docs/agent-system-prompt.md"),
+  path.join(process.cwd(), variant.systemPromptPath),
   "utf-8",
 );
 
 const current = await client.beta.agents.retrieve(agentId);
-console.log(`current: v${current.version}`);
+console.log(`current ${variant.variant}: v${current.version}`);
 
 const updated = await client.beta.agents.update(agentId, {
   version: current.version,
   model: AGENT_MODEL,
   system: SYSTEM_PROMPT,
-  description: AGENT_DESCRIPTION,
+  description: variant.description,
   tools: AGENT_TOOLS,
   mcp_servers: AGENT_MCP_SERVERS,
 });
-console.log(`updated: v${updated.version}`);
+console.log(`updated ${variant.variant}: v${updated.version}`);
 
 // Archive any vault credentials if a vault is configured. The agent no longer
 // uses MCP servers so any lingering credentials are unused.

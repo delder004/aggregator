@@ -130,37 +130,45 @@ When spawning agents for parallel work in this repo:
 - **Run `npx tsc --noEmit`** after merging to catch integration issues.
 - Every agent prompt should include: "You are writing TypeScript for a Cloudflare Worker. Use only Web APIs — no Node.js built-ins. Export functions matching the shared interfaces in `src/types.ts`. Handle all errors gracefully. Do not modify files outside your designated list."
 
-## Automated site agent
+## Automated site agents
 
-An Anthropic **Managed Agent** (`aggregator-agent`) runs weekly against this repo, diagnoses one content-accuracy or data-quality issue, makes a targeted code fix, and opens a PR. All PRs require human review before merge.
+Two Anthropic **Managed Agents** run daily against this repo, sequentially. Each agent opens at most one PR per session. All PRs require human review before merge.
 
-### Running it
+| Variant | When | Scope | Agent ID secret | System prompt |
+|---|---|---|---|---|
+| **janitor** | Daily 14:00 UTC | Correctness only — bugs, data accuracy, content quality, off-topic articles | `AGGREGATOR_AGENT_ID` | `docs/agent-system-prompt-janitor.md` |
+| **contributor** | Daily 14:45 UTC | Improvements — SEO, content depth, internal linking, structured data, competitor parity, new surfaces | `AGGREGATOR_CONTRIBUTOR_AGENT_ID` | `docs/agent-system-prompt-contributor.md` |
 
-- **Automatic:** GH Actions cron `0 14 * * 1` (Monday 14:00 UTC). Workflow: `.github/workflows/agent-schedule.yml`.
-- **Manual dispatch:** GitHub → Actions → `agent-schedule` → **Run workflow** (optional `goal` input overrides the default).
-- **Local ad-hoc:** `npx tsx --env-file=scripts/.env scripts/run-site-agent.mts "<goal>"` from the repo root.
+The split keeps each session focused on one mental model. The janitor's prompt explicitly defers improvement work to the contributor; the contributor's prompt explicitly defers correctness bugs to the janitor.
+
+### Running them
+
+- **Automatic:** GH Actions crons. Workflows: `.github/workflows/agent-janitor.yml` and `agent-contributor.yml`.
+- **Manual dispatch:** GitHub → Actions → pick the workflow → **Run workflow** (optional `goal` input overrides the default).
+- **Local ad-hoc:** `AGGREGATOR_AGENT_ID=<id> npx tsx --env-file=scripts/.env scripts/run-site-agent.mts "<goal>"` from the repo root. Set `AGGREGATOR_AGENT_ID` to whichever variant's ID you want to invoke.
 
 ### Layout
 
-- `scripts/setup-site-agent.mts` — one-time: create environment + agent. Returns IDs to persist as secrets.
-- `scripts/migrate-agent.mts` — re-apply the current `lib/agent-config.mts` + system prompt to the live agent. Idempotent; run after changing either.
-- `scripts/run-site-agent.mts` — per-session runner. Handles `cf_api` and `github_api` custom tool calls host-side; the agent never sees the underlying tokens.
-- `scripts/lib/agent-config.mts` — shared source of truth for agent model, tools, MCP servers. Both setup and migrate import from here.
+- `scripts/setup-site-agent.mts <variant>` — one-time creator per variant. First call also creates the shared `aggregator-env` environment; later calls reuse it.
+- `scripts/migrate-agent.mts <variant>` — re-apply the current `lib/agent-config.mts` + system prompt to the live agent for that variant. Idempotent; run after changing either.
+- `scripts/run-site-agent.mts` — per-session runner, variant-agnostic. Reads `AGGREGATOR_AGENT_ID` from env. Handles `cf_api` and `github_api` custom tool calls host-side; the agent never sees the underlying tokens.
+- `scripts/lib/agent-config.mts` — shared source of truth for model, tools, MCP servers, and the per-variant config (`getVariantConfig`).
 - `scripts/inspect-session.mts` / `cleanup-orphans.mts` / `update-agent-model.mts` — debugging helpers.
-- `docs/agent-system-prompt.md` — the system prompt the agent loads.
-- `.github/workflows/agent-pr-allowlist.yml` — CI guard that fails PRs from `agent/*` branches if they touch `wrangler.toml`, `CLAUDE.md`, `.github/**`, or `src/db/**.sql`. This is the hard safety rail; the system prompt is soft rail.
+- `docs/agent-system-prompt-janitor.md` / `agent-system-prompt-contributor.md` — the system prompts each agent loads.
+- `.github/workflows/agent-pr-allowlist.yml` — CI guard that fails PRs from `agent/*` branches if they touch `wrangler.toml`, `CLAUDE.md`, `.github/**`, or `src/db/**.sql`. This is the hard safety rail; the system prompts are soft rails.
 
 ### Secrets
 
-Stored in GH repo Secrets (used by the scheduled workflow) and mirrored in local `scripts/.env` (used by local/manual runs):
+Stored in GH repo Secrets (used by the scheduled workflows) and mirrored in local `scripts/.env` (used by local/manual runs):
 
 | Key | What it is |
 |---|---|
 | `ANTHROPIC_API_KEY` | Anthropic API — creates sessions on Managed Agents |
 | `CF_API_TOKEN` | Cloudflare API token, scoped Account: D1/Workers Scripts/Analytics/Observability (Read) |
 | `CF_ACCOUNT_ID` | Cloudflare account ID |
-| `AGGREGATOR_AGENT_ID` | Managed Agent ID (from `setup-site-agent.mts`) |
-| `AGGREGATOR_ENV_ID` | Managed Agent environment ID |
+| `AGGREGATOR_AGENT_ID` | Janitor Managed Agent ID |
+| `AGGREGATOR_CONTRIBUTOR_AGENT_ID` | Contributor Managed Agent ID |
+| `AGGREGATOR_ENV_ID` | Shared Managed Agent environment ID |
 | `AGENT_GITHUB_PAT` / `GITHUB_REPO_TOKEN` | Fine-grained GH PAT with Contents/PRs/Issues/Metadata/Actions/Commit-statuses on this repo. Used both for the session's `github_repository` mount (via Anthropic's git proxy) and for the `github_api` custom tool. Same value under both names (GH Actions secret uses `AGENT_GITHUB_PAT`; local `.env` uses `GITHUB_REPO_TOKEN`). |
 | `GITHUB_REPO_URL` | `https://github.com/<owner>/<repo>` — derived from `${{ github.repository }}` in CI; explicit in local `.env`. |
 
@@ -170,9 +178,18 @@ GH Actions (or local script) → `sessions.create()` → Anthropic hosts the con
 
 No MCP servers (Anthropic's MCP proxy was unreliable for both CF and GitHub MCPs during initial setup). The `cf_api` / `github_api` custom tools keep auth on our side and sidestep the proxy entirely.
 
-### Changing the agent
+### Changing an agent
 
-- **System prompt:** edit `docs/agent-system-prompt.md`, then `npx tsx --env-file=scripts/.env scripts/migrate-agent.mts`. Creates a new immutable agent version; next session picks it up.
-- **Model / tools / description:** edit `scripts/lib/agent-config.mts`, then run `migrate-agent.mts`.
-- **Schedule / goal:** edit `.github/workflows/agent-schedule.yml`.
+- **System prompt:** edit the variant's prompt file, then `npx tsx --env-file=scripts/.env scripts/migrate-agent.mts <variant>`. Creates a new immutable agent version; next session picks it up.
+- **Model / tools / description:** edit `scripts/lib/agent-config.mts`, then `migrate-agent.mts <variant>` for each variant you want updated.
+- **Schedule / goal:** edit the variant's workflow file (`agent-janitor.yml` or `agent-contributor.yml`).
 - **Allowlist:** edit `.github/workflows/agent-pr-allowlist.yml`.
+
+### Bootstrapping a new variant
+
+If you ever add a third variant (e.g., a "growth" agent), the steps are:
+
+1. Add an entry to `VARIANT_CONFIGS` in `scripts/lib/agent-config.mts`.
+2. Write `docs/agent-system-prompt-<variant>.md`.
+3. Run `npx tsx --env-file=scripts/.env scripts/setup-site-agent.mts <variant>`. Save the printed agent ID into the GH secret named in `agentIdEnvVar`.
+4. Add `.github/workflows/agent-<variant>.yml`.

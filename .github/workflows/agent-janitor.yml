@@ -1,12 +1,12 @@
-name: agent-schedule
+name: agent-janitor
 
 on:
   schedule:
-    - cron: '0 14 * * 1'
+    - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       goal:
-        description: 'Goal override (leave blank to use the default steady-state goal)'
+        description: 'Goal override (leave blank to use the default janitor goal)'
         required: false
         type: string
 
@@ -14,6 +14,9 @@ jobs:
   run-agent:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    concurrency:
+      group: agent-janitor
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +27,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Run site agent
+      - name: Run janitor agent
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -35,5 +38,5 @@ jobs:
           GITHUB_REPO_URL: https://github.com/${{ github.repository }}
           GOAL_INPUT: ${{ inputs.goal }}
         run: |
-          GOAL="${GOAL_INPUT:-Audit the site for data-accuracy or content-quality issues. Inspect D1 via cf_api. If you find a concrete, fixable issue (off-topic content, mislabeled pillars, corrupted data, stale entries, broken links, or similar), make a targeted code fix with tsc+vitest validation and open a PR via github_api. If nothing concerning stands out this week, say so clearly and stop — do not manufacture a task.}"
+          GOAL="${GOAL_INPUT:-Audit the site for correctness bugs only — data-accuracy, content-quality, broken/corrupted/stale data, off-topic articles, mislabeled records. Inspect D1 via cf_api. If you find a concrete fixable bug, ship a targeted fix with tsc+vitest validation and open a PR via github_api. If you only find improvement opportunities (SEO, copy, UX, new content surfaces), do NOT ship them — note them in your final message and stop. Those belong to the contributor agent.}"
           npx tsx scripts/run-site-agent.mts "$GOAL"

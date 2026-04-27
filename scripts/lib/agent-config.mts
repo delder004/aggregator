@@ -1,11 +1,78 @@
 // Shared agent configuration used by both `setup-site-agent.mts` (initial
-// create) and `migrate-agent.mts` (subsequent updates). Change this in one
-// place to keep both in sync.
+// create) and `migrate-agent.mts` (subsequent updates).
+//
+// Two agent variants ship from this file:
+//   - janitor    — find-and-fix correctness/quality bugs (existing behavior)
+//   - contributor — make targeted content/UX/SEO improvements via lens-based
+//                   investigation (added 2026-04-27)
+//
+// Both share the same model, custom tools, and toolset. They differ only in
+// name, description, system prompt path, and which env var holds their agent ID.
 
-export const AGENT_NAME = "aggregator-agent";
+import path from "node:path";
+
 export const AGENT_MODEL = "claude-haiku-4-5";
-export const AGENT_DESCRIPTION =
-  "Goal-directed coding agent for agenticaiccounting.com. Observes site state via cf_api and github_api custom tools; makes one code change per session and opens a PR.";
+
+export const AGENT_VARIANTS = ["janitor", "contributor"] as const;
+export type AgentVariant = (typeof AGENT_VARIANTS)[number];
+
+export interface VariantConfig {
+  variant: AgentVariant;
+  agentName: string;
+  description: string;
+  systemPromptPath: string;
+  agentIdEnvVar: string;
+}
+
+const DOCS_DIR = "docs";
+
+const VARIANT_CONFIGS: Record<AgentVariant, VariantConfig> = {
+  janitor: {
+    variant: "janitor",
+    agentName: "aggregator-janitor",
+    description:
+      "Janitor agent for agenticaiccounting.com. Finds correctness, data-accuracy, and content-quality bugs and ships one targeted fix per session as a PR.",
+    systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-janitor.md"),
+    agentIdEnvVar: "AGGREGATOR_AGENT_ID",
+  },
+  contributor: {
+    variant: "contributor",
+    agentName: "aggregator-contributor",
+    description:
+      "Contributor agent for agenticaiccounting.com. Pursues SEO, content-depth, internal-linking, and UX improvements through lens-based investigation. Ships one improvement PR per session.",
+    systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-contributor.md"),
+    agentIdEnvVar: "AGGREGATOR_CONTRIBUTOR_AGENT_ID",
+  },
+};
+
+export function getVariantConfig(variant: string): VariantConfig {
+  if (!(AGENT_VARIANTS as readonly string[]).includes(variant)) {
+    throw new Error(
+      `Unknown agent variant '${variant}'. Expected one of: ${AGENT_VARIANTS.join(", ")}`
+    );
+  }
+  return VARIANT_CONFIGS[variant as AgentVariant];
+}
+
+/**
+ * Parse the variant from process.argv. The variant is required as the first
+ * positional argument: `npx tsx <script> <variant>`.
+ */
+export function variantFromArgv(): VariantConfig {
+  const v = process.argv[2];
+  if (!v) {
+    console.error(
+      `Usage: pass variant as first arg. One of: ${AGENT_VARIANTS.join(", ")}`
+    );
+    process.exit(1);
+  }
+  try {
+    return getVariantConfig(v);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+}
 
 const cfApiTool = {
   type: "custom" as const,
