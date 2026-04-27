@@ -42,7 +42,7 @@ export async function getPublishedArticles(
   const results = await db
     .prepare(
       `SELECT * FROM articles
-       WHERE is_published = 1 AND relevance_score >= ?
+       WHERE is_published = 1 AND relevance_score >= ? AND (quality_score >= 30 OR quality_score IS NULL)
        ORDER BY (relevance_score * 0.5 + COALESCE(quality_score, 0) * 0.3 +
          CASE WHEN julianday('now') - julianday(published_at) < 1 THEN 20
               WHEN julianday('now') - julianday(published_at) < 3 THEN 10
