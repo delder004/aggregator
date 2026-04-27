@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS companies (
     website TEXT,
     description TEXT,
     category TEXT,
+    category_slug TEXT,
     funding_stage TEXT,
     logo_url TEXT,
     is_active INTEGER DEFAULT 1,
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS companies (
 
 CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
 CREATE INDEX IF NOT EXISTS idx_companies_category ON companies(category);
+CREATE INDEX IF NOT EXISTS idx_companies_category_slug ON companies(category_slug);
 
 CREATE TABLE IF NOT EXISTS article_companies (
     article_id TEXT NOT NULL,

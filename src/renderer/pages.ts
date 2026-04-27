@@ -23,6 +23,7 @@ import {
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
+import { CATEGORIES, getCategoryBySlug } from '../categories';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -559,10 +560,18 @@ function generateSitemap(
   }
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/categories</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/map</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
+
+  // Per-category landing pages from the controlled taxonomy
+  for (const cat of CATEGORIES) {
+    if (cat.slug === 'other') continue;
+    urls += `  <url><loc>${SITE_URL}/categories/${cat.slug}</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
+  }
 
   // Article detail pages
   for (const a of articles) {
@@ -645,6 +654,9 @@ export function generateAllPages(
     const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
     Object.assign(pages, generateCompaniesPage(companies, articleMap, jobsMap, layoutOpts));
     Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
+    Object.assign(pages, generateCategoriesPage(companies, articleMap, layoutOpts));
+    Object.assign(pages, generateCategoryDetailPages(companies, articleMap, jobsMap, layoutOpts));
+    Object.assign(pages, generateMapPage(companies, articleMap, layoutOpts));
   }
   Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
 
@@ -830,14 +842,17 @@ function generateCompaniesPage(
     companyRows += `</div>\n`;
   }
 
+  const subNav = categoriesSubNav('companies');
   const body = companies.length === 0
     ? `<h2 class="section-heading">Companies &amp; Startups</h2>
+${subNav}
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet. Check back soon.</p>`
     : `
 <h2 class="section-heading">Companies &amp; Startups in AI Accounting</h2>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
   Tracking ${companies.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
 </p>
+${subNav}
 ${companyRows}`;
 
   return {
@@ -972,6 +987,250 @@ function generateCompanyDetailPages(
   }
 
   return pages;
+}
+
+// ---------------------------------------------------------------------------
+// Categories: index, detail, and market map
+// ---------------------------------------------------------------------------
+
+/**
+ * Bucket every company by its `categorySlug`, defaulting NULL/unknown to 'other'.
+ * Returns a map keyed by slug. Categories without companies get an empty array
+ * so the index page can show a stub for them too.
+ */
+function bucketCompaniesBySlug(companies: Company[]): Map<string, Company[]> {
+  const buckets = new Map<string, Company[]>();
+  for (const cat of CATEGORIES) buckets.set(cat.slug, []);
+  for (const c of companies) {
+    const slug = getCategoryBySlug(c.categorySlug).slug;
+    buckets.get(slug)!.push(c);
+  }
+  return buckets;
+}
+
+/**
+ * Sub-nav rendered at the top of /companies, /categories, and /map so users
+ * can jump between the three views of the same data.
+ */
+function categoriesSubNav(active: 'companies' | 'categories' | 'map'): string {
+  const items: { href: string; label: string; key: typeof active }[] = [
+    { href: '/companies', label: 'All Companies', key: 'companies' },
+    { href: '/categories', label: 'By Category', key: 'categories' },
+    { href: '/map', label: 'Market Map', key: 'map' },
+  ];
+  const links = items.map(
+    (i) =>
+      `<a href="${i.href}" class="job-filter-btn${i.key === active ? ' active' : ''}">${i.label}</a>`
+  );
+  return `<nav class="job-filters">\n  ${links.join('\n  ')}\n</nav>\n`;
+}
+
+function generateCategoriesPage(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const buckets = bucketCompaniesBySlug(companies);
+
+  // Total recent-article count per category, last 30 days.
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recentCounts = new Map<string, number>();
+  for (const cat of CATEGORIES) {
+    let total = 0;
+    for (const c of buckets.get(cat.slug)!) {
+      const arts = companyArticles.get(c.id) ?? [];
+      for (const a of arts) {
+        if (new Date(a.publishedAt).getTime() >= cutoff) total++;
+      }
+    }
+    recentCounts.set(cat.slug, total);
+  }
+
+  let body = `<h2 class="section-heading">Categories</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${CATEGORIES.length} categories covering the AI-accounting landscape — from AI-native ERPs to firms running services on top of agents. Click any category for the companies in it and recent coverage.</p>\n`;
+  body += categoriesSubNav('categories');
+  body += `<div class="company-grid">\n`;
+
+  for (const cat of CATEGORIES) {
+    const cos = buckets.get(cat.slug)!;
+    if (cat.slug === 'other' && cos.length === 0) continue;
+    const recent = recentCounts.get(cat.slug) ?? 0;
+    body += `<div class="company-card">
+  <h3><a href="/categories/${cat.slug}">${escapeHtml(cat.label)}</a></h3>
+  <p class="card-desc">${escapeHtml(cat.description)}</p>
+  <div class="card-meta">
+    <span>${cos.length} compan${cos.length === 1 ? 'y' : 'ies'}</span>
+    ${recent > 0 ? `<span class="meta-dot">&middot;</span> <span>${recent} article${recent === 1 ? '' : 's'} in last 30 days</span>` : ''}
+  </div>
+</div>\n`;
+  }
+  body += `</div>\n`;
+
+  return {
+    '/categories': layout(body, {
+      title: 'Categories',
+      description:
+        'Browse AI-accounting companies by category — AI-native ERPs, bookkeeping automation, AI audit, AI tax, AI-enabled firms, and more.',
+      path: '/categories',
+      activeTab: 'companies',
+      ...layoutOpts,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'AI Accounting Categories',
+        'url': `${SITE_URL}/categories`,
+        'description':
+          'Categorized directory of companies building agentic AI for accounting.',
+      },
+    }),
+  };
+}
+
+function generateCategoryDetailPages(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  companyJobs: Map<string, CompanyJob[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+  const buckets = bucketCompaniesBySlug(companies);
+
+  for (const cat of CATEGORIES) {
+    const cos = [...buckets.get(cat.slug)!].sort(
+      (a, b) => b.articleCount - a.articleCount
+    );
+    if (cat.slug === 'other' && cos.length === 0) continue;
+
+    let body = `<div class="section-label"><a href="/categories" style="color:var(--text-tertiary);">Categories</a> &rsaquo; ${escapeHtml(cat.label)}</div>\n`;
+    body += `<h2 class="section-heading">${escapeHtml(cat.label)}</h2>\n`;
+    body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${escapeHtml(cat.description)}</p>\n`;
+    body += categoriesSubNav('categories');
+
+    if (cos.length === 0) {
+      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked in this category yet.</p>`;
+    } else {
+      body += `<div class="company-grid">\n`;
+      for (const c of cos) {
+        const name = escapeHtml(c.name);
+        const desc = c.description ? escapeHtml(c.description) : '';
+        const articleCount = companyArticles.get(c.id)?.length ?? 0;
+        const jobCount = companyJobs.get(c.id)?.length ?? 0;
+        const sizeLabel = companySizeLabel(
+          c.employeeCountMin ?? null,
+          c.employeeCountMax ?? null
+        );
+        body += `<div class="company-card">
+  <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
+  ${desc ? `<p class="card-desc">${desc}</p>` : ''}
+  <div class="card-meta">
+    <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
+    ${jobCount > 0 ? `<span class="meta-dot">&middot;</span> <span style="color:var(--accent);">${jobCount} open role${jobCount !== 1 ? 's' : ''}</span>` : ''}
+    ${sizeLabel ? `<span class="meta-dot">&middot;</span> <span>${escapeHtml(sizeLabel)}</span>` : ''}
+    ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(c.website))}</a>` : ''}
+  </div>
+</div>\n`;
+      }
+      body += `</div>\n`;
+
+      // Recent coverage across all companies in this category
+      const recent: Article[] = [];
+      const seen = new Set<string>();
+      for (const c of cos) {
+        for (const a of companyArticles.get(c.id) ?? []) {
+          if (!seen.has(a.id)) {
+            seen.add(a.id);
+            recent.push(a);
+          }
+        }
+      }
+      const recentSorted = sortByDate(recent).slice(0, 12);
+      if (recentSorted.length > 0) {
+        body += `<div class="section-label" style="margin-top:1.5rem;">Recent Coverage</div>\n`;
+        body += renderTimeGrouped(recentSorted);
+      }
+    }
+
+    const path = `/categories/${cat.slug}`;
+    pages[path] = layout(body, {
+      title: `${cat.label} — AI Accounting Companies`,
+      description: `${cat.description} ${cos.length} compan${cos.length === 1 ? 'y' : 'ies'} tracked.`,
+      path,
+      activeTab: 'companies',
+      noindex: cos.length === 0,
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
+}
+
+/**
+ * /map — a static market map. Categories are rows; companies are chips
+ * sized by article_count (proxy for coverage volume). Pure CSS grid; no JS.
+ */
+function generateMapPage(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const buckets = bucketCompaniesBySlug(companies);
+
+  let body = `<h2 class="section-heading">The AI Accounting Market Map</h2>\n`;
+  body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${companies.length} companies across ${CATEGORIES.length} categories building agentic AI for accounting, audit, tax, and bookkeeping. Chip size scales with coverage volume — bigger chips mean more articles tracked.</p>\n`;
+  body += categoriesSubNav('map');
+
+  // Compute max article count for scaling
+  let maxArticles = 1;
+  for (const c of companies) {
+    if (c.articleCount > maxArticles) maxArticles = c.articleCount;
+  }
+
+  body += `<div class="market-map">\n`;
+  for (const cat of CATEGORIES) {
+    const cos = [...buckets.get(cat.slug)!].sort(
+      (a, b) => b.articleCount - a.articleCount
+    );
+    if (cos.length === 0 && cat.slug === 'other') continue;
+    body += `<div class="market-map-row">\n`;
+    body += `<div class="market-map-label"><a href="/categories/${cat.slug}">${escapeHtml(cat.label)}</a><span class="market-map-count">${cos.length}</span></div>\n`;
+    body += `<div class="market-map-cells">\n`;
+    if (cos.length === 0) {
+      body += `<span class="market-map-empty">No companies tracked yet.</span>\n`;
+    } else {
+      for (const c of cos) {
+        // 4 size buckets so the map reads at a glance
+        const ratio = c.articleCount / maxArticles;
+        const size =
+          ratio > 0.5 ? 'xl' : ratio > 0.25 ? 'lg' : ratio > 0.05 ? 'md' : 'sm';
+        const recent = (companyArticles.get(c.id)?.length ?? 0);
+        const title = `${c.name} — ${c.articleCount} article${c.articleCount === 1 ? '' : 's'} tracked${recent > 0 ? `, ${recent} recent` : ''}`;
+        body += `<a class="market-map-chip ${size}" href="/company/${escapeHtml(c.id)}" title="${escapeHtml(title)}">${escapeHtml(c.name)}</a>\n`;
+      }
+    }
+    body += `</div>\n</div>\n`;
+  }
+  body += `</div>\n`;
+
+  body += `<p style="color:var(--text-tertiary);font-size:0.78rem;margin-top:1.5rem;text-align:center;">Tracking ${companies.length} companies. Updated hourly.</p>\n`;
+
+  return {
+    '/map': layout(body, {
+      title: 'Market Map',
+      description:
+        'A live market map of companies building agentic AI for accounting — categorized and sized by coverage. Updated hourly.',
+      path: '/map',
+      activeTab: 'companies',
+      ...layoutOpts,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'AI Accounting Market Map',
+        'url': `${SITE_URL}/map`,
+        'description':
+          'Live market map of AI-accounting companies, categorized and sized by recent coverage volume.',
+      },
+    }),
+  };
 }
 
 // ---------------------------------------------------------------------------

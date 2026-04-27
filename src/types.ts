@@ -84,6 +84,7 @@ export interface Company {
   website: string | null;
   description: string | null;
   category: string | null;
+  categorySlug: string | null;
   fundingStage: string | null;
   logoUrl: string | null;
   isActive: boolean;

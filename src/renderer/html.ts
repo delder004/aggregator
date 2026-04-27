@@ -474,6 +474,93 @@ a.source-name:hover{text-decoration:underline;}
 .company-card .card-meta{font-size:0.73rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
 .company-card .card-badge{display:inline-block;font-size:0.65rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:100px;background:var(--accent-subtle);color:var(--accent);}
 
+/* Market map */
+.market-map{
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+  margin:1rem 0 0;
+}
+.market-map-row{
+  display:grid;
+  grid-template-columns:minmax(160px, 200px) 1fr;
+  gap:1rem;
+  align-items:start;
+  padding:0.75rem 0;
+  border-bottom:1px solid var(--border);
+}
+.market-map-row:last-child{border-bottom:none;}
+.market-map-label{
+  font-size:0.85rem;
+  font-weight:600;
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  gap:0.15rem;
+}
+.market-map-label a{color:var(--text);}
+.market-map-label a:hover{color:var(--accent);text-decoration:none;}
+.market-map-count{
+  font-size:0.7rem;
+  font-weight:500;
+  color:var(--text-tertiary);
+}
+.market-map-cells{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.4rem;
+  align-items:center;
+}
+.market-map-empty{
+  font-size:0.78rem;
+  color:var(--text-tertiary);
+  font-style:italic;
+}
+.market-map-chip{
+  display:inline-block;
+  padding:0.3rem 0.65rem;
+  border-radius:8px;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-size:0.78rem;
+  font-weight:500;
+  line-height:1.2;
+  transition:transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.market-map-chip:hover{
+  text-decoration:none;
+  border-color:var(--accent);
+  color:var(--accent);
+  transform:translateY(-1px);
+  box-shadow:var(--shadow);
+}
+.market-map-chip.md{font-size:0.85rem;padding:0.35rem 0.75rem;}
+.market-map-chip.lg{
+  font-size:0.92rem;
+  font-weight:600;
+  padding:0.4rem 0.85rem;
+  background:var(--accent-subtle);
+  border-color:var(--accent-subtle);
+  color:var(--accent);
+}
+.market-map-chip.xl{
+  font-size:1rem;
+  font-weight:700;
+  padding:0.5rem 1rem;
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.market-map-chip.xl:hover{
+  background:var(--accent-hover);
+  border-color:var(--accent-hover);
+  color:#fff;
+}
+@media (max-width:640px){
+  .market-map-row{grid-template-columns:1fr;gap:0.4rem;}
+}
+
 /* Job filters */
 .job-filters{
   margin-bottom:1.25rem;
