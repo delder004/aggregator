@@ -861,6 +861,20 @@ ${companyRows}`;
       description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
       path: '/companies',
       activeTab: 'companies',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'AI Accounting Companies & Startups',
+        'url': `${SITE_URL}/companies`,
+        'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+        'itemListElement': companies.slice(0, 20).map((c, idx) => ({
+          '@type': 'Thing',
+          'position': idx + 1,
+          'name': c.name,
+          'url': `${SITE_URL}/company/${c.id}`,
+          'description': c.description,
+        })),
+      },
       ...layoutOpts,
     }),
   };
@@ -977,11 +991,34 @@ function generateCompanyDetailPages(
       body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet for ${name}. Check back soon.</p>`;
     }
 
+    // Build Organization schema for this company
+    const companyJsonLd: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      'name': company.name,
+      'url': `${SITE_URL}${path}`,
+      'description': company.description || `${company.name} — AI-powered accounting solution`,
+    };
+
+    if (company.website) {
+      companyJsonLd['sameAs'] = company.website;
+    }
+
+    if (company.category) {
+      companyJsonLd['knowsAbout'] = [company.category, 'Agentic AI', 'AI Accounting'];
+    }
+
+    // Include article mention count as knowledge signal
+    if (articles.length > 0) {
+      companyJsonLd['award'] = `Featured in ${articles.length} article${articles.length !== 1 ? 's' : ''}`;
+    }
+
     pages[path] = layout(body, {
       title: `${company.name} — Feed`,
       description: `Latest news and articles about ${company.name} in AI-powered accounting.`,
       path,
       activeTab: 'companies',
+      jsonLd: companyJsonLd,
       ...layoutOpts,
     });
   }
