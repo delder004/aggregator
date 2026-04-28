@@ -88,7 +88,8 @@ export type IngestNamespace =
   | 'search-console'
   | 'rankings'
   | 'competitors'
-  | 'article-views-rollup';
+  | 'article-views-rollup'
+  | 'engagement-rollup';
 
 export type IngestRunStatus = 'pending' | 'running' | 'complete' | 'error' | 'skipped';
 

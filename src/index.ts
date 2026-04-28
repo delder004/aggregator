@@ -12,6 +12,7 @@ import {
   runArticleViewsRollup,
   writeArticleViewEvent,
 } from './analytics/analytics-engine';
+import { runEngagementRollup } from './analytics/engagement-rollup';
 import {
   writeConversionEvent,
   writePageViewEvent,
@@ -209,6 +210,50 @@ export default {
           since: sinceDate,
           limit,
           offset,
+          count: result.results.length,
+          rows: result.results,
+        }),
+        { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+      );
+    }
+
+    // Engagement path-daily summary: most-viewed paths in a window with
+    // bounce/conversion stats. Optional ?since=YYYY-MM-DD&limit=N&path=X.
+    if (path === '/ops/engagement') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      const limitParam = Number(url.searchParams.get('limit') || '100');
+      const limit = Number.isFinite(limitParam)
+        ? Math.max(1, Math.min(500, Math.floor(limitParam)))
+        : 100;
+      const sinceDate =
+        url.searchParams.get('since') ||
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
+      const pathFilter = url.searchParams.get('path');
+      const baseSql =
+        `SELECT view_date, path, views, unique_sessions, entries, exits,
+                bounces, conversions, next_path_top
+         FROM engagement_path_daily
+         WHERE view_date >= ?`;
+      const result = pathFilter
+        ? await env.DB
+            .prepare(`${baseSql} AND path = ?
+                       ORDER BY view_date DESC, views DESC LIMIT ?`)
+            .bind(sinceDate, pathFilter, limit)
+            .all()
+        : await env.DB
+            .prepare(`${baseSql}
+                       ORDER BY view_date DESC, views DESC LIMIT ?`)
+            .bind(sinceDate, limit)
+            .all();
+      return new Response(
+        JSON.stringify({
+          since: sinceDate,
+          path: pathFilter,
+          limit,
           count: result.results.length,
           rows: result.results,
         }),
@@ -623,6 +668,52 @@ export default {
           options.days = Math.floor(n);
         }
         const result = await runArticleViewsRollup(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
+    if (path === '/ops/cron/engagement-rollup' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const fromDateParam = url.searchParams.get('from_date');
+        const toDateParam = url.searchParams.get('to_date');
+        const daysParam = url.searchParams.get('days');
+        const options: {
+          fromDate?: string;
+          toDate?: string;
+          days?: number;
+        } = {};
+        if (fromDateParam) options.fromDate = fromDateParam;
+        if (toDateParam) options.toDate = toDateParam;
+        if (daysParam) {
+          const n = Number(daysParam);
+          if (!Number.isFinite(n)) {
+            return new Response(
+              JSON.stringify({ status: 'error', error: 'days must be a number' }),
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+              }
+            );
+          }
+          options.days = Math.floor(n);
+        }
+        const result = await runEngagementRollup(env, options);
         return new Response(JSON.stringify({ status: 'ok', ...result }), {
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
         });

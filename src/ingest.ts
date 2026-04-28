@@ -6,6 +6,7 @@ import { upsertIngestRun } from './analytics/db';
 import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
 import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runArticleViewsRollup, resolveRollupWindow } from './analytics/analytics-engine';
+import { runEngagementRollup } from './analytics/engagement-rollup';
 import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
 import { runWeeklyConsolidation } from './consolidation/service';
@@ -172,13 +173,36 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     );
     results.push(rollupResult);
 
+    await step.sleep('pre-engagement-pause', '2 seconds');
+
+    // Step 5b: Engagement rollup — same window as article-views, separate
+    // dataset and separate D1 tables.
+    const engagementResult = await step.do('engagement-rollup', () =>
+      this.runNamespace(pipelineRunId, 'engagement-rollup', async () => {
+        const r = await runEngagementRollup(this.env, {
+          fromDate: rollupWindow.fromDate,
+          toDate: rollupWindow.toDate,
+        });
+        return {
+          rowsScanned: r.rowsScanned,
+          sessionsWritten: r.sessionsWritten,
+          pathsWritten: r.pathsWritten,
+          fromDate: r.fromDate,
+          toDate: r.toDate,
+        };
+      }, rollupWindowStartIso, rollupWindowEndIso)
+    );
+    results.push(engagementResult);
+
     const completedCount = results.filter((r) => r.status === 'complete').length;
     const errorCount = results.filter((r) => r.status === 'error').length;
     const skippedCount = results.filter((r) => r.status === 'skipped').length;
 
-    // Step 6: Weekly consolidation — only runs if at least 3 of 5
+    // Step 6: Weekly consolidation — only runs if at least 3 of 6
     // capture namespaces completed. Partial data is better than no
     // consolidation, but near-total capture failure should skip.
+    // Threshold stays at 3 (not 4) so a flaky engagement-rollup —
+    // newest, least-mature namespace — never blocks consolidation.
     let consolidationResult: { written: boolean; summary?: string } | null = null;
     if (completedCount >= 3) {
       await step.sleep('pre-consolidation-pause', '5 seconds');
@@ -200,7 +224,7 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
       });
     } else {
       console.log(
-        `Skipping consolidation: only ${completedCount}/5 namespaces completed (need >= 3)`
+        `Skipping consolidation: only ${completedCount}/6 namespaces completed (need >= 3)`
       );
     }
 
