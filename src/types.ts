@@ -130,6 +130,7 @@ export interface Env {
   BUTTONDOWN_API_KEY?: string;
   // Phase 1 consolidation loop: capture-layer bindings & secrets
   AE_EVENTS?: AnalyticsEngineDataset;
+  AE_ENGAGEMENT?: AnalyticsEngineDataset;
   CF_ACCOUNT_ID?: string;
   CF_ANALYTICS_API_TOKEN?: string;
   CF_ZONE_ID?: string;

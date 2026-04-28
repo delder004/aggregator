@@ -37,3 +37,7 @@ class_name = "IngestWorkflow"
 [[analytics_engine_datasets]]
 binding = "AE_EVENTS"
 dataset = "agenticaiaccounting_article_views"
+
+[[analytics_engine_datasets]]
+binding = "AE_ENGAGEMENT"
+dataset = "agenticaiaccounting_engagement"
