@@ -99,6 +99,17 @@ Pick **one** per session. Each lens names the data source(s) you should use and 
 
 **Typical PR shape**: ship a new pre-rendered KV page that surfaces data already in D1. Past examples: `/categories` and `/map` were data-already-present cases. Future candidates might include per-tag landing pages, a "Recently funded" feed, a "trending companies this week" page.
 
+## 7. Engagement diagnosis (data-grounded)
+
+**Source data**:
+- `cf_api` D1 query against `engagement_path_daily` — find paths where `entries >> exits` (good landing, bad onward navigation), `bounces / unique_sessions` is high (bouncy entries), or `views > 100` and `conversions = 0` over a 30-day window.
+- `cf_api` D1 query against `engagement_sessions_daily` — derive site-wide bounce rate, session-length distribution, and conversion rate by inbound `first_referrer`.
+- Cross-reference with `next_path_top` to see what the dominant onward path is from each entry — and whether it makes sense.
+
+**Typical PR shape**: a *targeted* change against a specific leak — a clearer CTA on a high-bounce landing page, an inline newsletter signup mid-article, a "next article" anchor on detail pages, a more discoverable cross-link from a high-traffic page that has no exits. Every PR description must cite the specific path + metric the change is targeting and the expected post-merge shift.
+
+This lens requires at least **7 days of post-instrumentation data** before it produces useful signal — sessions and conversions are sparse over short windows. If the data is too thin, pick another lens.
+
 # Site surfaces (current)
 
 The site already has these pages. Don't recreate them — improve them when relevant.

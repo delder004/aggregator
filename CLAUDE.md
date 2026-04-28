@@ -97,12 +97,19 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
     - `POST /ops/cron/rankings-sweep`
     - `POST /ops/cron/competitor-snapshots`
     - `POST /ops/cron/article-views-rollup`
+    - `POST /ops/cron/engagement-rollup`
   - Inspection endpoints:
     - `GET /ops/cf-analytics[/:id]`, `GET /ops/search-console[/:id]`
     - `GET /ops/rankings`, `GET /ops/competitors[/:id]`
     - `GET /ops/article-views`, `GET /ops/source-candidates`
+    - `GET /ops/engagement` (path-daily summary; `?since=YYYY-MM-DD&path=&limit=`)
+- **Engagement instrumentation:**
+  - Cookie-less, hash-derived sessions: `sha256(ip || ua || 30min_bucket || daily_salt)` where the salt rotates daily and lives in KV under `__engagement_salt__:YYYY-MM-DD`. No PII written; only the one-way hash persists.
+  - Events land in Analytics Engine dataset `agenticaiaccounting_engagement` (binding `AE_ENGAGEMENT`). Page-view events fire on every HTML response in `fetch()`; conversion events fire on successful `/subscribe` POST. Both via `ctx.waitUntil` so the response path stays unblocked.
+  - Daily rollup (`runEngagementRollup`) runs as step 5b of `IngestWorkflow` over the same window as `article-views-rollup`. Output: `engagement_sessions_daily` (per-session facts) and `engagement_path_daily` (per-(date, path) views/entries/exits/bounces/conversions/next-path-top).
+  - Use this data to ground engagement-related contributor agent work — see the lens guidance in `docs/agent-system-prompt-contributor.md`.
 - **Weekly consolidation (Phase 2 dry-run):**
-  - Runs as step 6 of `IngestWorkflow` after capture completes (gated on >= 3/5 namespaces succeeding)
+  - Runs as step 6 of `IngestWorkflow` after capture completes (gated on >= 3/6 namespaces succeeding)
   - Manual trigger: `POST /ops/cron/consolidate` with `X-Cron-Key` (accepts `?window=` for backfill)
   - Inspection: `GET /ops/consolidations` (list), `GET /ops/consolidations/:id` (detail + KV blobs)
   - Uses Sonnet for the AI call; context is assembled from all Phase 1 inputs
