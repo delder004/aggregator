@@ -12,6 +12,11 @@ import {
   runArticleViewsRollup,
   writeArticleViewEvent,
 } from './analytics/analytics-engine';
+import {
+  writeConversionEvent,
+  writePageViewEvent,
+} from './analytics/engagement-events';
+import { deriveSessionId } from './analytics/session';
 import { runCfAnalyticsSnapshot } from './analytics/cloudflare';
 import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runRankingsSweep } from './analytics/rankings';
@@ -37,6 +42,69 @@ export { IngestWorkflow } from './ingest';
 
 function isOpsAuthorized(request: Request, env: Env): boolean {
   return Boolean(env.CRON_SECRET && request.headers.get('X-Cron-Key') === env.CRON_SECRET);
+}
+
+/**
+ * Fire-and-forget page-view recorder. Derives the session id (one KV read)
+ * and writes the AE event off the response path via ctx.waitUntil. Safe to
+ * call on any HTML response; never throws.
+ */
+function recordPageView(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  path: string
+): void {
+  if (!env.AE_ENGAGEMENT) return;
+  ctx.waitUntil(
+    (async () => {
+      const sessionId = await deriveSessionId(request, env.KV);
+      if (!sessionId) return;
+      writePageViewEvent(env, {
+        sessionId,
+        path,
+        referrer: request.headers.get('Referer'),
+        country:
+          (request as unknown as { cf?: { country?: string } }).cf?.country ??
+          null,
+        userAgent: request.headers.get('User-Agent'),
+      });
+    })().catch(() => {
+      // best-effort
+    })
+  );
+}
+
+/**
+ * Fire-and-forget conversion recorder. Used after a successful newsletter
+ * signup so the event can be tied back to the same session that landed the
+ * user on the site.
+ */
+function recordConversion(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  path: string,
+  conversionType: 'newsletter'
+): void {
+  if (!env.AE_ENGAGEMENT) return;
+  ctx.waitUntil(
+    (async () => {
+      const sessionId = await deriveSessionId(request, env.KV);
+      if (!sessionId) return;
+      writeConversionEvent(env, {
+        sessionId,
+        conversionType,
+        path,
+        country:
+          (request as unknown as { cf?: { country?: string } }).cf?.country ??
+          null,
+        userAgent: request.headers.get('User-Agent'),
+      });
+    })().catch(() => {
+      // best-effort
+    })
+  );
 }
 
 async function startPipeline(env: Env, triggerType: RunTriggerType, triggerSource: string) {
@@ -617,6 +685,10 @@ export default {
           }
         }
 
+        // Record conversion against the originating session so the rollup
+        // can attribute newsletter signups back to a landing page.
+        recordConversion(request, env, ctx, '/subscribe', 'newsletter');
+
         return Response.redirect(`${url.origin}/?subscribed=1`, 303);
       } catch {
         return Response.redirect(`${url.origin}/?subscribed=error`, 303);
@@ -644,6 +716,8 @@ export default {
           null,
         userAgent: request.headers.get('User-Agent'),
       });
+      // Engagement page-view (separate dataset; runs async via waitUntil).
+      recordPageView(request, env, ctx, path);
 
       const related = await getRelatedArticles(env.DB, article);
 
@@ -818,6 +892,12 @@ export default {
           const banner = `<div style="position:fixed;top:0;left:0;right:0;z-index:9999;padding:0.75rem 1rem;text-align:center;font-size:0.88rem;font-weight:500;color:#fff;background:${isSuccess ? '#0f766e' : '#dc2626'};">${escapeHtml(msg)}</div>`;
           content = content.replace('<body>', `<body>${banner}`);
         }
+      }
+
+      // Record an engagement page view for HTML responses only — skip XML
+      // (sitemap, feed) since those are typically machine consumers.
+      if (!isXml) {
+        recordPageView(request, env, ctx, path);
       }
 
       return new Response(content, {
