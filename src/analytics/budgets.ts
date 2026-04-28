@@ -47,6 +47,13 @@ export const ANALYTICS_ENGINE_BUDGET = {
   rollupRowLimit: 10_000,
 } as const;
 
+export const ENGAGEMENT_ROLLUP_BUDGET = {
+  rollupTimeoutMs: 20_000,
+  // Headroom for 7 days × an order of magnitude more events than article
+  // views (every page view, not just article detail). Throws on truncation.
+  rollupRowLimit: 100_000,
+} as const;
+
 export const BLOB_NAMESPACES = {
   cfAnalytics: 'cf-analytics',
   searchConsole: 'search-console',
