@@ -1004,6 +1004,26 @@ function generateCompanyDetailPages(
       companyJsonLd['sameAs'] = company.website;
     }
 
+    if (company.logoUrl) {
+      companyJsonLd['logo'] = {
+        '@type': 'ImageObject',
+        'url': company.logoUrl,
+        'width': 300,
+        'height': 300,
+      };
+    }
+
+    if (company.employeeCountMin || company.employeeCountMax) {
+      const employeesObj: Record<string, unknown> = { '@type': 'QuantitativeValue' };
+      if (company.employeeCountMin) {
+        employeesObj['minValue'] = company.employeeCountMin;
+      }
+      if (company.employeeCountMax) {
+        employeesObj['maxValue'] = company.employeeCountMax;
+      }
+      companyJsonLd['numberOfEmployees'] = employeesObj;
+    }
+
     if (company.category) {
       companyJsonLd['knowsAbout'] = [company.category, 'Agentic AI', 'AI Accounting'];
     }
