@@ -63,6 +63,37 @@ CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
 CREATE INDEX IF NOT EXISTS idx_companies_category ON companies(category);
 CREATE INDEX IF NOT EXISTS idx_companies_category_slug ON companies(category_slug);
 
+CREATE TABLE IF NOT EXISTS engagement_sessions_daily (
+    session_date     TEXT NOT NULL,
+    session_id       TEXT NOT NULL,
+    page_count       INTEGER NOT NULL,
+    first_path       TEXT NOT NULL,
+    last_path        TEXT NOT NULL,
+    first_referrer   TEXT,
+    duration_seconds INTEGER NOT NULL DEFAULT 0,
+    bounced          INTEGER NOT NULL DEFAULT 0,
+    converted        INTEGER NOT NULL DEFAULT 0,
+    country          TEXT,
+    PRIMARY KEY (session_date, session_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_engagement_sessions_date ON engagement_sessions_daily(session_date);
+
+CREATE TABLE IF NOT EXISTS engagement_path_daily (
+    view_date        TEXT NOT NULL,
+    path             TEXT NOT NULL,
+    views            INTEGER NOT NULL,
+    unique_sessions  INTEGER NOT NULL,
+    entries          INTEGER NOT NULL,
+    exits            INTEGER NOT NULL,
+    bounces          INTEGER NOT NULL,
+    conversions      INTEGER NOT NULL,
+    next_path_top    TEXT,
+    PRIMARY KEY (view_date, path)
+);
+
+CREATE INDEX IF NOT EXISTS idx_engagement_path_date ON engagement_path_daily(view_date);
+
 CREATE TABLE IF NOT EXISTS article_companies (
     article_id TEXT NOT NULL,
     company_id TEXT NOT NULL,
