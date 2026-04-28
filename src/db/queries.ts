@@ -263,9 +263,11 @@ export async function getAllCompanyArticles(
     .prepare(
       `SELECT ac.company_id, a.* FROM article_companies ac
        JOIN articles a ON a.id = ac.article_id
+       WHERE a.is_published = 1 AND a.relevance_score >= ?
        ORDER BY a.published_at DESC
        LIMIT 2500`
     )
+    .bind(MIN_PUBLISH_SCORE)
     .all();
 
   const map = new Map<string, Article[]>();
