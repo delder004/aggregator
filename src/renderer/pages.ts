@@ -983,6 +983,28 @@ function generateCompanyDetailPages(
       body += `</div>\n`;
     }
 
+    // Related companies in the same category
+    if (company.category && company.categorySlug) {
+      const relatedCompanies = companies.filter(c => c.categorySlug === company.categorySlug && c.id !== company.id);
+      if (relatedCompanies.length > 0) {
+        body += `<div class="section-label">Companies in ${escapeHtml(company.category)}</div>\n`;
+        body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;margin-bottom:2rem;">\n`;
+        // Show up to 6 related companies
+        const displayRelated = relatedCompanies.slice(0, 6);
+        for (const relComp of displayRelated) {
+          const relArticles = companyArticles.get(relComp.id) ?? [];
+          const relDesc = relComp.description ? `<div style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.25rem;">${escapeHtml(relComp.description)}</div>` : '';
+          const relMeta = `<div style="font-size:0.8rem;color:var(--text-tertiary);margin-top:0.5rem;">${relArticles.length} article${relArticles.length !== 1 ? 's' : ''}</div>`;
+          body += `<a href="/company/${escapeHtml(relComp.id)}" style="padding:0.75rem;border:1px solid var(--border);border-radius:0.25rem;text-decoration:none;color:inherit;transition:background-color 0.2s;display:block;"><div style="font-weight:600;color:var(--accent);">${escapeHtml(relComp.name)}</div>${relDesc}${relMeta}</a>\n`;
+        }
+        body += `</div>\n`;
+        if (relatedCompanies.length > 6) {
+          const categorySlug = company.categorySlug.replace(/_/g, '-');
+          body += `<p style="text-align:center;margin-bottom:2rem;"><a href="/categories/${categorySlug}" style="color:var(--accent);">View all ${relatedCompanies.length} companies in ${escapeHtml(company.category)} →</a></p>\n`;
+        }
+      }
+    }
+
     // Article feed
     if (articles.length > 0) {
       body += `<div class="section-label">Recent Coverage</div>\n`;
