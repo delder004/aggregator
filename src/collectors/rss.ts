@@ -192,7 +192,8 @@ function extractAtomImage(entryXml: string, feedUrl: string): string | null {
 function parseRssItem(
   itemXml: string,
   sourceName: string,
-  feedUrl: string
+  feedUrl: string,
+  maxContentLength: number = 500
 ): CollectedArticle | null {
   const title = getTagContent(itemXml, 'title');
   const link = getTagContent(itemXml, 'link');
@@ -217,7 +218,7 @@ function parseRssItem(
   const rawContent = getTagContent(itemXml, 'content:encoded')
     || getTagContent(itemXml, 'description');
   const contentSnippet = rawContent
-    ? truncate(stripHtml(rawContent), 500)
+    ? truncate(stripHtml(rawContent), maxContentLength)
     : null;
 
   // Author
@@ -246,7 +247,8 @@ function parseRssItem(
 function parseAtomEntry(
   entryXml: string,
   sourceName: string,
-  feedUrl: string
+  feedUrl: string,
+  maxContentLength: number = 500
 ): CollectedArticle | null {
   const title = getTagContent(entryXml, 'title');
   if (!title) return null;
@@ -269,7 +271,7 @@ function parseAtomEntry(
   const rawContent = getTagContent(entryXml, 'content')
     || getTagContent(entryXml, 'summary');
   const contentSnippet = rawContent
-    ? truncate(stripHtml(rawContent), 500)
+    ? truncate(stripHtml(rawContent), maxContentLength)
     : null;
 
   // Author — nested <author><name>
@@ -365,6 +367,9 @@ export const rssCollector: Collector = {
       return [];
     }
 
+    // Read maxContentLength from config, default to 500 if not specified
+    const maxContentLength = config.config.maxContentLength ? parseInt(config.config.maxContentLength, 10) : 500;
+
     try {
       const response = await fetch(feedUrl, {
         headers: {
@@ -398,7 +403,7 @@ export const rssCollector: Collector = {
         const entries = splitByTag(xml, 'entry');
         for (const entry of entries) {
           try {
-            const article = parseAtomEntry(entry, config.name, feedUrl);
+            const article = parseAtomEntry(entry, config.name, feedUrl, maxContentLength);
             if (article) articles.push(article);
           } catch (err) {
             console.error(`[RSS] Error parsing Atom entry from ${feedUrl}:`, err);
@@ -408,7 +413,7 @@ export const rssCollector: Collector = {
         const items = splitByTag(xml, 'item');
         for (const item of items) {
           try {
-            const article = parseRssItem(item, config.name, feedUrl);
+            const article = parseRssItem(item, config.name, feedUrl, maxContentLength);
             if (article) {
               const idx = articles.length;
               articles.push(article);
