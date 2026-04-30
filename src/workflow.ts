@@ -996,8 +996,31 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
 
             await this.env.KV.put(hashKey, JSON.stringify(newHashes));
 
+            // Purge edge cache for changed/removed paths so manual testing
+            // doesn't wait out the s-maxage=3600 set by the fetch handler.
+            // Note: caches.default.delete() is per-colo — this only purges
+            // the colo running the cron, not the global edge. Good enough
+            // for dev iteration; for a true global purge use the CF API.
+            const purgePaths = [...changed.map(([path]) => path), ...staleKeys].filter((p) =>
+              p.startsWith('/')
+            );
+            const hostname = this.env.SITE_HOSTNAME ?? 'agenticaiccounting.com';
+            for (let i = 0; i < purgePaths.length; i += 25) {
+              const batch = purgePaths.slice(i, i + 25);
+              await Promise.all(
+                batch.map((path) =>
+                  caches.default
+                    .delete(new Request(`https://${hostname}${path}`, { method: 'GET' }))
+                    .catch((err) => {
+                      console.error(`Cache purge failed for ${path}:`, err);
+                      return false;
+                    })
+                )
+              );
+            }
+
             console.log(
-              `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys, deleted ${staleKeys.length} stale keys (${entries.length - changed.length} skipped)`
+              `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys, deleted ${staleKeys.length} stale keys, purged ${purgePaths.length} edge-cache entries (${entries.length - changed.length} skipped)`
             );
 
             return {
