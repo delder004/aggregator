@@ -1052,7 +1052,7 @@ function generateCompanyDetailPages(
 
     pages[path] = layout(body, {
       title: `${company.name} — Feed`,
-      description: `Latest news and articles about ${company.name} in AI-powered accounting.`,
+      description: company.description || `Latest news and articles about ${company.name} in AI-powered accounting.`,
       path,
       activeTab: 'companies',
       jsonLd: companyJsonLd,
