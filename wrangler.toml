@@ -2,6 +2,10 @@ name = "agenticaiaccounting"
 main = "src/index.ts"
 compatibility_date = "2025-03-14"
 
+routes = [
+  { pattern = "agenticaiccounting.com", custom_domain = true },
+]
+
 [triggers]
 crons = ["0 * * * *", "0 13 * * 1"]
 
