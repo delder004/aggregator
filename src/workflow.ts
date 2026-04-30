@@ -36,6 +36,7 @@ import {
   getAllCompanyInsights,
   getTotalArticleCount,
   getLatestSummaries,
+  getArticleCount,
 } from './db/queries';
 import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
@@ -890,7 +891,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
             const featuredArticles = await getFeaturedArticles(this.env.DB, 10);
             const tags = await getAllUniqueTags(this.env.DB);
 
-            const publishedCount = recentArticles.length;
+            const publishedCount = await getArticleCount(this.env.DB, MIN_PUBLISH_SCORE);
             const crawledArticles = await getTotalArticleCount(this.env.DB);
             const latestPublished = recentArticles.reduce(
               (max, article) => (article.publishedAt > max ? article.publishedAt : max),
