@@ -307,6 +307,31 @@ describe('parseAndValidateResponse', () => {
     expect(result.qualityScore).toBe(60);
   });
 
+  it('should extract JSON when prose follows the closing fence', () => {
+    // Real Haiku failure mode observed in production: fenced JSON followed
+    // by free-form "**Reasoning:**" commentary breaks naive fence-stripping.
+    const raw =
+      '```json\n{"relevanceScore":15,"qualityScore":45,"tags":["regulation"],"summary":"Test.","companyMentions":[]}\n```\n\n**Reasoning:**\n\n**Relevance (15):** This is purely a tax policy story.';
+    const result = parseAndValidateResponse(raw);
+    expect(result.relevanceScore).toBe(15);
+    expect(result.qualityScore).toBe(45);
+  });
+
+  it('should extract JSON when surrounded by free-form prose', () => {
+    const raw =
+      'Sure, here is my analysis:\n\n{"relevanceScore":20,"qualityScore":50,"tags":[],"summary":"Test.","companyMentions":[]}\n\nLet me know if you need more.';
+    const result = parseAndValidateResponse(raw);
+    expect(result.relevanceScore).toBe(20);
+  });
+
+  it('should not be confused by braces inside string literals', () => {
+    const raw =
+      '{"relevanceScore":30,"qualityScore":40,"tags":[],"summary":"Contains {curly} and [square] brackets and a \\"quote\\".","companyMentions":[]}';
+    const result = parseAndValidateResponse(raw);
+    expect(result.relevanceScore).toBe(30);
+    expect(result.summary).toContain('{curly}');
+  });
+
   it('should throw on invalid JSON', () => {
     expect(() => parseAndValidateResponse('not json at all')).toThrow('Failed to parse classifier JSON');
   });
