@@ -64,7 +64,7 @@ function renderItem(article: Article): string {
       <guid isPermaLink="true">${guid}</guid>
       <description>${description}</description>
       <pubDate>${pubDate}</pubDate>
-      <source url="https://agenticaiaccounting.com">${source}</source>
+      <source url="https://agenticaiccounting.com">${source}</source>
 ${authorTag}${categoryTags ? categoryTags + '\n' : ''}${qualityTag}    </item>`;
 }
 
@@ -91,14 +91,14 @@ export function generateRssFeed(articles: Article[]): string {
   const items = sorted.map(renderItem).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:agenticai="https://agenticaiaccounting.com/ns">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:agenticai="https://agenticaiccounting.com/ns">
   <channel>
     <title>Agentic AI Accounting</title>
-    <link>https://agenticaiaccounting.com</link>
+    <link>https://agenticaiccounting.com</link>
     <description>The latest on AI agents in accounting, bookkeeping, audit, and tax</description>
     <language>en-us</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
-    <atom:link href="https://agenticaiaccounting.com/feed.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://agenticaiccounting.com/feed.xml" rel="self" type="application/rss+xml" />
     <ttl>60</ttl>
 ${items}
   </channel>

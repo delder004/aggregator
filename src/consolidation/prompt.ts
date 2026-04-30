@@ -5,7 +5,7 @@ import { extractJsonObject } from '../runs/retrospective';
 export const CONSOLIDATION_MODEL = 'claude-opus-4-7';
 export const CONSOLIDATION_MAX_TOKENS = 4096;
 
-export const CONSOLIDATION_SYSTEM_PROMPT = `You are a strategic analyst for agenticaiaccounting.com, an automated news aggregator covering agentic AI in accounting.
+export const CONSOLIDATION_SYSTEM_PROMPT = `You are a strategic analyst for agenticaiccounting.com, an automated news aggregator covering agentic AI in accounting.
 
 You will receive a weekly context bundle containing:
 - Pipeline run summaries with AI retrospectives

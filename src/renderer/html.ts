@@ -1,5 +1,5 @@
 /**
- * HTML template engine for agenticaiaccounting.com
+ * HTML template engine for agenticaiccounting.com
  *
  * Base layout, shared CSS, and reusable components.
  * Uses template literal functions — no libraries.
@@ -17,7 +17,7 @@ import { MIN_PUBLISH_SCORE } from '../scoring/classifier';
 const SITE_TITLE = 'Agentic AI Accounting';
 const SITE_DESCRIPTION =
   'The latest on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.';
-const SITE_URL = 'https://agenticaiaccounting.com';
+const SITE_URL = 'https://agenticaiccounting.com';
 
 // Tags shown in the nav bar filter list
 export const NAV_TAGS: { label: string; slug: string }[] = [
@@ -1682,7 +1682,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           <a href="/about">About Us</a>
           <a href="/faq">FAQ</a>
           <a href="/feed.xml">RSS Feed</a>
-          <a href="mailto:hello@agenticaiaccounting.com">Contact</a>
+          <a href="mailto:hello@agenticaiccounting.com">Contact</a>
         </div>
       </div>
       <div class="footer-bottom">

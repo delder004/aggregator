@@ -31,7 +31,7 @@ export const ALLOWED_TAGS = new Set([
   'open-source',
 ]);
 
-const SYSTEM_PROMPT = `You are a strict content classifier for agenticaiaccounting.com, a niche news aggregator focused specifically on the intersection of AI/automation AND accounting/audit/tax/bookkeeping.
+const SYSTEM_PROMPT = `You are a strict content classifier for agenticaiccounting.com, a niche news aggregator focused specifically on the intersection of AI/automation AND accounting/audit/tax/bookkeeping.
 
 CRITICAL: Content MUST be about BOTH artificial intelligence AND accounting to score well. Articles about only AI (without accounting) or only accounting (without AI) should score LOW.
 

@@ -36,7 +36,7 @@ describe('generateRssFeed', () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(xml).toContain('<rss version="2.0"');
     expect(xml).toContain('<title>Agentic AI Accounting</title>');
-    expect(xml).toContain('<link>https://agenticaiaccounting.com</link>');
+    expect(xml).toContain('<link>https://agenticaiccounting.com</link>');
     expect(xml).toContain(
       '<description>The latest on AI agents in accounting, bookkeeping, audit, and tax</description>'
     );
@@ -51,7 +51,7 @@ describe('generateRssFeed', () => {
     const xml = generateRssFeed([]);
     expect(xml).toContain('xmlns:atom="http://www.w3.org/2005/Atom"');
     expect(xml).toContain(
-      '<atom:link href="https://agenticaiaccounting.com/feed.xml" rel="self" type="application/rss+xml" />'
+      '<atom:link href="https://agenticaiccounting.com/feed.xml" rel="self" type="application/rss+xml" />'
     );
   });
 
@@ -67,7 +67,7 @@ describe('generateRssFeed', () => {
       '<description>AI is transforming accounting workflows.</description>'
     );
     expect(xml).toContain('<pubDate>');
-    expect(xml).toContain('<source url="https://agenticaiaccounting.com">Accounting Today</source>');
+    expect(xml).toContain('<source url="https://agenticaiccounting.com">Accounting Today</source>');
     expect(xml).toContain('<author>Jane Doe</author>');
     expect(xml).toContain('<category>agentic-ai</category>');
     expect(xml).toContain('<category>automation</category>');

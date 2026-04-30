@@ -136,7 +136,7 @@ This returns one row per article with aggregated weekly views — the correct sh
 ### System prompt
 
 ```
-You are a strategic analyst for agenticaiaccounting.com, an automated
+You are a strategic analyst for agenticaiccounting.com, an automated
 news aggregator covering agentic AI in accounting.
 
 You will receive a weekly context bundle containing:
