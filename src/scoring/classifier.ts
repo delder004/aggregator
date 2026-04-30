@@ -298,24 +298,60 @@ async function callClaudeAPI(userMessage: string, env: Env): Promise<string> {
 }
 
 /**
+ * Find the first balanced JSON object or array in a string. Walks the
+ * bracket stack while respecting string literals so braces inside strings
+ * don't throw off the count. Returns null if no balanced block is found.
+ */
+function extractJsonBlock(text: string): string | null {
+  let start = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{' || text[i] === '[') {
+      start = i;
+      break;
+    }
+  }
+  if (start === -1) return null;
+
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (inString) {
+      if (c === '\\') escape = true;
+      else if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+    } else if (c === '{' || c === '[') {
+      stack.push(c);
+    } else if (c === '}' || c === ']') {
+      stack.pop();
+      if (stack.length === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/**
  * Parse the JSON response from Claude and validate all fields.
  * Clamps scores to 0-100, filters unknown tags,
  * truncates summary to 280 characters, and validates companyMentions.
  */
 export function parseAndValidateResponse(rawText: string): ClassifierResponse {
-  // Strip markdown code fences if the model wraps the JSON
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith('```')) {
-    // Remove opening fence (with optional language identifier)
-    cleaned = cleaned.replace(/^```[a-zA-Z]*\n?/, '');
-    // Remove closing fence
-    cleaned = cleaned.replace(/\n?```$/, '');
-    cleaned = cleaned.trim();
-  }
+  // Models sometimes wrap JSON in markdown fences and/or trail it with
+  // free-form prose ("**Reasoning:** ..."). Pull out the first balanced
+  // {...} or [...] block instead of relying on fence position.
+  const candidate = extractJsonBlock(rawText) ?? rawText.trim();
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(cleaned);
+    parsed = JSON.parse(candidate);
   } catch {
     throw new Error(`Failed to parse classifier JSON: ${rawText}`);
   }
