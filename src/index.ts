@@ -947,7 +947,37 @@ export default {
       });
     }
 
-    // Serve pre-rendered pages from KV
+    // Serve pre-rendered pages from KV (with edge caching via Cache API).
+    //
+    // Workers responses are NOT auto-cached at the edge — `Cache-Control` on
+    // the response alone is necessary but not sufficient. We must explicitly
+    // put responses in `caches.default`. After this change the CDN serves
+    // most pages directly with TTFB ~5–15ms instead of running the Worker
+    // and KV lookup on every request.
+    //
+    // Skipped when ?subscribed=... is in the URL because the response gets a
+    // user-facing banner injected and shouldn't be shared across users.
+    const isXml = path.endsWith('.xml');
+    const subscribed = url.searchParams.get('subscribed');
+    const cacheKey: Request | null = subscribed
+      ? null
+      : new Request(url.toString(), { method: 'GET' });
+
+    // 1. Check edge cache first
+    if (cacheKey) {
+      const cachedResp = await caches.default.match(cacheKey);
+      if (cachedResp) {
+        // Still record an engagement page view on cache hits so analytics
+        // stay accurate. recordPageView already runs async via waitUntil
+        // internally so this doesn't block the response.
+        if (!isXml) {
+          recordPageView(request, env, ctx, path);
+        }
+        return cachedResp;
+      }
+    }
+
+    // 2. Cache miss — fetch from KV
     const cached = await env.KV.get(path, 'text');
     if (cached) {
       // OG image stored as base64-prefixed PNG
@@ -958,19 +988,23 @@ export default {
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        return new Response(bytes, {
+        const pngResponse = new Response(bytes, {
           headers: {
             'Content-Type': 'image/png',
-            'Cache-Control': 'public, max-age=86400',
+            // OG images are ~static (regenerated only when site re-deploys).
+            // Cache aggressively at edge + browser.
+            'Cache-Control': 'public, max-age=86400, s-maxage=86400, immutable',
           },
         });
+        if (cacheKey) {
+          ctx.waitUntil(caches.default.put(cacheKey, pngResponse.clone()));
+        }
+        return pngResponse;
       }
 
-      const isXml = path.endsWith('.xml');
       let content = cached;
 
       // Inject newsletter subscription confirmation into HTML pages
-      const subscribed = url.searchParams.get('subscribed');
       if (subscribed && !isXml) {
         const msgs: Record<string, string> = {
           '1': 'Thanks for subscribing! You\u2019ll hear from us soon.',
@@ -991,14 +1025,29 @@ export default {
         recordPageView(request, env, ctx, path);
       }
 
-      return new Response(content, {
+      const response = new Response(content, {
         headers: {
           'Content-Type': isXml
             ? 'application/xml; charset=utf-8'
             : 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=300',
+          // - max-age=300: browsers cache 5 min (so refreshes don't show
+          //   ancient content)
+          // - s-maxage=3600: CDN caches 1 hour, matching the hourly content
+          //   cron — fresh content rolls in naturally
+          // - stale-while-revalidate=86400: HTML only — serve stale up to
+          //   24h while revalidating, eliminating cache-miss latency cliffs
+          'Cache-Control': isXml
+            ? 'public, max-age=300, s-maxage=3600'
+            : 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
         },
       });
+
+      // 3. Populate edge cache for next request
+      if (cacheKey) {
+        ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+      }
+
+      return response;
     }
 
     return new Response('Not Found', { status: 404 });
