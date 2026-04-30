@@ -13,3 +13,8 @@ UPDATE companies
 SET aliases = '["QuickBooks","QuickBooks AI","TurboTax"]',
     description = 'Financial software platform including QuickBooks and TurboTax'
 WHERE id = 'intuit';
+
+-- Also soft-delete the standalone Mailchimp company that was auto-discovered
+-- via the contributor flow (separate row from the Intuit alias above).
+-- Marketing-tech is off-thesis; we don't aggregate it.
+UPDATE companies SET is_active = 0 WHERE id = 'mailchimp';
