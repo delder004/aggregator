@@ -1,5 +1,5 @@
 /**
- * Page generators for agenticaiaccounting.com
+ * Page generators for agenticaiccounting.com
  *
  * Each function produces a Record<string, string> mapping URL paths
  * to fully-rendered HTML strings. The integration layer writes these
@@ -30,7 +30,7 @@ import { CATEGORIES, getCategoryBySlug } from '../categories';
 // ---------------------------------------------------------------------------
 
 const ARTICLES_PER_PAGE = 20;
-const SITE_URL = 'https://agenticaiaccounting.com';
+const SITE_URL = 'https://agenticaiccounting.com';
 
 // ---------------------------------------------------------------------------
 // OG Image
@@ -445,7 +445,7 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
   <h2>Contact</h2>
   <p>
     Questions or suggestions? Reach us at
-    <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a>.
+    <a href="mailto:hello@agenticaiccounting.com">hello@agenticaiccounting.com</a>.
   </p>
 </div>`;
 
@@ -488,7 +488,7 @@ function generateFaqPage(layoutOpts: Partial<LayoutOptions>): Record<string, str
     },
     {
       q: 'Can I submit a source or company to be tracked?',
-      a: 'Yes! We\'re always looking to expand our coverage. Send the source URL or company name to <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a> and we\'ll evaluate it for inclusion.',
+      a: 'Yes! We\'re always looking to expand our coverage. Send the source URL or company name to <a href="mailto:hello@agenticaiccounting.com">hello@agenticaiccounting.com</a> and we\'ll evaluate it for inclusion.',
     },
     {
       q: 'How does the company tracker work?',
@@ -508,7 +508,7 @@ function generateFaqPage(layoutOpts: Partial<LayoutOptions>): Record<string, str
     },
     {
       q: 'Who runs this site?',
-      a: 'Agentic AI Accounting is an independent project. The entire pipeline — collection, scoring, company tracking, and publishing — is automated. There is no editorial staff. Questions or feedback? Reach us at <a href="mailto:hello@agenticaiaccounting.com">hello@agenticaiaccounting.com</a>.',
+      a: 'Agentic AI Accounting is an independent project. The entire pipeline — collection, scoring, company tracking, and publishing — is automated. There is no editorial staff. Questions or feedback? Reach us at <a href="mailto:hello@agenticaiccounting.com">hello@agenticaiccounting.com</a>.',
     },
   ];
 

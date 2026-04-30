@@ -37,7 +37,7 @@ import { DEFAULT_KEYWORDS } from './keywords';
  */
 
 const SERPER_API_URL = 'https://google.serper.dev/search';
-const DEFAULT_HOSTNAME = 'agenticaiaccounting.com';
+const DEFAULT_HOSTNAME = 'agenticaiccounting.com';
 
 export interface RankingSweepOptions {
   keywords?: readonly string[];
@@ -279,9 +279,9 @@ export function parseTotalResults(raw: string | undefined): number | null {
 
 /**
  * Find our site's rank in the organic results. Matches on hostname with
- * exact + subdomain support: `agenticaiaccounting.com` matches both
- * `agenticaiaccounting.com` and `www.agenticaiaccounting.com`, but NOT
- * `notagenticaiaccounting.com`.
+ * exact + subdomain support: `agenticaiccounting.com` matches both
+ * `agenticaiccounting.com` and `www.agenticaiccounting.com`, but NOT
+ * `notagenticaiccounting.com`.
  *
  * Exported for direct unit testing.
  */

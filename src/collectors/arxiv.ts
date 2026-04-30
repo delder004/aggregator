@@ -286,7 +286,7 @@ export const arxivCollector: Collector = {
       const response = await fetch(url, {
         headers: {
           'User-Agent':
-            'AgenticAIAccounting/1.0 (https://agenticaiaccounting.com)',
+            'AgenticAIAccounting/1.0 (https://agenticaiccounting.com)',
         },
       });
 

@@ -82,7 +82,7 @@ async function fetchRssItems(rssUrl: string): Promise<CompetitorItem[]> {
   let response: Response;
   try {
     response = await fetch(rssUrl, {
-      headers: { 'User-Agent': 'AgenticAIAccounting/1.0 (+https://agenticaiaccounting.com)' },
+      headers: { 'User-Agent': 'AgenticAIAccounting/1.0 (+https://agenticaiccounting.com)' },
       signal: controller.signal,
     });
   } finally {
@@ -176,7 +176,7 @@ async function fetchHomepageItems(
   try {
     response = await fetch(homepageUrl, {
       headers: {
-        'User-Agent': 'AgenticAIAccounting/1.0 (+https://agenticaiaccounting.com)',
+        'User-Agent': 'AgenticAIAccounting/1.0 (+https://agenticaiccounting.com)',
         Accept: 'text/html',
       },
       signal: controller.signal,

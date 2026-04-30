@@ -1,7 +1,7 @@
 /**
  * Seed keyword list for the weekly rankings sweep.
  *
- * Hand-curated for agenticaiaccounting.com. Prune and expand as the site's
+ * Hand-curated for agenticaiccounting.com. Prune and expand as the site's
  * topic focus sharpens — Phase 2 consolidation will surface low-value
  * keywords (consistently unranked + low search interest) so the operator
  * can trim, and Phase 3 will propose new candidates via the source-

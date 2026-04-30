@@ -32,49 +32,49 @@ describe('findOurRank', () => {
     totalResults: null,
     organic: [
       { position: 1, link: 'https://other.com/a' },
-      { position: 2, link: 'https://www.agenticaiaccounting.com/article/foo' },
-      { position: 3, link: 'https://agenticaiaccounting.com/' },
+      { position: 2, link: 'https://www.agenticaiccounting.com/article/foo' },
+      { position: 3, link: 'https://agenticaiccounting.com/' },
     ],
   };
 
   it('matches exact hostname', () => {
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
-        { position: 1, link: 'https://agenticaiaccounting.com/' },
+        { position: 1, link: 'https://agenticaiccounting.com/' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(1);
-    expect(result.url).toBe('https://agenticaiaccounting.com/');
+    expect(result.url).toBe('https://agenticaiccounting.com/');
   });
 
   it('matches subdomain (www.)', () => {
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
-        { position: 5, link: 'https://www.agenticaiaccounting.com/x' },
+        { position: 5, link: 'https://www.agenticaiccounting.com/x' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(5);
   });
 
   it('does NOT match a non-suffix imposter domain', () => {
-    // notagenticaiaccounting.com would be a false match for a naive endsWith check
+    // notagenticaiccounting.com would be a false match for a naive endsWith check
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
-        { position: 1, link: 'https://notagenticaiaccounting.com/x' },
+        { position: 1, link: 'https://notagenticaiccounting.com/x' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(null);
     expect(result.url).toBe(null);
   });
 
   it('returns the first matching position when multiple results match', () => {
-    const result = findOurRank(serp, 'agenticaiaccounting.com');
+    const result = findOurRank(serp, 'agenticaiccounting.com');
     // The second organic row (position 2, www.) matches first
     expect(result.rank).toBe(2);
-    expect(result.url).toBe('https://www.agenticaiaccounting.com/article/foo');
+    expect(result.url).toBe('https://www.agenticaiccounting.com/article/foo');
   });
 
   it('returns null rank but non-null URL when position field is missing (matched-but-no-position)', () => {
@@ -82,21 +82,21 @@ describe('findOurRank', () => {
     // results), not "unranked" (which means we were absent entirely).
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
-        { link: 'https://agenticaiaccounting.com/' },
+        { link: 'https://agenticaiccounting.com/' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(null);
-    expect(result.url).toBe('https://agenticaiaccounting.com/');
+    expect(result.url).toBe('https://agenticaiccounting.com/');
   });
 
   it('skips results with invalid URLs', () => {
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
         { position: 1, link: 'not a url' },
-        { position: 2, link: 'https://agenticaiaccounting.com/' },
+        { position: 2, link: 'https://agenticaiccounting.com/' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(2);
   });
@@ -107,7 +107,7 @@ describe('findOurRank', () => {
         { position: 1, link: 'https://competitor.com/' },
         { position: 2, link: 'https://another.com/' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(null);
     expect(result.url).toBe(null);
@@ -116,9 +116,9 @@ describe('findOurRank', () => {
   it('is case-insensitive on hostname', () => {
     const result = findOurRank(
       { features: [], totalResults: null, organic: [
-        { position: 1, link: 'https://AgenticAiAccounting.COM/' },
+        { position: 1, link: 'https://AgenticAiccounting.COM/' },
       ] },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(1);
   });
@@ -129,11 +129,11 @@ describe('findOurRank', () => {
       { position: 1, link: 'https://other.com/' },
       undefined,
       null,
-      { position: 4, link: 'https://agenticaiaccounting.com/' },
+      { position: 4, link: 'https://agenticaiccounting.com/' },
     ];
     const result = findOurRank(
       { features: [], totalResults: null, organic: sparse },
-      'agenticaiaccounting.com'
+      'agenticaiccounting.com'
     );
     expect(result.rank).toBe(4);
   });
@@ -353,7 +353,7 @@ describe('runRankingsSweep', () => {
       callCount += 1;
       if (callCount === 1) {
         // k1: ranked at position 3
-        return serperResponse(3, 'https://agenticaiaccounting.com/article/x');
+        return serperResponse(3, 'https://agenticaiccounting.com/article/x');
       }
       if (callCount === 2) {
         // k2: not ranked (our site not in results)
@@ -381,7 +381,7 @@ describe('runRankingsSweep', () => {
     // k1 ranked
     const k1 = result.rankings.find((r) => r.keyword === 'k1')!;
     expect(k1.rank).toBe(3);
-    expect(k1.urlRanked).toBe('https://agenticaiaccounting.com/article/x');
+    expect(k1.urlRanked).toBe('https://agenticaiccounting.com/article/x');
     expect(k1.failed).toBe(false);
 
     // k2 unranked but not failed
@@ -408,7 +408,7 @@ describe('runRankingsSweep', () => {
       if (callCount === 2) {
         return new Response('err', { status: 500 });
       }
-      return serperResponse(5, 'https://agenticaiaccounting.com/');
+      return serperResponse(5, 'https://agenticaiccounting.com/');
     });
     const env = {
       DB: db,
@@ -455,7 +455,7 @@ describe('runRankingsSweep', () => {
           JSON.stringify({
             organic: [
               // Serper returns our URL but omits the position field entirely
-              { link: 'https://agenticaiaccounting.com/article/x' },
+              { link: 'https://agenticaiccounting.com/article/x' },
             ],
           }),
           { status: 200 }
@@ -476,7 +476,7 @@ describe('runRankingsSweep', () => {
     // But the rank number itself is null
     expect(result.rankings[0].rank).toBe(null);
     expect(result.rankings[0].urlRanked).toBe(
-      'https://agenticaiaccounting.com/article/x'
+      'https://agenticaiccounting.com/article/x'
     );
   });
 
