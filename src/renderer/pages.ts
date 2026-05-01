@@ -338,6 +338,20 @@ function generateTagPages(
     }
     body += pagination(1, totalPages, basePath);
 
+    const tagJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`,
+      'url': `https://agenticaiccounting.com${basePath}`,
+      'description': `Articles about ${tagLabel} in AI-powered accounting.`,
+      'publisher': {
+        '@type': 'Organization',
+        'name': 'Agentic AI Accounting',
+        'url': 'https://agenticaiccounting.com',
+        'logo': { '@type': 'ImageObject', 'url': 'https://agenticaiccounting.com/og.png' },
+      },
+    };
+
     pages[basePath] = layout(body, {
       title: `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`,
       description: `Articles about ${tagLabel} in AI-powered accounting.`,
@@ -345,6 +359,7 @@ function generateTagPages(
       activeTag: tag,
       activeTab: 'news',
       noindex: filtered.length < 5,
+      jsonLd: tagJsonLd,
       ...layoutOpts,
     });
 
@@ -1225,12 +1240,33 @@ function generateCategoryDetailPages(
     }
 
     const path = `/categories/${cat.slug}`;
+    const catJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': `${cat.label} — AI Accounting Companies`,
+      'url': `https://agenticaiccounting.com${path}`,
+      'description': `${cat.description} ${cos.length} compan${cos.length === 1 ? 'y' : 'ies'} tracked.`,
+      'publisher': {
+        '@type': 'Organization',
+        'name': 'Agentic AI Accounting',
+        'url': 'https://agenticaiccounting.com',
+        'logo': { '@type': 'ImageObject', 'url': 'https://agenticaiccounting.com/og.png' },
+      },
+      'itemListElement': cos.slice(0, 10).map((c, idx) => ({
+        '@type': 'Thing',
+        'position': idx + 1,
+        'name': c.name,
+        'url': `https://agenticaiccounting.com/company/${c.id}`,
+        'description': c.description || undefined,
+      })),
+    };
     pages[path] = layout(body, {
       title: `${cat.label} — AI Accounting Companies`,
       description: `${cat.description} ${cos.length} compan${cos.length === 1 ? 'y' : 'ies'} tracked.`,
       path,
       activeTab: 'companies',
       noindex: cos.length === 0,
+      jsonLd: catJsonLd,
       ...layoutOpts,
     });
   }

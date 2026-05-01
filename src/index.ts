@@ -917,6 +917,12 @@ export default {
         'headline': article.headline || article.title,
         'datePublished': article.publishedAt,
         'url': `https://agenticaiccounting.com/article/${articleId}`,
+        'image': {
+          '@type': 'ImageObject',
+          'url': 'https://agenticaiccounting.com/og.png',
+          'width': 1200,
+          'height': 630,
+        },
         'publisher': {
           '@type': 'Organization',
           'name': 'Agentic AI Accounting',
@@ -924,12 +930,22 @@ export default {
           'logo': { '@type': 'ImageObject', 'url': 'https://agenticaiccounting.com/og.png' },
         },
         'mainEntityOfPage': { '@type': 'WebPage', '@id': `https://agenticaiccounting.com/article/${articleId}` },
+        'inLanguage': 'en',
       };
       if (article.author) {
         articleJsonLd['author'] = { '@type': 'Person', 'name': article.author };
       }
       if (article.aiSummary) {
         articleJsonLd['description'] = article.aiSummary;
+        // Include truncated article body from summary for better snippet generation
+        articleJsonLd['articleBody'] = article.aiSummary;
+      }
+      // Add source organization to give credit and improve context
+      if (article.sourceName) {
+        articleJsonLd['sourceOrganization'] = {
+          '@type': 'Organization',
+          'name': article.sourceName,
+        };
       }
 
       const html = layout(detailBody, {
