@@ -30,6 +30,7 @@ import { CATEGORIES, getCategoryBySlug } from '../categories';
 // ---------------------------------------------------------------------------
 
 const ARTICLES_PER_PAGE = 20;
+const JOBS_PER_PAGE = 50;
 const SITE_URL = 'https://agenticaiccounting.com';
 
 // ---------------------------------------------------------------------------
@@ -543,6 +544,7 @@ function generateSitemap(
   articles: Article[],
   tags: string[],
   totalLatestPages: number,
+  totalJobPages: number,
   companies?: Company[]
 ): string {
   const now = new Date().toISOString().split('T')[0];
@@ -563,6 +565,9 @@ function generateSitemap(
   urls += `  <url><loc>${SITE_URL}/categories</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/map</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  for (let i = 2; i <= totalJobPages; i++) {
+    urls += `  <url><loc>${SITE_URL}/jobs/page/${i}</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
+  }
   urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
@@ -641,6 +646,13 @@ export function generateAllPages(
 
   const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
 
+  // Calculate total job pages for sitemap
+  let totalJobCount = 0;
+  for (const jobs of jobsMap.values()) {
+    totalJobCount += jobs.length;
+  }
+  const totalJobPages = Math.max(Math.ceil(totalJobCount / JOBS_PER_PAGE), 1);
+
   const pages: Record<string, string> = {
     ...generateHomepage(featured, latest, articles, layoutOpts, companies, jobsMap, insights),
     ...generateTagPages(articles, layoutOpts),
@@ -666,6 +678,7 @@ export function generateAllPages(
     articles,
     effectiveTags,
     totalLatestPages,
+    totalJobPages,
     companies
   );
 
@@ -1451,26 +1464,44 @@ function generateJobsPage(
 
   const filterNav = jobFilterNav(departments, locations, companyFilterList, '', hasRemote);
 
-  // Main /jobs page (all jobs)
-  let body = '';
-  if (allJobs.length === 0) {
-    body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
-    body += filterNav;
-    body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
-  } else {
-    body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
-    body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
-    body += filterNav;
-    body += renderJobCards(allJobs);
-  }
+  // Main /jobs page (all jobs) - paginated
+  const jobPages = paginate(allJobs, JOBS_PER_PAGE);
+  const totalJobPages = jobPages.length;
 
-  pages['/jobs'] = layout(body, {
-    title: 'Jobs',
-    description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
-    path: '/jobs',
-    activeTab: 'jobs',
-    ...layoutOpts,
-  });
+  for (let i = 0; i < jobPages.length; i++) {
+    let body = '';
+    if (allJobs.length === 0) {
+      body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
+      body += filterNav;
+      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
+    } else {
+      body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
+      body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
+      body += filterNav;
+      body += renderJobCards(jobPages[i]);
+      if (totalJobPages > 1) {
+        const pageNum = i + 1;
+        body += `<div style="display:flex;justify-content:center;gap:0.5rem;margin-top:2rem;flex-wrap:wrap;align-items:center;">`;
+        if (i > 0) {
+          body += `<a href="${i === 1 ? '/jobs' : `/jobs/page/${i}`}" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:4px;text-decoration:none;color:var(--accent);">← Previous</a>`;
+        }
+        body += `<span style="color:var(--text-secondary);">Page ${pageNum} of ${totalJobPages}</span>`;
+        if (i < jobPages.length - 1) {
+          body += `<a href="/jobs/page/${pageNum + 1}" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:4px;text-decoration:none;color:var(--accent);">Next →</a>`;
+        }
+        body += `</div>`;
+      }
+    }
+
+    const path = i === 0 ? '/jobs' : `/jobs/page/${i + 1}`;
+    pages[path] = layout(body, {
+      title: totalJobPages > 1 && i > 0 ? `Jobs — Page ${i + 1}` : 'Jobs',
+      description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+      path,
+      activeTab: 'jobs',
+      ...layoutOpts,
+    });
+  }
 
   // Remote filter page
   if (hasRemote) {
