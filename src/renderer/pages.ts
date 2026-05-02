@@ -682,7 +682,7 @@ export function generateAllPages(
     Object.assign(pages, generateCompaniesPage(companies, articleMap, jobsMap, layoutOpts));
     Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
     Object.assign(pages, generateCategoriesPage(companies, articleMap, layoutOpts));
-    Object.assign(pages, generateCategoryDetailPages(companies, articleMap, jobsMap, layoutOpts));
+    Object.assign(pages, generateCategoryDetailPages(companies, articleMap, jobsMap, articles, layoutOpts));
     Object.assign(pages, generateMapPage(companies, articleMap, layoutOpts));
   }
   Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
@@ -1188,10 +1188,19 @@ function generateCategoriesPage(
   };
 }
 
+// Mapping from category slug to tag slug for empty categories
+const CATEGORY_TO_TAG_MAP: Record<string, string> = {
+  'audit-automation': 'audit',
+  'tax-automation': 'tax',
+  'ap-automation': 'automation',
+  'ar-automation': 'automation',
+};
+
 function generateCategoryDetailPages(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
   companyJobs: Map<string, CompanyJob[]>,
+  allArticles: Article[],
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
@@ -1209,7 +1218,23 @@ function generateCategoryDetailPages(
     body += categoriesSubNav('categories');
 
     if (cos.length === 0) {
-      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked in this category yet.</p>`;
+      // For empty categories, show recent articles tagged with the matching tag
+      const tagSlug = CATEGORY_TO_TAG_MAP[cat.slug];
+      if (tagSlug) {
+        const matchingArticles = allArticles.filter(
+          a => a.isPublished && a.tags && a.tags.includes(tagSlug)
+        );
+        if (matchingArticles.length > 0) {
+          const recent = sortByDate(matchingArticles).slice(0, 12);
+          body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;">No companies tracked yet. Below is recent coverage on this topic:</p>\n`;
+          body += `<div class="section-label" style="margin-top:1rem;">Recent Coverage</div>\n`;
+          body += renderTimeGrouped(recent);
+        } else {
+          body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked in this category yet.</p>`;
+        }
+      } else {
+        body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked in this category yet.</p>`;
+      }
     } else {
       body += `<div class="company-grid">\n`;
       for (const c of cos) {
