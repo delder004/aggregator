@@ -883,26 +883,52 @@ ${subNav}
 ${subNav}
 ${companyRows}`;
 
+  const companiesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'AI Accounting Companies & Startups',
+    'url': `${SITE_URL}/companies`,
+    'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+    'itemListElement': companies.slice(0, 20).map((c, idx) => ({
+      '@type': 'Thing',
+      'position': idx + 1,
+      'name': c.name,
+      'url': `${SITE_URL}/company/${c.id}`,
+      'description': c.description,
+    })),
+  };
+
+  const companiesBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': 'Companies',
+        'item': `${SITE_URL}/companies`,
+      },
+    ],
+  };
+
+  const companiesJsonLdGraph = {
+    '@context': 'https://schema.org',
+    '@graph': [companiesJsonLd, companiesBreadcrumb],
+  };
+
   return {
     '/companies': layout(body, {
       title: 'Companies',
       description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
       path: '/companies',
       activeTab: 'companies',
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        'name': 'AI Accounting Companies & Startups',
-        'url': `${SITE_URL}/companies`,
-        'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
-        'itemListElement': companies.slice(0, 20).map((c, idx) => ({
-          '@type': 'Thing',
-          'position': idx + 1,
-          'name': c.name,
-          'url': `${SITE_URL}/company/${c.id}`,
-          'description': c.description,
-        })),
-      },
+      jsonLd: companiesJsonLdGraph,
       ...layoutOpts,
     }),
   };
@@ -1078,12 +1104,44 @@ function generateCompanyDetailPages(
       companyJsonLd['knowsAbout'] = [company.category, 'Agentic AI', 'AI Accounting'];
     }
 
+    // Add BreadcrumbList schema for better navigation hierarchy
+    const breadcrumbList = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Companies',
+          'item': `${SITE_URL}/companies`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': company.name,
+          'item': `${SITE_URL}${path}`,
+        },
+      ],
+    };
+
+    // Combine Organization and BreadcrumbList into a graph
+    const jsonLdGraph = {
+      '@context': 'https://schema.org',
+      '@graph': [companyJsonLd, breadcrumbList],
+    };
+
     pages[path] = layout(body, {
       title: `${company.name} — Feed`,
       description: company.description || `Latest news and articles about ${company.name} in AI-powered accounting.`,
       path,
       activeTab: 'companies',
-      jsonLd: companyJsonLd,
+      jsonLd: jsonLdGraph,
       ...layoutOpts,
     });
   }
@@ -1168,6 +1226,39 @@ function generateCategoriesPage(
   }
   body += `</div>\n`;
 
+  const categoriesJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'AI Accounting Categories',
+    'url': `${SITE_URL}/categories`,
+    'description':
+      'Categorized directory of companies building agentic AI for accounting.',
+  };
+
+  const categoriesBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': 'Categories',
+        'item': `${SITE_URL}/categories`,
+      },
+    ],
+  };
+
+  const categoriesJsonLdGraph = {
+    '@context': 'https://schema.org',
+    '@graph': [categoriesJsonLd, categoriesBreadcrumb],
+  };
+
   return {
     '/categories': layout(body, {
       title: 'Categories',
@@ -1176,14 +1267,7 @@ function generateCategoriesPage(
       path: '/categories',
       activeTab: 'companies',
       ...layoutOpts,
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        'name': 'AI Accounting Categories',
-        'url': `${SITE_URL}/categories`,
-        'description':
-          'Categorized directory of companies building agentic AI for accounting.',
-      },
+      jsonLd: categoriesJsonLdGraph,
     }),
   };
 }
@@ -1298,13 +1382,46 @@ function generateCategoryDetailPages(
         'description': c.description || undefined,
       })),
     };
+
+    // Add BreadcrumbList schema for category detail pages
+    const catBreadcrumbList = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Categories',
+          'item': `${SITE_URL}/categories`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': cat.label,
+          'item': `${SITE_URL}${path}`,
+        },
+      ],
+    };
+
+    // Combine CollectionPage and BreadcrumbList into a graph
+    const catJsonLdGraph = {
+      '@context': 'https://schema.org',
+      '@graph': [catJsonLd, catBreadcrumbList],
+    };
+
     pages[path] = layout(body, {
       title: `${cat.label} — AI Accounting Companies`,
       description: `${cat.description} ${cos.length} compan${cos.length === 1 ? 'y' : 'ies'} tracked.`,
       path,
       activeTab: 'companies',
       noindex: cos.length === 0,
-      jsonLd: catJsonLd,
+      jsonLd: catJsonLdGraph,
       ...layoutOpts,
     });
   }
@@ -1371,11 +1488,32 @@ function generateMapPage(
       ...layoutOpts,
       jsonLd: {
         '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        'name': 'AI Accounting Market Map',
-        'url': `${SITE_URL}/map`,
-        'description':
-          'Live market map of AI-accounting companies, categorized and sized by recent coverage volume.',
+        '@graph': [
+          {
+            '@type': 'CollectionPage',
+            'name': 'AI Accounting Market Map',
+            'url': `${SITE_URL}/map`,
+            'description':
+              'Live market map of AI-accounting companies, categorized and sized by recent coverage volume.',
+          },
+          {
+            '@type': 'BreadcrumbList',
+            'itemListElement': [
+              {
+                '@type': 'ListItem',
+                'position': 1,
+                'name': 'Home',
+                'item': SITE_URL,
+              },
+              {
+                '@type': 'ListItem',
+                'position': 2,
+                'name': 'Market Map',
+                'item': `${SITE_URL}/map`,
+              },
+            ],
+          },
+        ],
       },
     }),
   };
