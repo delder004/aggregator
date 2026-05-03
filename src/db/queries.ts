@@ -891,3 +891,20 @@ export async function failPipelineRunRetrospective(
     .bind(error, runId)
     .run();
 }
+
+/** Clean up stale article-company links where the article is no longer published or below minimum score threshold. */
+export async function cleanupStaleArticleCompanyLinks(
+  db: D1Database
+): Promise<number> {
+  const result = await db
+    .prepare(
+      `DELETE FROM article_companies
+       WHERE article_id NOT IN (
+         SELECT id FROM articles
+         WHERE is_published = 1 AND relevance_score >= ?
+       )`
+    )
+    .bind(MIN_PUBLISH_SCORE)
+    .run();
+  return result.meta.changes ?? 0;
+}
