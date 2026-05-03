@@ -37,6 +37,7 @@ import {
   getTotalArticleCount,
   getLatestSummaries,
   getArticleCount,
+  cleanupStaleArticleCompanyLinks,
 } from './db/queries';
 import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
@@ -882,6 +883,12 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         },
         async () => {
           try {
+            // Clean up stale article-company links before rendering
+            const deletedLinks = await cleanupStaleArticleCompanyLinks(this.env.DB);
+            if (deletedLinks > 0) {
+              console.log(`Cleaned up ${deletedLinks} stale article-company links`);
+            }
+
             const oneEightyDaysAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
             const publishedArticles = await getPublishedArticles(this.env.DB, {
               limit: 1000,
