@@ -131,7 +131,7 @@ Context for the custom tools:
 - \`cf_api\`: your Cloudflare account_id is \`${CF_ACCOUNT_ID}\`. The D1 database_id is in /workspace/aggregator/wrangler.toml.
 - \`github_api\`: this repo is \`${OWNER}/${REPO}\`. Use that in any '/repos/{owner}/{repo}/...' path.
 
-Make one code change toward the goal, validate with tsc + vitest, and open a PR via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message.`;
+Follow the goal and your system prompt. If you ship a PR, validate with \`npm run typecheck\` + \`npm test\` and open it via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message, or — if the goal and system prompt allow stopping without a PR (e.g. nothing high-confidence to ship) — say so and stop.`;
 
 const [, stream] = await Promise.all([
   client.beta.sessions.events.send(session.id, {

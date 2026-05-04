@@ -40,19 +40,17 @@ jobs:
             exit 1
           fi
 
-          # Stylist-only forbids — pipeline and data-layer code is off-limits
-          # to the stylist agent. Renderer-only design changes belong on
-          # agent/stylist-* branches; correctness/data work belongs to the
-          # janitor (agent/<other>) or to a human PR.
+          # Stylist allowlist — the stylist agent's scope is the renderer and
+          # the design roadmap, nothing else. Anything outside that set is
+          # rejected, even if the universal forbids above would allow it.
+          # If a stylist change genuinely needs to touch other paths, a human
+          # should open the PR, or the work should be routed through the
+          # janitor or contributor agent.
           if [[ "$HEAD_REF" == agent/stylist-* ]]; then
-            stylist_forbidden=$(echo "$changed" | grep -E '^(src/collectors/.*|src/scoring/.*|src/db/.*|src/index\.ts)$' || true)
-            if [ -n "$stylist_forbidden" ]; then
-              echo "::error::Stylist PRs cannot modify pipeline/data-layer code. Forbidden paths touched:"
-              echo "$stylist_forbidden"
-              echo ""
-              echo "Stylist scope is the renderer (src/renderer/**) and docs/design-roadmap.md only."
-              echo "If this change genuinely needs to land, a human should open a new PR from a non-agent/* branch,"
-              echo "or route the work through the janitor or contributor agent."
+            out_of_scope=$(echo "$changed" | grep -vE '^(src/renderer/.*|docs/design-roadmap\.md)$' || true)
+            if [ -n "$out_of_scope" ]; then
+              echo "::error::Stylist PRs may only modify src/renderer/** and docs/design-roadmap.md. Out-of-scope paths touched:"
+              echo "$out_of_scope"
               exit 1
             fi
           fi

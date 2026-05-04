@@ -48,7 +48,7 @@ Piccalil.li is a publication; we're a data product. Borrow voice cues, not struc
 - **No client-side JS, no external fonts/CSS, < 50KB per page.** Every design move has to fit inside the constraints from `CLAUDE.md`. Sortable tables = pre-rendered alternate sort URLs (e.g. `/companies/by-articles` rendered to KV as a separate page), not JS sorting. If a step seems to require client JS, redesign the step.
 - **No corporate SaaS aesthetic.** No glassmorphism, no gradient mesh blobs, no AI-marketing tropes.
 - **No premature redesign.** Each phase ships in **one bounded PR**. Don't bundle phases. Incremental compounding change is the whole point.
-- **No regressions on mobile.** See Phase 0 — every visual PR must verify desktop *and* iPhone-width screenshots are clean before merge.
+- **No regressions on mobile.** See Phase 0 — every visual PR must include CSS-level evidence that desktop *and* iPhone-width layouts remain clean. The human reviewer captures the actual screenshots before merge.
 
 ---
 
@@ -75,7 +75,7 @@ Each phase is a small group of related steps. Each **step is one PR** — bounde
 
 ### Phase 0 — Responsive baseline (gating)
 
-The site has visible mobile regressions today. Until they're fixed, every visual change risks compounding the problem. This phase is also a permanent constraint: every later PR must verify desktop *and* iPhone-width (≤ 390px) screenshots are clean before merge.
+The site has visible mobile regressions today. Until they're fixed, every visual change risks compounding the problem. This phase is also a permanent constraint: every later PR must demonstrate that desktop *and* iPhone-width (≤ 390px) layouts remain clean before merge. The split: **the agent provides CSS-level evidence in the PR body** (no fixed widths > 360px without media-query escapes, all flex/grid containers wrap or scroll, no unbreakable strings, named responsive rules); **the human reviewer captures actual screenshots** at desktop and iPhone widths before approving merge.
 
 - **0A — Eliminate horizontal overflow** on the homepage and article pages at iPhone widths. Audit rules in `src/renderer/html.ts` for fixed widths, `min-width` traps, and unbreakable strings (long URLs in summaries, tag rows that don't wrap).
 - **0B — Fix nav scrolling and tab bar overflow.** The `.tab-bar` and `.tag-nav` rows currently scroll horizontally on small screens; verify the scroll affordance reads as intentional rather than broken, or wrap them properly.
@@ -83,7 +83,7 @@ The site has visible mobile regressions today. Until they're fixed, every visual
 - **0D — Fix footer layout** so multi-column footers stack cleanly on mobile without orphan items.
 - **0E — Fix article card text fitting** — ensure title, summary, meta row all wrap correctly inside the flex layout when the thumbnail is present and when it isn't.
 
-**Permanent gate.** Once 0A-E are clean, the agent must screenshot the homepage and one article page at desktop (≥ 1280px) and iPhone width (≤ 390px) for every subsequent PR and confirm cleanliness in the PR description before merging.
+**Permanent gate.** Once 0A-E are clean, every subsequent stylist PR must include a CSS-level mobile-clean section in the PR body (the contract spelled out in the system prompt). The human reviewer takes the actual screenshots at desktop (≥ 1280px) and iPhone width (≤ 390px) before approving merge.
 
 ### Phase 1 — Homepage structure (the argument)
 
@@ -167,9 +167,9 @@ The agent appends here every time a step ships. Format: `- [step ID] — [PR #N]
 
 1. **Read it first.** Every session starts here.
 2. **Compare to the live site.** `web_fetch https://agenticaiccounting.com` and the relevant inspiration site(s).
-3. **Verify mobile hasn't regressed.** If Phase 0 items remain open, only Phase 0 work ships. If Phase 0 is clean, every later PR must still confirm desktop + iPhone-width screenshots are clean before merge.
+3. **Verify mobile hasn't regressed.** If Phase 0 items remain open, only Phase 0 work ships. If Phase 0 is clean, every later PR must still include CSS-level evidence that desktop + iPhone-width layouts remain clean (the human reviewer takes the actual screenshots before merge).
 4. **Decide if the plan is still right.** If the next step assumes a state of the site that doesn't match observation — e.g. the hero has already been rewritten in a way that supersedes 2B — the agent edits this file (plan-only PR, no other code changed).
-5. **Otherwise, ship the next step.** One step, one bounded PR. The PR description must cite which step it implements, what it leaves for future sessions, and confirm the mobile/desktop screenshot check.
+5. **Otherwise, ship the next step.** One step, one bounded PR. The PR description must cite which step it implements, what it leaves for future sessions, and include the CSS-level mobile-clean evidence.
 6. **Append to "Completed steps."** Same PR.
 
 If observation suggests a step that isn't on the roadmap and isn't a strict refinement of one that is, the agent proposes it via plan-only PR rather than shipping it directly. The roadmap is the contract.

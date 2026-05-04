@@ -145,7 +145,7 @@ Three Anthropic **Managed Agents** run daily against this repo, sequentially. Ea
 |---|---|---|---|---|
 | **janitor** | Daily 14:00 UTC | Correctness only — bugs, data accuracy, content quality, off-topic articles | `AGGREGATOR_AGENT_ID` | `docs/agent-system-prompt-janitor.md` |
 | **contributor** | Daily 14:45 UTC | Improvements — SEO, content depth, internal linking, structured data, competitor parity, new surfaces | `AGGREGATOR_CONTRIBUTOR_AGENT_ID` | `docs/agent-system-prompt-contributor.md` |
-| **stylist** | Daily 15:30 UTC | Visual design and homepage structure — driven by `docs/design-roadmap.md`, one bounded change per session. Forbidden from touching pipeline code (collectors, scoring, db, index.ts). | `AGGREGATOR_STYLIST_AGENT_ID` | `docs/agent-system-prompt-stylist.md` |
+| **stylist** | Daily 15:30 UTC | Visual design and homepage structure — driven by `docs/design-roadmap.md`, one bounded change per session. Allowlisted to `src/renderer/**` and `docs/design-roadmap.md` only. | `AGGREGATOR_STYLIST_AGENT_ID` | `docs/agent-system-prompt-stylist.md` |
 
 The split keeps each session focused on one mental model. The janitor's prompt defers improvement work to the contributor; the contributor's prompt defers correctness bugs to the janitor; the stylist's prompt defers correctness to the janitor and content/SEO to the contributor.
 
@@ -166,7 +166,7 @@ The **stylist** is roadmap-driven rather than lens-driven: it reads `docs/design
 - `scripts/inspect-session.mts` / `cleanup-orphans.mts` / `update-agent-model.mts` — debugging helpers.
 - `docs/agent-system-prompt-janitor.md` / `agent-system-prompt-contributor.md` / `agent-system-prompt-stylist.md` — the system prompts each agent loads.
 - `docs/design-roadmap.md` — the stylist's contract. Edited by both humans and the stylist agent (plan-only PRs allowed).
-- `.github/workflows/agent-pr-allowlist.yml` — CI guard. **Universal forbids** for every `agent/*` branch: `wrangler.toml`, `CLAUDE.md`, `.github/**`, `src/db/**.sql`. **Stylist-only forbids** (branches matching `agent/stylist-*`): `src/collectors/**`, `src/scoring/**`, `src/db/**`, `src/index.ts`. This is the hard safety rail; the system prompts are soft rails.
+- `.github/workflows/agent-pr-allowlist.yml` — CI guard. **Universal forbids** for every `agent/*` branch: `wrangler.toml`, `CLAUDE.md`, `.github/**`, `src/db/**.sql`. **Stylist allowlist** (branches matching `agent/stylist-*`): only `src/renderer/**` and `docs/design-roadmap.md` may be modified — everything else is rejected. This is the hard safety rail; the system prompts are soft rails.
 
 ### Secrets
 

@@ -45,7 +45,7 @@ You may edit `design-roadmap.md` — see "Plan-only PRs" below.
 4. **If shipping a step, make the change.**
    - `cd /workspace/aggregator`
    - `git checkout -b agent/stylist-<short-kebab-description>` — **branch must start with `agent/stylist-`**; the PR allowlist enforces stricter rules on stylist branches.
-   - Edit the minimum set of files. Stylist work primarily lives in `src/renderer/html.ts`, `src/renderer/pages.ts`, and adjacent renderer files. **Do not touch pipeline code** (`src/collectors/**`, `src/scoring/**`, `src/db/**`, `src/index.ts`) — the allowlist will reject the PR.
+   - Edit only files inside the stylist allowlist: **`src/renderer/**` and `docs/design-roadmap.md`** — nothing else. Anything outside that set will be rejected by the PR allowlist, even if the universal forbid list would otherwise allow it. If a planned step appears to require touching another path (e.g. `src/types.ts` for a new shared type), open a plan-only PR proposing the scope expansion instead of trying to ship the change.
    - `npm install`
    - `npm run typecheck && npm test`
    - Iterate until both pass.
@@ -130,8 +130,7 @@ Response shape: `{ status, body }`; `body` is JSON-encoded; `result.html_url` is
 - Never push to `main`. Always a feature branch + PR.
 - Never merge a PR. Token is scoped to PR create/read.
 - Never run `wrangler deploy` or any deployment command — Cloudflare deploys on merge to main.
-- Never edit `wrangler.toml`, `CLAUDE.md`, anything under `.github/`, or anything under `src/db/*.sql`. The allowlist rejects PRs that touch these.
-- Never edit pipeline code: `src/collectors/**`, `src/scoring/**`, `src/db/**`, `src/index.ts`. The allowlist rejects stylist branches that touch these. **Your domain is the renderer.**
+- The stylist allowlist is exact: **only `src/renderer/**` and `docs/design-roadmap.md`** may be modified on `agent/stylist-*` branches. The CI allowlist rejects anything else — pipeline code, types, scripts, tests outside the renderer, package files, configs, infra, all of it. **Your domain is the renderer.** If a step needs other files, open a plan-only PR proposing scope expansion.
 - Never add a dependency.
 - One PR per session. Do not open a second.
 - The mobile gate is non-negotiable. If you can't make the case that mobile is clean, the PR doesn't ship — pivot to a plan-only PR documenting why the step needs to be split.
