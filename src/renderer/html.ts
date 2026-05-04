@@ -610,8 +610,10 @@ a.source-name:hover{text-decoration:underline;}
   left:0;
   z-index:50;
   min-width:12rem;
+  max-width:calc(100vw - 2rem);
   max-height:16rem;
   overflow-y:auto;
+  overflow-x:hidden;
   background:var(--bg-card);
   border:1px solid var(--border);
   border-radius:var(--radius);
@@ -936,6 +938,16 @@ a.source-name:hover{text-decoration:underline;}
   .hero p{font-size:0.92rem;}
   .hero-stats{gap:1.25rem;}
   .footer-bottom{flex-direction:column;text-align:center;}
+  .job-dropdown .dropdown-menu{min-width:10rem;max-width:calc(100vw - 2rem);}
+}
+@media (max-width:390px){
+  .container{padding:0 1rem;}
+  .container-narrow{padding:0 1rem;}
+  .pagination{gap:0.2rem;}
+  .pagination a,.pagination span{min-width:2.25rem;height:2.25rem;padding:0 0.35rem;font-size:0.76rem;}
+  .job-dropdown .dropdown-menu{min-width:9rem;max-width:calc(100vw - 2rem);}
+  .tag-nav a{font-size:0.68rem;padding:0.3rem 0.6rem;}
+  .article-meta{font-size:0.72rem;}
 }
 
 /* Insights */
