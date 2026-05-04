@@ -1,0 +1,45 @@
+name: agent-stylist
+
+on:
+  schedule:
+    # 45 min after the contributor (45 14 * * *) to avoid overlap.
+    - cron: '30 15 * * *'
+  workflow_dispatch:
+    inputs:
+      goal:
+        description: 'Goal override (leave blank to use the default stylist goal)'
+        required: false
+        type: string
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: agent-stylist
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run stylist agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          # Stylist-specific agent ID. Janitor uses AGGREGATOR_AGENT_ID;
+          # contributor uses AGGREGATOR_CONTRIBUTOR_AGENT_ID.
+          AGGREGATOR_AGENT_ID: ${{ secrets.AGGREGATOR_STYLIST_AGENT_ID }}
+          AGGREGATOR_ENV_ID: ${{ secrets.AGGREGATOR_ENV_ID }}
+          GITHUB_REPO_TOKEN: ${{ secrets.AGENT_GITHUB_PAT }}
+          GITHUB_REPO_URL: https://github.com/${{ github.repository }}
+          GOAL_INPUT: ${{ inputs.goal }}
+        run: |
+          GOAL="${GOAL_INPUT:-Read docs/design-roadmap.md in full. Compare to the live site at https://agenticaiccounting.com (and the inspirations named in the roadmap when relevant — primary: choppingblock.ai; secondary: piccalil.li). Then pick exactly one of three actions: (a) ship the next bounded step on the roadmap as a PR with npm run typecheck + npm test validation, branching from agent/stylist-<short-desc>, appending to the Completed steps log, and citing CSS-level mobile-clean evidence in the PR body; (b) open a plan-only PR editing only docs/design-roadmap.md if observation contradicts the plan or a step needs splitting/reordering; or (c) stop and report nothing-to-ship if the roadmap is clean and no high-confidence step remains. Phase 0 mobile work is gating — if any horizontal overflow, pagination wrap, or footer/nav regression is visible at iPhone widths, that is the next step regardless of phase. Do not touch pipeline code (src/collectors/**, src/scoring/**, src/db/**, src/index.ts) — the allowlist will reject the PR.}"
+          npx tsx scripts/run-site-agent.mts "$GOAL"
