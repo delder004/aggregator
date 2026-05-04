@@ -159,7 +159,7 @@ Smaller, character-driving changes. Lower priority but compound the editorial fe
 
 The agent appends here every time a step ships. Format: `- [step ID] — [PR #N] — [one-line description] — [date]`.
 
-*(none yet — first stylist PR will be the first entry)*
+- [0A] — PR pending — Eliminate horizontal overflow on iPhone widths (360-390px) by constraining dropdown menus, reducing container padding, and tightening pagination sizing at ultra-narrow breakpoints. — 2026-05-04
 
 ---
 
