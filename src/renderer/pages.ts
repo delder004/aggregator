@@ -24,6 +24,7 @@ import {
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
 import { CATEGORIES, getCategoryBySlug } from '../categories';
+import { renderJobPostingsJsonLd } from './jobposting-schema';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1619,6 +1620,9 @@ function generateJobsPage(
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
+  // Create company map for JobPosting schema generation
+  const companyMap = new Map(companies.map(c => [c.id, c]));
+
   // Collect all jobs, attaching company info
   const allJobs: EnrichedJob[] = [];
   for (const company of companies) {
@@ -1678,6 +1682,8 @@ function generateJobsPage(
       body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
       body += filterNav;
       body += renderJobCards(jobPages[i]);
+      // Add JobPosting schema for all jobs on this page
+      body += renderJobPostingsJsonLd(jobPages[i], companyMap);
       if (totalJobPages > 1) {
         const pageNum = i + 1;
         body += `<div style="display:flex;justify-content:center;gap:0.5rem;margin-top:2rem;flex-wrap:wrap;align-items:center;">`;
@@ -1709,6 +1715,8 @@ function generateJobsPage(
     remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
     remoteBody += jobFilterNav(departments, locations, companyFilterList, 'remote', hasRemote);
     remoteBody += renderJobCards(remoteJobs);
+    // Add JobPosting schema for remote jobs
+    remoteBody += renderJobPostingsJsonLd(remoteJobs, companyMap);
 
     pages['/jobs/remote'] = layout(remoteBody, {
       title: 'Remote Jobs',
@@ -1727,6 +1735,8 @@ function generateJobsPage(
     deptBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${deptJobs.length} role${deptJobs.length !== 1 ? 's' : ''} in ${escapeHtml(dept)}.</p>\n`;
     deptBody += jobFilterNav(departments, locations, companyFilterList, `dept-${slug}`, hasRemote);
     deptBody += renderJobCards(deptJobs);
+    // Add JobPosting schema for department jobs
+    deptBody += renderJobPostingsJsonLd(deptJobs, companyMap);
 
     pages[`/jobs/dept/${slug}`] = layout(deptBody, {
       title: `${dept} Jobs`,
@@ -1745,6 +1755,8 @@ function generateJobsPage(
     locBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${locJobs.length} role${locJobs.length !== 1 ? 's' : ''} in ${escapeHtml(loc)}.</p>\n`;
     locBody += jobFilterNav(departments, locations, companyFilterList, `loc-${slug}`, hasRemote);
     locBody += renderJobCards(locJobs);
+    // Add JobPosting schema for location jobs
+    locBody += renderJobPostingsJsonLd(locJobs, companyMap);
 
     pages[`/jobs/location/${slug}`] = layout(locBody, {
       title: `Jobs in ${loc}`,
@@ -1763,6 +1775,8 @@ function generateJobsPage(
     cBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${cJobs.length} open role${cJobs.length !== 1 ? 's' : ''} at ${escapeHtml(c.name)}.</p>\n`;
     cBody += jobFilterNav(departments, locations, companyFilterList, `company-${slug}`, hasRemote);
     cBody += renderJobCards(cJobs);
+    // Add JobPosting schema for company jobs
+    cBody += renderJobPostingsJsonLd(cJobs, companyMap);
 
     pages[`/jobs/company/${slug}`] = layout(cBody, {
       title: `${c.name} Jobs`,
