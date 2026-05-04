@@ -1,19 +1,23 @@
 // Shared agent configuration used by both `setup-site-agent.mts` (initial
 // create) and `migrate-agent.mts` (subsequent updates).
 //
-// Two agent variants ship from this file:
+// Three agent variants ship from this file:
 //   - janitor    — find-and-fix correctness/quality bugs (existing behavior)
 //   - contributor — make targeted content/UX/SEO improvements via lens-based
 //                   investigation (added 2026-04-27)
+//   - stylist    — incrementally restyle the renderer toward the design
+//                  roadmap (`docs/design-roadmap.md`); one bounded visual
+//                  change per session (added 2026-05-03)
 //
-// Both share the same model, custom tools, and toolset. They differ only in
-// name, description, system prompt path, and which env var holds their agent ID.
+// All three share the same model, custom tools, and toolset. They differ
+// only in name, description, system prompt path, and which env var holds
+// their agent ID.
 
 import path from "node:path";
 
 export const AGENT_MODEL = "claude-haiku-4-5";
 
-export const AGENT_VARIANTS = ["janitor", "contributor"] as const;
+export const AGENT_VARIANTS = ["janitor", "contributor", "stylist"] as const;
 export type AgentVariant = (typeof AGENT_VARIANTS)[number];
 
 export interface VariantConfig {
@@ -42,6 +46,14 @@ const VARIANT_CONFIGS: Record<AgentVariant, VariantConfig> = {
       "Contributor agent for agenticaiccounting.com. Pursues SEO, content-depth, internal-linking, and UX improvements through lens-based investigation. Ships one improvement PR per session.",
     systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-contributor.md"),
     agentIdEnvVar: "AGGREGATOR_CONTRIBUTOR_AGENT_ID",
+  },
+  stylist: {
+    variant: "stylist",
+    agentName: "aggregator-stylist",
+    description:
+      "Stylist agent for agenticaiccounting.com. Reads docs/design-roadmap.md, compares to the live site, and ships one bounded visual/structural design change per session as a PR. Forbidden from touching pipeline code (collectors, scoring, db, index.ts).",
+    systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-stylist.md"),
+    agentIdEnvVar: "AGGREGATOR_STYLIST_AGENT_ID",
   },
 };
 
