@@ -22,12 +22,22 @@ const SNIPPET_FETCH_TIMEOUT_MS = 3000;
 const LINK_REGEX = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
 
 // Strip HTML tags from a string, including script and style content
+// Also handles HTML-escaped tags like &lt;script&gt;...&lt;/script&gt;
 function stripHtml(html: string): string {
   let text = html;
-  // Remove script, style, nav, header, footer tags and their content
+  // Remove script, style, nav, header, footer tags and their content (literal tags)
   text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
   text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ');
-  // Strip remaining HTML tags
+  text = text.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, ' ');
+  text = text.replace(/<header\b[^>]*>[\s\S]*?<\/header>/gi, ' ');
+  text = text.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, ' ');
+  // Also remove HTML-escaped versions of the above tags
+  text = text.replace(/&lt;script\b[^&]*&gt;[\s\S]*?&lt;\/script&gt;/gi, ' ');
+  text = text.replace(/&lt;style\b[^&]*&gt;[\s\S]*?&lt;\/style&gt;/gi, ' ');
+  text = text.replace(/&lt;nav\b[^&]*&gt;[\s\S]*?&lt;\/nav&gt;/gi, ' ');
+  text = text.replace(/&lt;header\b[^&]*&gt;[\s\S]*?&lt;\/header&gt;/gi, ' ');
+  text = text.replace(/&lt;footer\b[^&]*&gt;[\s\S]*?&lt;\/footer&gt;/gi, ' ');
+  // Strip remaining literal HTML tags
   text = text.replace(/<[^>]*>/g, ' ');
   // Collapse multiple whitespace
   text = text.replace(/\s+/g, ' ').trim();
