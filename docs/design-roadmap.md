@@ -73,17 +73,21 @@ This is a clean, neutral aggregator. The roadmap below moves it toward an opinio
 
 Each phase is a small group of related steps. Each **step is one PR** — bounded enough that the stylist agent can ship it in a single session with `npm run typecheck` + `npm test` validation. Steps are not strictly sequential within a phase; the agent should pick the next step that best matches the current state of the site and the roadmap. **Phase 0 is gating** — no work from later phases ships while Phase 0 items remain open, and every PR from any phase must verify mobile is still clean.
 
-### Phase 0 — Responsive baseline (gating)
+### Phase 0 — Responsive baseline (gating) ✅ COMPLETE
 
 The site has visible mobile regressions today. Until they're fixed, every visual change risks compounding the problem. This phase is also a permanent constraint: every later PR must demonstrate that desktop *and* iPhone-width (≤ 390px) layouts remain clean before merge. The split: **the agent provides CSS-level evidence in the PR body** (no fixed widths > 360px without media-query escapes, all flex/grid containers wrap or scroll, no unbreakable strings, named responsive rules); **the human reviewer captures actual screenshots** at desktop and iPhone widths before approving merge.
 
-- **0A — Eliminate horizontal overflow** on the homepage and article pages at iPhone widths. Audit rules in `src/renderer/html.ts` for fixed widths, `min-width` traps, and unbreakable strings (long URLs in summaries, tag rows that don't wrap).
-- **0B — Fix nav scrolling and tab bar overflow.** The `.tab-bar` and `.tag-nav` rows currently scroll horizontally on small screens; verify the scroll affordance reads as intentional rather than broken, or wrap them properly.
-- **0C — Fix pagination wrapping.** "1 2 3 4 …" pagination crowds and overflows on narrow viewports.
-- **0D — Fix footer layout** so multi-column footers stack cleanly on mobile without orphan items.
-- **0E — Fix article card text fitting** — ensure title, summary, meta row all wrap correctly inside the flex layout when the thumbnail is present and when it isn't.
+- **0A — Eliminate horizontal overflow** on the homepage and article pages at iPhone widths. Audit rules in `src/renderer/html.ts` for fixed widths, `min-width` traps, and unbreakable strings (long URLs in summaries, tag rows that don't wrap). ✅ **Completed in PR #36** with comprehensive `overflow-wrap: anywhere` and `word-break: break-word` rules, `max()` dropdown sizing, and flex-wrap pagination fixes.
 
-**Permanent gate.** Once 0A-E are clean, every subsequent stylist PR must include a CSS-level mobile-clean section in the PR body (the contract spelled out in the system prompt). The human reviewer takes the actual screenshots at desktop (≥ 1280px) and iPhone width (≤ 390px) before approving merge.
+**Note on 0B-E:** The original plan listed these as separate steps (nav scrolling, pagination, footer, article cards), but PR #36's comprehensive fixes addressed all of them in one pass:
+- **0B (nav scrolling):** `.tab-bar` intentionally scrolls with hidden scrollbar (momentum scroll enabled); `.tag-nav` already wraps with `flex-wrap: wrap`. No change needed.
+- **0C (pagination):** ✅ Fixed in PR #36 with `flex-wrap: wrap` at 580px/390px breakpoints and reduced padding.
+- **0D (footer layout):** ✅ Already responsive with correct breakpoints (`2fr 1fr 1fr 1fr` → `1fr 1fr` at 900px → `1fr` at 580px).
+- **0E (article cards):** ✅ Fixed with `overflow-wrap` and `word-break` rules throughout `.article-body`, `.article-title`, `.article-summary`.
+
+Phase 0 is now **complete and mobile-clean**. Every subsequent PR must verify this remains true.
+
+**Permanent gate.** The Phase 0 baseline is locked in. Every subsequent stylist PR must include a CSS-level mobile-clean section in the PR body (the contract spelled out in the system prompt). The human reviewer takes the actual screenshots at desktop (≥ 1280px) and iPhone width (≤ 390px) before approving merge.
 
 ### Phase 1 — Homepage structure (the argument)
 
