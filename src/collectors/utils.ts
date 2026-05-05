@@ -84,6 +84,12 @@ export function sanitizeTitle(raw: string): string {
     .replace(/(\S)(?:Team|Staff|Editor|Admin|Blog)$/i, '$1')
     .trim();
 
+  // Strip standalone "Button" and similar UI element text (common in blogscraper extraction)
+  // This happens when the scraper matches empty links or icon-only buttons
+  if (/^Button$/i.test(title)) {
+    return '';
+  }
+
   // Remove "Read more" and similar common junk trailing phrases
   title = title
     .replace(/\s*Read\s+more\s*$/i, '')
