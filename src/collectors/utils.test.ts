@@ -107,4 +107,13 @@ describe('sanitizeTitle', () => {
     expect(result.length).toBe(120);
     expect(result.endsWith('...')).toBe(true);
   });
+
+  it('filters out standalone "Button" (UI element artifact)', () => {
+    // Blogscraper sometimes extracts empty links or icon-only buttons
+    // whose only text is the word "Button" (navigation artifacts from Daylit blog, etc.)
+    expect(sanitizeTitle('Button')).toBe('');
+    expect(sanitizeTitle('button')).toBe('');
+    expect(sanitizeTitle('BUTTON')).toBe('');
+  });
 });
+
