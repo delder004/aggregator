@@ -74,6 +74,35 @@ function safeHostname(url: string): string {
   }
 }
 
+/** Generate a context-aware description for a company if one is missing. */
+function generateCompanyDescription(company: Company): string {
+  if (company.description) {
+    return company.description;
+  }
+
+  // Build a fallback description from available metadata
+  const parts: string[] = [];
+  const name = company.name;
+
+  if (company.category) {
+    parts.push(`${name} is a company in the ${company.category} space`);
+  } else {
+    parts.push(`${name} is an AI-powered accounting solution`);
+  }
+
+  if (company.articleCount && company.articleCount > 0) {
+    parts.push(` with ${company.articleCount} article${company.articleCount !== 1 ? 's' : ''} covering its platform and developments`);
+  } else {
+    parts.push(' helping with AI and accounting workflows');
+  }
+
+  if (company.fundingStage) {
+    parts.push(`. ${name} is a ${company.fundingStage.toLowerCase()} company`);
+  }
+
+  return parts.join('').trim() + '.';
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -850,7 +879,7 @@ function generateCompaniesPage(
     companyRows += `<div class="company-grid">\n`;
     for (const c of cos) {
       const name = escapeHtml(c.name);
-      const desc = c.description ? escapeHtml(c.description) : '';
+      const desc = escapeHtml(generateCompanyDescription(c));
       const articleCount = companyArticles.get(c.id)?.length ?? 0;
       const jobCount = companyJobs?.get(c.id)?.length ?? 0;
 
@@ -858,7 +887,7 @@ function generateCompaniesPage(
 
       companyRows += `<div class="company-card">
   <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
-  ${desc ? `<p class="card-desc">${desc}</p>` : ''}
+  <p class="card-desc">${desc}</p>
   <div class="card-meta">
     ${c.category ? `<span class="card-badge">${escapeHtml(c.category)}</span>` : ''}
     <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
@@ -999,9 +1028,8 @@ function generateCompanyDetailPages(
 
     body += `<div style="padding:1rem 0;border-bottom:1px solid var(--border);margin-bottom:1rem;">`;
     body += `<h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;">${name}</h1>`;
-    if (company.description) {
-      body += `<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;">${escapeHtml(company.description)}</p>`;
-    }
+    const displayDescription = generateCompanyDescription(company);
+    body += `<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;">${escapeHtml(displayDescription)}</p>`;
     body += `<div class="article-meta">`;
     if (company.category) {
       body += `<span class="company-tag" style="cursor:default;">${escapeHtml(company.category)}</span>`;
@@ -1074,7 +1102,7 @@ function generateCompanyDetailPages(
       '@type': 'Organization',
       'name': company.name,
       'url': `${SITE_URL}${path}`,
-      'description': company.description || `${company.name} — AI-powered accounting solution`,
+      'description': generateCompanyDescription(company),
     };
 
     if (company.website) {
