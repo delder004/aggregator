@@ -199,6 +199,38 @@ a.logo{text-decoration:none;}
   opacity:0.75;
 }
 
+/* Signal strip */
+.signal-strip{
+  background:var(--bg-secondary);
+  padding:2rem 0;
+  border-bottom:1px solid var(--border);
+}
+.signal-strip .container{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1.5rem;
+}
+.signal-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+}
+.signal-value{
+  font-size:1.75rem;
+  font-weight:700;
+  color:var(--accent);
+  line-height:1;
+  margin-bottom:0.25rem;
+}
+.signal-label{
+  font-size:0.75rem;
+  font-weight:600;
+  color:var(--text-secondary);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+
 /* Nav tags */
 .tag-nav{
   display:flex;
@@ -942,6 +974,9 @@ a.source-name:hover{text-decoration:underline;}
   .hero h1{font-size:1.5rem;}
   .hero p{font-size:0.92rem;}
   .hero-stats{gap:1.25rem;}
+  .signal-strip .container{gap:1rem;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+  .signal-value{font-size:1.5rem;}
+  .signal-label{font-size:0.7rem;}
   .footer-bottom{flex-direction:column;text-align:center;}
   .job-dropdown .dropdown-menu{min-width:9rem;max-width:calc(100vw - 2rem);}
 }
@@ -953,6 +988,9 @@ a.source-name:hover{text-decoration:underline;}
   .job-dropdown .dropdown-menu{min-width:8rem;max-width:calc(100vw - 2rem);}
   .tag-nav a{font-size:0.68rem;padding:0.3rem 0.6rem;}
   .article-meta{font-size:0.72rem;}
+  .signal-strip .container{gap:0.75rem;grid-template-columns:repeat(2,1fr);}
+  .signal-value{font-size:1.25rem;}
+  .signal-label{font-size:0.65rem;}
 }
 
 /* Insights */
@@ -1548,6 +1586,38 @@ export function insightNav(activePeriod: string): string {
   return `<nav class="insight-nav">
     ${links}
   </nav>`;
+}
+
+/**
+ * Render a signal strip showing key metrics (sources, articles, companies, jobs).
+ * Positioned directly under the hero as the first piece of evidence.
+ */
+export function signalStrip(stats: {
+  sources: number;
+  articles: number;
+  companies: number;
+  jobs: number;
+}): string {
+  return `<div class="signal-strip">
+  <div class="container">
+    <div class="signal-item">
+      <div class="signal-value">${stats.sources.toLocaleString()}</div>
+      <div class="signal-label">Sources</div>
+    </div>
+    <div class="signal-item">
+      <div class="signal-value">${stats.articles.toLocaleString()}</div>
+      <div class="signal-label">Articles</div>
+    </div>
+    <div class="signal-item">
+      <div class="signal-value">${stats.companies.toLocaleString()}</div>
+      <div class="signal-label">Companies</div>
+    </div>
+    <div class="signal-item">
+      <div class="signal-value">${stats.jobs.toLocaleString()}</div>
+      <div class="signal-label">Open Roles</div>
+    </div>
+  </div>
+</div>`;
 }
 
 // ---------------------------------------------------------------------------
