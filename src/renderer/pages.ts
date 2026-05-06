@@ -31,7 +31,7 @@ import { renderJobPostingsJsonLd } from './jobposting-schema';
 // ---------------------------------------------------------------------------
 
 const ARTICLES_PER_PAGE = 20;
-const JOBS_PER_PAGE = 50;
+const JOBS_PER_PAGE = 25;
 const SITE_URL = 'https://agenticaiccounting.com';
 
 // ---------------------------------------------------------------------------
