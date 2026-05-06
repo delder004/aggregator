@@ -10,8 +10,14 @@
  * Notes:
  * - We set `directApply: false` because applicants are sent to the company's
  *   external careers page (job.url) rather than applying through us.
- * - We don't fabricate `validThrough` or `baseSalary` because we don't have
- *   reliable data for them; Google treats those as optional.
+ * - `validThrough` is derived as `lastSeenAt + 30 days`. Job boards are
+ *   re-scraped regularly; if a posting hasn't appeared in 30 days it is
+ *   almost certainly closed. This is a defensible inference from data we
+ *   have, not a fabricated expiration date.
+ * - `employmentType` defaults to `FULL_TIME` with title-based detection for
+ *   `INTERN`, `CONTRACTOR`, `PART_TIME`, and `TEMPORARY`.
+ * - We don't emit `baseSalary` because we don't collect salary data and
+ *   Google treats it as optional.
  * - `description` falls back to a generic value when the company has none.
  *
  * Integration:
@@ -34,6 +40,19 @@ export type EnrichedJob = CompanyJob & {
   companyName: string;
   companyId: string;
 };
+
+/** Number of days after `lastSeenAt` we consider a posting still active. */
+const VALID_THROUGH_DAYS = 30;
+
+/** Infer Google for Jobs employmentType from a job title. Defaults to FULL_TIME. */
+function inferEmploymentType(title: string): string {
+  const t = title.toLowerCase();
+  if (/\bintern(ship)?\b/.test(t)) return 'INTERN';
+  if (/\b(contract(or)?|freelanc)/.test(t)) return 'CONTRACTOR';
+  if (/\bpart[\s-]?time\b/.test(t)) return 'PART_TIME';
+  if (/\b(temp(orary)?|seasonal)\b/.test(t)) return 'TEMPORARY';
+  return 'FULL_TIME';
+}
 
 /**
  * Render JSON-LD JobPosting schema for each job. Returns a string of one
@@ -71,10 +90,18 @@ export function renderJobPostingsJsonLd(
       },
       url: job.url,
       directApply: false,
+      employmentType: inferEmploymentType(job.title),
     };
 
     if (job.postedAt) {
       posting.datePosted = job.postedAt;
+    }
+
+    const lastSeen = Date.parse(job.lastSeenAt);
+    if (!Number.isNaN(lastSeen)) {
+      posting.validThrough = new Date(
+        lastSeen + VALID_THROUGH_DAYS * 24 * 60 * 60 * 1000
+      ).toISOString();
     }
 
     if (job.isRemote) {
