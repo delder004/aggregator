@@ -333,7 +333,8 @@ function generateHomepage(
 
 function generateTagPages(
   articles: Article[],
-  layoutOpts: Partial<LayoutOptions>
+  layoutOpts: Partial<LayoutOptions>,
+  companies?: Company[]
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
@@ -360,8 +361,46 @@ function generateTagPages(
     const tagLabel = tag.replace(/-/g, ' ');
     const basePath = `/tag/${tag}`;
 
+    // Extract companies mentioned in articles with this tag
+    const companiesForTag = new Set<string>();
+    for (const article of filtered) {
+      if (article.companyMentions) {
+        for (const mention of article.companyMentions) {
+          companiesForTag.add(mention);
+        }
+      }
+    }
+    
+    // Get top companies (by mention count or article relevance)
+    const topCompaniesForTag: Company[] = [];
+    if (companies && companiesForTag.size > 0) {
+      const companyMentionCount = new Map<string, number>();
+      for (const mention of companiesForTag) {
+        const count = companyMentionCount.get(mention) || 0;
+        companyMentionCount.set(mention, count + 1);
+      }
+      
+      const sortedCompanies = [...(companies || [])]
+        .filter(c => companiesForTag.has(c.id))
+        .sort((a, b) => (companyMentionCount.get(b.id) || 0) - (companyMentionCount.get(a.id) || 0))
+        .slice(0, 5);
+      
+      topCompaniesForTag.push(...sortedCompanies);
+    }
+
     // Page 1
     let body = `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+    
+    // Add featured companies section for tags with company mentions
+    if (topCompaniesForTag.length > 0) {
+      body += `<div class="section-label">Featured Companies</div>\n`;
+      body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-bottom:1.5rem;">\n`;
+      for (const comp of topCompaniesForTag) {
+        body += `<a href="/company/${escapeHtml(comp.id)}" style="padding:0.75rem;border:1px solid var(--border);border-radius:0.25rem;text-decoration:none;color:inherit;transition:background-color 0.2s;display:block;"><div style="font-weight:600;color:var(--accent);">${escapeHtml(comp.name)}</div><div style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.25rem;">${comp.category || 'AI Accounting'}</div></a>\n`;
+      }
+      body += `</div>\n`;
+    }
+    
     if (tagPages.length > 0) {
       body += renderTimeGrouped(tagPages[0]);
     } else {
@@ -700,7 +739,7 @@ export function generateAllPages(
 
   const pages: Record<string, string> = {
     ...generateHomepage(featured, latest, articles, layoutOpts, companies, jobsMap, insights),
-    ...generateTagPages(articles, layoutOpts),
+    ...generateTagPages(articles, layoutOpts, companies),
     ...generateAboutPage(layoutOpts),
     ...generateFaqPage(layoutOpts),
     ...generateResourcesPage(insights ?? [], layoutOpts),
