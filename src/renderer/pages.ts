@@ -20,6 +20,7 @@ import {
   NAV_TAGS,
   insightCard,
   companySizeLabel,
+  signalStrip,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
@@ -202,6 +203,14 @@ function generateHomepage(
 
   // Build homepage (page 1)
   let body = '';
+
+  // Signal strip — key metrics directly under hero
+  body += signalStrip({
+    sources: stats ? stats.sources : 0,
+    articles: stats ? stats.articles : 0,
+    companies: companies ? companies.length : 0,
+    jobs: totalJobs,
+  });
 
   // Featured section — 3-column grid on desktop
   const topFeatured = sortedFeatured.length > 0
