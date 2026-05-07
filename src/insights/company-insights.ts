@@ -65,9 +65,9 @@ export async function generateCompanyInsights(
     const existing = existingInsights.get(c.id);
     if (!existing) return true;
     const age = now - new Date(existing.generatedAt).getTime();
-    // Regenerate if older than cooldown AND article count has changed
+    // Regenerate if older than cooldown
     const articles = companyArticles.get(c.id) ?? [];
-    return age > REGEN_COOLDOWN_MS && articles.length !== existing.articleCount;
+    return age > REGEN_COOLDOWN_MS;
   });
 
   // Prioritize: companies with articles first, then by article count desc
