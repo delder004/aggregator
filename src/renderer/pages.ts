@@ -889,11 +889,64 @@ function generateResourcesPage(
     }
     insightsBody += `</div>\n`;
 
+    const insightsJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'AI Accounting Digests',
+      'url': `${SITE_URL}/insights`,
+      'description': 'AI-generated digests and analysis of trends in agentic AI for accounting.',
+      'publisher': {
+        '@type': 'Organization',
+        'name': 'Agentic AI Accounting',
+        'url': SITE_URL,
+        'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+      },
+      'hasPart': insights.map((insight, idx) => ({
+        '@type': 'Article',
+        'position': idx + 1,
+        'name': insight.title,
+        'url': `${SITE_URL}/insights/${escapeHtml(insight.periodType)}/${escapeHtml(insight.periodStart)}`,
+        'description': insight.content ? insight.content.substring(0, 160) : '',
+        'datePublished': insight.generatedAt,
+      })),
+    };
+
+    const insightsBreadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Resources',
+          'item': `${SITE_URL}/resources`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': 'Digests',
+          'item': `${SITE_URL}/insights`,
+        },
+      ],
+    };
+
+    const insightsJsonLdGraph = {
+      '@context': 'https://schema.org',
+      '@graph': [insightsJsonLd, insightsBreadcrumb],
+    };
+
     pages['/insights'] = layout(insightsBody, {
       title: 'Digests',
       description: 'AI-generated digests and analysis of trends in agentic AI for accounting.',
       path: '/insights',
       activeTab: 'resources',
+      jsonLd: insightsJsonLdGraph,
       ...layoutOpts,
     });
   }
