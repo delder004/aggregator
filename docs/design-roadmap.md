@@ -52,18 +52,20 @@ Piccalil.li is a publication; we're a data product. Borrow voice cues, not struc
 
 ---
 
-## Current snapshot (as of 2026-05-03)
+## Current snapshot (as of 2026-05-07)
 
 What the live site looks like today, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
 - **Palette.** Teal accent (`#0f766e` → `#14b8a6` gradient hero), Zinc-style neutrals, dark-mode mirror. Seven source-color badges (HN orange, YouTube red, arXiv crimson, RSS, Substack, Product Hunt, YC) competing for attention in article meta rows.
 - **Typography.** System sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, …`). Headline `h1` is 2.2rem, modest weight progression. No serif. No display face.
 - **Hero.** `linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)` with a descriptive tagline. Three small stats on a row below. Branding-style hero, not positioning-style.
-- **Homepage flow.** Hero → tag-nav pills → tab bar → featured cards → latest article list (paginated) → footer. Chronology-first.
-- **Article card.** Horizontal `display:flex` with 88×66px thumbnail, title, source-badge, dot-separated meta row, 2-line summary, tag pills.
-- **Stats** (sources tracked, articles published, companies, jobs) live in the footer.
-- **No editorial sections.** No opinionated framing, no "what's changing" surface, no curated "this matters" view.
-- **Mobile issues observed.** Horizontal overflow on some viewports, crowded pagination, nav scrolling that catches awkwardly, footer layout breaks, card text overruns. Phase 0 fixes these.
+- **Signal strip.** ✅ Positioned directly under hero (Phase 1A complete). Displays 4 key metrics (Sources, Articles, Companies, Open Roles) in a responsive grid (4 columns on desktop, 2 on mobile). Styled with gray background and centered text. Pulls these metrics out of the footer as promised.
+- **Homepage flow.** Hero → signal strip → featured cards → "Trending This Week" spotlight section (with top companies and insights when available) → latest article list (paginated) → footer. Still chronology-first after the feature section, but signal strip now leads with data.
+- **Article card.** Horizontal `display:flex` with thumbnail, title, source-badge, dot-separated meta row, 2-line summary, tag pills.
+- **Spotlight sections.** "Trending This Week" (social-scored articles from last 7 days), "Top Companies" (articles by count), and "Latest Insight" (when digests exist). These are partial implementations; they touch on 1B/1D behavior but aren't yet the cohesive "What changed this week" section the roadmap describes.
+- **Mobile.** Phase 0 baseline is clean — no regressions observed at iPhone widths. Pagination wraps, signal strip responds, nav doesn't overflow. ✅ Mobile-clean.
+
+**Note on Phase 1 implementation drift:** The current site has started work on 1B (trending section), 1D (top companies), and 1C (featured stories), but they're interleaved rather than in the planned order and not yet refined. Step 1B should establish "What changed this week" as a coherent editorial section with clear labeling and structure, distinct from the later Featured Analysis (1C) and Companies Preview (1D). Future sessions should address: (a) whether to refactor the existing spotlight grid to match 1B's vision, or (b) how to add the missing 1E (Jobs preview) and 1F (demote latest feed) while the spotlight sections are partial. The roadmap remains the target; execution may iterate.
 
 This is a clean, neutral aggregator. The roadmap below moves it toward an opinionated data product.
 
@@ -164,7 +166,7 @@ Smaller, character-driving changes. Lower priority but compound the editorial fe
 The agent appends here every time a step ships. Format: `- [step ID] — [PR #N] — [one-line description] — [date]`.
 
 - [0A] — PR #36 — Eliminate horizontal overflow on iPhone widths by adding overflow-wrap/word-break to links and text, fixing dropdown min-width with max(), and optimizing pagination with flex-wrap at 580px and 390px breakpoints. — 2026-05-04
-- [1A] — PR pending — Add signal strip under hero with 4 key metrics (sources, articles, companies, jobs) as the first piece of evidence behind the thesis, using grid layout with responsive breakpoints. — 2026-05-06
+- [1A] — PR #42 — Add signal strip under hero with 4 key metrics (sources, articles, companies, jobs) as the first piece of evidence behind the thesis, using grid layout with responsive breakpoints (4 cols desktop, 2 cols mobile). — 2026-05-06
 
 ---
 
