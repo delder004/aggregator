@@ -662,6 +662,7 @@ function generateSitemap(
     urls += `  <url><loc>${SITE_URL}/jobs/page/${i}</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
   }
   urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/what-is-agentic-ai</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
@@ -751,6 +752,7 @@ export function generateAllPages(
     ...generateTagPages(articles, layoutOpts, companies),
     ...generateAboutPage(layoutOpts),
     ...generateFaqPage(layoutOpts),
+    ...generateGuidePages(articles, layoutOpts),
     ...generateResourcesPage(insights ?? [], layoutOpts),
   };
 
@@ -774,6 +776,183 @@ export function generateAllPages(
     totalJobPages,
     companies
   );
+
+  return pages;
+}
+
+// ---------------------------------------------------------------------------
+// Guide pages
+// ---------------------------------------------------------------------------
+
+function generateGuidePages(
+  articles: Article[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+
+  // ===========================================================================
+  // Guide: What is Agentic AI?
+  // ===========================================================================
+
+  const agenticAiGuide = (): string => {
+    let body = `<h2 class="section-heading">What is Agentic AI?</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">A comprehensive guide to autonomous AI agents in accounting, tax, audit, and bookkeeping.</p>\n`;
+
+    // Definition
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Definition</h3>\n`;
+    body += `<p>Agentic AI refers to autonomous, goal-driven AI systems that behave like intelligent teammates rather than passive tools. Unlike traditional automation that follows fixed rules, agentic AI:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Acts with purpose</strong> — pursues objectives with autonomy, learning, and real-time adaptation</li>
+<li><strong>Reasons through problems</strong> — analyzes context, makes decisions, and suggests actions</li>
+<li><strong>Executes workflows</strong> — handles end-to-end processes, not isolated steps</li>
+<li><strong>Improves over time</strong> — learns from previous cycles and refines its approach</li>
+<li><strong>Works with humans</strong> — keeps people in the loop for oversight and approval</li>
+</ul>\n`;
+
+    // Key Differences
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">How Agentic AI Differs</h3>\n`;
+    body += `<div style="background:#0f766e08;border-left:4px solid #0f766e;padding:1.5rem;margin:1.5rem 0;border-radius:0.375rem;">\n`;
+    body += `<p><strong>Traditional RPA (Robotic Process Automation):</strong> Follows rigid scripts; fails when conditions change.</p>\n`;
+    body += `<p style="margin-top:1rem;"><strong>Generative AI (ChatGPT-style):</strong> Creates content but doesn't act autonomously; requires prompts.</p>\n`;
+    body += `<p style="margin-top:1rem;"><strong>Agentic AI:</strong> Operates independently, adapts to new scenarios, executes decisions, and orchestrates multi-step workflows.</p>\n`;
+    body += `</div>\n`;
+
+    // Use Cases
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Accounting Applications</h3>\n`;
+    body += `<p>Agentic AI is transforming core accounting workflows:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">\n`;
+    body += `<li><strong>Reconciliation & Close</strong> — agents match transactions across ERPs, flag discrepancies, and reconcile accounts automatically</li>\n`;
+    body += `<li><strong>Invoice & Expense Processing</strong> — extract data, validate amounts, detect duplicates, and post entries without manual review</li>\n`;
+    body += `<li><strong>Audit & Compliance</strong> — generate audit trails, flag control issues, and prepare workpapers in real-time</li>\n`;
+    body += `<li><strong>Tax Preparation</strong> — analyze transactions, categorize for tax rules, and generate returns or schedules</li>\n`;
+    body += `<li><strong>Financial Analysis</strong> — monitor variances, detect anomalies, and explain discrepancies with context</li>\n`;
+    body += `</ul>\n`;
+
+    // Benefits
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Key Benefits</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">\n`;
+    body += `<li><strong>Reduced manual effort</strong> — finance teams shift from execution to review and strategy</li>\n`;
+    body += `<li><strong>Faster cycles</strong> — month-end close times drop from weeks to days</li>\n`;
+    body += `<li><strong>Better accuracy</strong> — agents don't fatigue; they maintain consistent precision</li>\n`;
+    body += `<li><strong>Scalability</strong> — handle 10x transaction volume without proportional headcount</li>\n`;
+    body += `<li><strong>Continuous monitoring</strong> — real-time detection vs. batch-based reviews</li>\n`;
+    body += `<li><strong>Auditability</strong> — every action logged, reversible, and explainable</li>\n`;
+    body += `</ul>\n`;
+
+    // Companies & Tools
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Leading Companies</h3>\n`;
+    body += `<p>Companies building agentic AI for accounting:</p>\n`;
+    body += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin:1.5rem 0;">\n`;
+
+    const topCompanies = [
+      { name: 'Basis', id: 'basis', desc: 'AI bookkeeping and financial review for CPA firms' },
+      { name: 'Digits', id: 'digits', desc: 'AI-native accounting platform with real-time visibility' },
+      { name: 'Stacks', id: 'stacks', desc: 'AI financial operations and automation for enterprise' },
+      { name: 'Vic.ai', id: 'vic-ai', desc: 'AI-powered autonomous accounting platform' },
+      { name: 'Campfire', id: 'campfire', desc: 'AI-native accounting platform with ERP integration' },
+      { name: 'Suralink', id: 'suralink', desc: 'AI-powered audit workpaper automation' },
+    ];
+
+    for (const co of topCompanies) {
+      body += `<div style="border:1px solid #e5e7eb;border-radius:0.5rem;padding:1rem;">\n`;
+      body += `<h4 style="margin:0 0 0.5rem 0;"><a href="/company/${escapeHtml(co.id)}" style="color:var(--accent);text-decoration:none;">${escapeHtml(co.name)}</a></h4>\n`;
+      body += `<p style="font-size:0.875rem;color:var(--text-secondary);margin:0;">${escapeHtml(co.desc)}</p>\n`;
+      body += `</div>\n`;
+    }
+    body += `</div>\n`;
+
+    // Recent Insights
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Recent Coverage</h3>\n`;
+    const agenticArticles = articles
+      .filter(a => a.tags?.includes('agentic-ai'))
+      .slice(0, 5);
+
+    if (agenticArticles.length > 0) {
+      body += `<div style="display:grid;gap:1rem;margin:1.5rem 0;">\n`;
+      for (const article of agenticArticles) {
+        body += `<div style="border:1px solid #e5e7eb;border-radius:0.5rem;padding:1rem;">\n`;
+        body += `<h4 style="margin:0 0 0.5rem 0;"><a href="/article/${escapeHtml(article.id)}" style="color:var(--accent);text-decoration:none;">${escapeHtml(article.headline || article.title)}</a></h4>\n`;
+        if (article.aiSummary) {
+          body += `<p style="font-size:0.875rem;color:var(--text-secondary);margin:0.5rem 0 0 0;line-height:1.5;">${escapeHtml(article.aiSummary.substring(0, 150))}...</p>\n`;
+        }
+        body += `<p style="font-size:0.75rem;color:#999;margin:0.75rem 0 0 0;"><a href="/tag/agentic-ai">agentic-ai</a> · <a href="/article/${escapeHtml(article.id)}">read more</a></p>\n`;
+        body += `</div>\n`;
+      }
+      body += `</div>\n`;
+    }
+
+    // FAQ Section
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Common Questions</h3>\n`;
+    body += `<details style="margin:1rem 0;border:1px solid #e5e7eb;padding:1rem;border-radius:0.375rem;">\n`;
+    body += `<summary style="cursor:pointer;font-weight:500;">Will AI agents replace accountants?</summary>\n`;
+    body += `<p style="margin-top:1rem;color:var(--text-secondary);">No. Agentic AI is designed to augment, not replace. Agents handle repetitive execution; accountants focus on judgment, complex analysis, and client relationships. The result is higher-value work for professionals.</p>\n`;
+    body += `</details>\n`;
+
+    body += `<details style="margin:1rem 0;border:1px solid #e5e7eb;padding:1rem;border-radius:0.375rem;">\n`;
+    body += `<summary style="cursor:pointer;font-weight:500;">How does agentic AI handle compliance and audit trails?</summary>\n`;
+    body += `<p style="margin-top:1rem;color:var(--text-secondary);">Every action is logged with full context: what was analyzed, what logic was applied, and what decision was made. Agents operate within pre-defined approval thresholds. Humans review exceptions. This creates the audit trail required for SOX, AICPA, and PCAOB compliance.</p>\n`;
+    body += `</details>\n`;
+
+    body += `<details style="margin:1rem 0;border:1px solid #e5e7eb;padding:1rem;border-radius:0.375rem;">\n`;
+    body += `<summary style="cursor:pointer;font-weight:500;">What's the difference between agentic AI and AI-powered tools?</summary>\n`;
+    body += `<p style="margin-top:1rem;color:var(--text-secondary);">AI tools assist with specific tasks (e.g., extracting invoice data). Agentic systems orchestrate entire workflows end-to-end, learning and adapting along the way. An agent doesn't just extract data—it validates, matches, flags, and sometimes even posts entries autonomously.</p>\n`;
+    body += `</details>\n`;
+
+    return body;
+  };
+
+  const guideJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'What is Agentic AI?',
+    'url': `${SITE_URL}/guide/what-is-agentic-ai`,
+    'description': 'A comprehensive guide to autonomous AI agents in accounting, tax, audit, and bookkeeping.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+    'datePublished': new Date().toISOString().split('T')[0],
+  };
+
+  const guideBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': 'Resources',
+        'item': `${SITE_URL}/resources`,
+      },
+      {
+        '@type': 'ListItem',
+        'position': 3,
+        'name': 'What is Agentic AI?',
+        'item': `${SITE_URL}/guide/what-is-agentic-ai`,
+      },
+    ],
+  };
+
+  const guideJsonLdGraph = {
+    '@context': 'https://schema.org',
+    '@graph': [guideJsonLd, guideBreadcrumb],
+  };
+
+  pages['/guide/what-is-agentic-ai'] = layout(agenticAiGuide(), {
+    title: 'What is Agentic AI? — Agentic AI Accounting',
+    description: 'A comprehensive guide to autonomous AI agents and how they\'re transforming accounting, audit, tax, and bookkeeping workflows.',
+    path: '/guide/what-is-agentic-ai',
+    activeTab: 'resources',
+    jsonLd: guideJsonLdGraph,
+    ...layoutOpts,
+  });
 
   return pages;
 }
@@ -811,6 +990,7 @@ function generateResourcesPage(
       typeColor: 'background:#0f766e15;color:#0f766e;',
       title: 'What is Agentic AI?',
       desc: 'An introduction to autonomous AI agents and how they\'re being applied in accounting workflows — from data entry to complex audit procedures.',
+      url: '/guide/what-is-agentic-ai',
     },
     {
       type: 'Industry',
@@ -845,11 +1025,13 @@ function generateResourcesPage(
   ];
 
   for (const r of resources) {
-    body += `<div class="resource-card">
+    const linkAttr = (r as any).url ? ` href="${(r as any).url}"` : '';
+    const isLink = (r as any).url ? 'a' : 'div';
+    body += `<${isLink} class="resource-card"${linkAttr} style="${isLink === 'a' ? 'text-decoration:none;color:inherit;display:block;' : ''}">
   <span class="resource-type" style="${r.typeColor}">${r.type}</span>
   <h3>${r.title}</h3>
   <p>${r.desc}</p>
-</div>\n`;
+</${isLink}>\n`;
   }
 
   body += `</div>\n`;
