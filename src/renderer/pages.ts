@@ -285,6 +285,43 @@ function generateHomepage(
     body += `</div>\n`;
   }
 
+  // Jobs preview section — latest open roles
+  if (companyJobs && companyJobs.size > 0) {
+    // Collect all jobs and sort by postedAt (most recent first)
+    const allJobs: Array<CompanyJob & { companyName: string }> = [];
+    for (const [companyId, jobs] of companyJobs.entries()) {
+      const company = companies?.find(c => c.id === companyId);
+      const companyName = company?.name ?? 'Unknown Company';
+      for (const job of jobs) {
+        allJobs.push({ ...job, companyName });
+      }
+    }
+    
+    // Sort by postedAt descending (most recent first), fallback to lastSeenAt
+    allJobs.sort((a, b) => {
+      const aDate = a.postedAt ? new Date(a.postedAt).getTime() : new Date(a.lastSeenAt).getTime();
+      const bDate = b.postedAt ? new Date(b.postedAt).getTime() : new Date(b.lastSeenAt).getTime();
+      return bDate - aDate;
+    });
+    
+    const previewJobs = allJobs.slice(0, 5);
+    if (previewJobs.length > 0) {
+      body += `<div class="section-label"><a href="/jobs" style="color:inherit;text-decoration:none;">Open Roles</a></div>\n`;
+      body += `<div class="jobs-preview-grid">\n`;
+      for (const job of previewJobs) {
+        const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
+        const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
+        body += `<div class="job-preview-card">
+  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
+  <div class="job-company">${escapeHtml(job.companyName)}</div>
+  <div class="job-tags">${remoteBadge}${locationBadge}</div>
+</div>\n`;
+      }
+      body += `</div>\n`;
+      body += `<div class="view-all"><a href="/jobs">View all jobs &rarr;</a></div>\n`;
+    }
+  }
+
   // Latest section — time-grouped with inline tag filter
   body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav('', tagsWithArticles)}</div>\n`;
   if (latestPages.length > 0) {
