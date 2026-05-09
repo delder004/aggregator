@@ -309,6 +309,18 @@ a.logo{text-decoration:none;}
   letter-spacing:-0.02em;
 }
 
+/* Latest feed — demoted secondary hierarchy (Phase 1F) */
+.latest-feed{
+  opacity:0.9;
+  margin-top:3rem;
+  border-top:1px solid var(--border);
+  padding-top:1.5rem;
+}
+.latest-feed .section-label-row{
+  margin-top:0;
+  padding-top:0;
+}
+
 /* Article cards */
 .article-card{
   display:flex;
