@@ -89,7 +89,8 @@ export type IngestNamespace =
   | 'rankings'
   | 'competitors'
   | 'article-views-rollup'
-  | 'engagement-rollup';
+  | 'engagement-rollup'
+  | 'auto-categorize';
 
 export type IngestRunStatus = 'pending' | 'running' | 'complete' | 'error' | 'skipped';
 

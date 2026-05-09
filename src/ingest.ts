@@ -10,6 +10,7 @@ import { runEngagementRollup } from './analytics/engagement-rollup';
 import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
 import { runWeeklyConsolidation } from './consolidation/service';
+import { autoCategorizUncategorizedCompanies } from './db/auto-categorizer';
 
 /**
  * IngestWorkflow — weekly capture-layer orchestrator.
@@ -193,6 +194,22 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
       }, rollupWindowStartIso, rollupWindowEndIso)
     );
     results.push(engagementResult);
+
+    await step.sleep('pre-autocategorize-pause', '2 seconds');
+
+    // Step 5c: Auto-categorize uncategorized companies based on article tags.
+    // This enriches company metadata for better SEO and internal linking.
+    const autoCategorizeResult = await step.do('auto-categorize', () =>
+      this.runNamespace(pipelineRunId, 'auto-categorize', async () => {
+        const r = await autoCategorizUncategorizedCompanies(this.env.DB);
+        return {
+          categorized: r.categorized,
+          skipped: r.skipped,
+          errors: r.errors.length > 0 ? r.errors.join('; ') : null,
+        };
+      }, rollupWindowStartIso, rollupWindowEndIso)
+    );
+    results.push(autoCategorizeResult);
 
     const completedCount = results.filter((r) => r.status === 'complete').length;
     const errorCount = results.filter((r) => r.status === 'error').length;
