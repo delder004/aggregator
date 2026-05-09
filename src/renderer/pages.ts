@@ -322,15 +322,16 @@ function generateHomepage(
     }
   }
 
-  // Latest section — time-grouped with inline tag filter
+  // Latest section — time-grouped with inline tag filter (demoted visual hierarchy)
+  body += `<div class="latest-feed">\n`;
   body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav('', tagsWithArticles)}</div>\n`;
   if (latestPages.length > 0) {
     body += renderTimeGrouped(latestPages[0]);
   } else {
     body += `<p class="empty-state">No articles yet. Check back soon.</p>`;
   }
-
   body += pagination(1, totalPages);
+  body += `</div>\n`;
 
   pages['/'] = layout(body, {
     path: '/',
