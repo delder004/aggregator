@@ -168,7 +168,8 @@ The agent appends here every time a step ships. Format: `- [step ID] — [PR #N]
 - [0A] — PR #36 — Eliminate horizontal overflow on iPhone widths by adding overflow-wrap/word-break to links and text, fixing dropdown min-width with max(), and optimizing pagination with flex-wrap at 580px and 390px breakpoints. — 2026-05-04
 - [1A] — PR #42 — Add signal strip under hero with 4 key metrics (sources, articles, companies, jobs) as the first piece of evidence behind the thesis, using grid layout with responsive breakpoints (4 cols desktop, 2 cols mobile). — 2026-05-06
 - [1E] — PR #47 — Add homepage Jobs preview showing latest 5 open roles with title, company, location, and link to full `/jobs` page; uses responsive auto-fit grid (1 col on mobile, multi-col on desktop) positioned after spotlight sections and before Latest feed. — 2026-05-08
-- [1F] — PR pending — Demote the latest feed as secondary hierarchy: wrap in `.latest-feed` container with upper border separator, reduced margin, and opacity to visually distinguish from curated sections (Featured, Open Roles). Latest articles remain fully functional with pagination and tag filtering. — 2026-05-09
+- [1F] — PR #50 — Demote the latest feed as secondary hierarchy: wrap in `.latest-feed` container with upper border separator, reduced margin, and opacity to visually distinguish from curated sections (Featured, Open Roles). Latest articles remain fully functional with pagination and tag filtering. — 2026-05-09
+- [1B] — PR pending — Build a "What changed this week" section with 4 data-driven panels: Trending on Social (top 5 articles by social score), New Roles Posted (jobs from last 7 days), Latest Insight (or Most Covered companies this week). Uses responsive grid (2 cols desktop, 1 col mobile ≤580px). Added `.new-roles-list` and `.new-role-item` CSS. — 2026-05-10
 
 ---
 
