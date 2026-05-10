@@ -882,6 +882,29 @@ a.source-name:hover{text-decoration:underline;}
   color:var(--text-tertiary);
   margin-left:0.4rem;
 }
+.new-roles-list{
+  display:flex;
+  flex-direction:column;
+  gap:0.5rem;
+}
+.new-role-item{
+  padding:0.4rem 0;
+  border-bottom:1px solid var(--border);
+}
+.new-role-item:last-child{border-bottom:none;}
+.new-role-title{
+  font-size:0.88rem;
+  font-weight:500;
+  color:var(--text);
+  display:block;
+  line-height:1.4;
+}
+.new-role-title:hover{color:var(--accent);text-decoration:none;}
+.new-role-company{
+  font-size:0.73rem;
+  color:var(--text-tertiary);
+  margin-top:0.2rem;
+}
 .view-all{
   margin-top:0.75rem;
   text-align:right;

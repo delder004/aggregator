@@ -229,30 +229,78 @@ function generateHomepage(
   const latestPages = paginate(filteredLatest, ARTICLES_PER_PAGE);
   const totalPages = Math.max(latestPages.length, 1);
 
-  // Most discussed section — articles with highest social engagement this week
+  // What changed this week section — data-driven panels with current signals
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  
+  // Panel 1: Trending articles by social score this week
   const discussed = [...allArticles]
     .filter(a => a.socialScore && a.socialScore > 0 && a.publishedAt >= sevenDaysAgo)
     .sort((a, b) => (b.socialScore || 0) - (a.socialScore || 0))
     .slice(0, 5);
 
-  if (discussed.length > 0) {
-    body += `<div class="spotlight-grid" style="margin-top:1.5rem;">\n`;
-    body += `<div class="spotlight-card">`;
-    body += `<h3 class="spotlight-heading">Trending This Week</h3>`;
-    body += `<ol class="discussed-list">\n`;
-    for (const a of discussed) {
-      const href = `/article/${escapeHtml(a.id)}`;
-      const title = escapeHtml(a.headline || a.title);
-      const source = escapeHtml(a.sourceName);
-      const score = a.socialScore || 0;
-      body += `<li class="discussed-item">
+  // Panel 2: New roles posted this week
+  const newRolesThisWeek: Array<CompanyJob & { companyName: string }> = [];
+  if (companyJobs && companyJobs.size > 0) {
+    for (const [companyId, jobs] of companyJobs.entries()) {
+      const company = companies?.find(c => c.id === companyId);
+      const companyName = company?.name ?? 'Unknown Company';
+      for (const job of jobs) {
+        const jobDate = job.postedAt || job.lastSeenAt;
+        if (jobDate >= sevenDaysAgo) {
+          newRolesThisWeek.push({ ...job, companyName });
+        }
+      }
+    }
+    newRolesThisWeek.sort((a, b) => {
+      const aDate = a.postedAt ? new Date(a.postedAt).getTime() : new Date(a.lastSeenAt).getTime();
+      const bDate = b.postedAt ? new Date(b.postedAt).getTime() : new Date(b.lastSeenAt).getTime();
+      return bDate - aDate;
+    });
+  }
+
+  // Show "What changed this week" section if we have any signals
+  const hasWhatChangedSignals = discussed.length > 0 || newRolesThisWeek.length > 0;
+  if (hasWhatChangedSignals) {
+    body += `<h2 class="section-heading">What Changed This Week</h2>\n`;
+    body += `<div class="spotlight-grid">\n`;
+
+    // Trending This Week panel
+    if (discussed.length > 0) {
+      body += `<div class="spotlight-card">`;
+      body += `<h3 class="spotlight-heading">Trending on Social</h3>`;
+      body += `<ol class="discussed-list">\n`;
+      for (const a of discussed) {
+        const href = `/article/${escapeHtml(a.id)}`;
+        const title = escapeHtml(a.headline || a.title);
+        const source = escapeHtml(a.sourceName);
+        const score = a.socialScore || 0;
+        body += `<li class="discussed-item">
   <a href="${href}">${title}</a>
   <span class="discussed-meta">${source} &middot; <span class="social-score">&blacktriangle; ${score}</span></span>
 </li>\n`;
+      }
+      body += `</ol>\n`;
+      body += `</div>\n`;
     }
-    body += `</ol>\n`;
-    body += `</div>\n`;
+
+    // New Roles Posted panel
+    if (newRolesThisWeek.length > 0) {
+      const previewNewRoles = newRolesThisWeek.slice(0, 4);
+      body += `<div class="spotlight-card">`;
+      body += `<h3 class="spotlight-heading">New Roles Posted</h3>`;
+      body += `<div class="new-roles-list">\n`;
+      for (const job of previewNewRoles) {
+        body += `<div class="new-role-item">
+  <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener" class="new-role-title">${escapeHtml(job.title)}</a>
+  <div class="new-role-company">${escapeHtml(job.companyName)}</div>
+</div>\n`;
+      }
+      body += `</div>\n`;
+      if (newRolesThisWeek.length > 4) {
+        body += `<div class="view-all"><a href="/jobs">View all jobs &rarr;</a></div>`;
+      }
+      body += `</div>\n`;
+    }
 
     // Latest insights preview (if available)
     if (insights && insights.length > 0) {
@@ -265,21 +313,23 @@ function generateHomepage(
       }
       body += `</div>\n`;
     } else {
-      // Company spotlight instead
+      // Company spotlight instead (most covered overall)
       if (companies && companies.length > 0) {
         const topCompanies = [...companies]
           .sort((a, b) => b.articleCount - a.articleCount)
           .slice(0, 4);
-        body += `<div class="spotlight-card">`;
-        body += `<h3 class="spotlight-heading">Top Companies</h3>`;
-        for (const c of topCompanies) {
-          body += `<div class="spotlight-item">
+        if (topCompanies.length > 0) {
+          body += `<div class="spotlight-card">`;
+          body += `<h3 class="spotlight-heading">Most Covered</h3>`;
+          for (const c of topCompanies) {
+            body += `<div class="spotlight-item">
   <a href="/company/${escapeHtml(c.id)}" class="spotlight-item-link">${escapeHtml(c.name)}</a>
   <span class="spotlight-item-count">${c.articleCount} articles</span>
 </div>\n`;
+          }
+          body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>`;
+          body += `</div>\n`;
         }
-        body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>`;
-        body += `</div>\n`;
       }
     }
     body += `</div>\n`;
