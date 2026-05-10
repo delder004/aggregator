@@ -75,6 +75,23 @@ function safeHostname(url: string): string {
   }
 }
 
+/** Clean and extract the primary category from a potentially malformed category string. */
+function getPrimaryCategory(category: string | null): string | null {
+  if (!category) return null;
+  // Split by space and filter out duplicates/empty strings
+  const parts = category.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return null;
+  // Return the first unique segment or fall back to concatenating cleaned parts
+  // If the string looks malformed (many short repeating words), just take the first segment
+  const uniqueParts = [...new Set(parts)];
+  if (uniqueParts.length > 2) {
+    // Likely malformed, return first segment
+    return parts[0];
+  }
+  // Otherwise return the cleaned full string
+  return uniqueParts.join(' ');
+}
+
 /** Generate a context-aware description for a company if one is missing. */
 function generateCompanyDescription(company: Company): string {
   if (company.description) {
@@ -85,8 +102,9 @@ function generateCompanyDescription(company: Company): string {
   const parts: string[] = [];
   const name = company.name;
 
-  if (company.category) {
-    parts.push(`${name} is a company in the ${company.category} space`);
+  const primaryCategory = getPrimaryCategory(company.category);
+  if (primaryCategory) {
+    parts.push(`${name} is a company in the ${primaryCategory} space`);
   } else {
     parts.push(`${name} is an AI-powered accounting solution`);
   }
@@ -443,7 +461,8 @@ function generateTagPages(
       body += `<div class="section-label">Featured Companies</div>\n`;
       body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-bottom:1.5rem;">\n`;
       for (const comp of topCompaniesForTag) {
-        body += `<a href="/company/${escapeHtml(comp.id)}" style="padding:0.75rem;border:1px solid var(--border);border-radius:0.25rem;text-decoration:none;color:inherit;transition:background-color 0.2s;display:block;"><div style="font-weight:600;color:var(--accent);">${escapeHtml(comp.name)}</div><div style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.25rem;">${comp.category || 'AI Accounting'}</div></a>\n`;
+        const compCategoryDisplay = getPrimaryCategory(comp.category) || 'AI Accounting';
+        body += `<a href="/company/${escapeHtml(comp.id)}" style="padding:0.75rem;border:1px solid var(--border);border-radius:0.25rem;text-decoration:none;color:inherit;transition:background-color 0.2s;display:block;"><div style="font-weight:600;color:var(--accent);">${escapeHtml(comp.name)}</div><div style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.25rem;">${compCategoryDisplay}</div></a>\n`;
       }
       body += `</div>\n`;
     }
@@ -1189,7 +1208,7 @@ function generateCompaniesPage(
   // Group companies by category
   const categories = new Map<string, Company[]>();
   for (const c of sorted) {
-    const cat = c.category || 'Other';
+    const cat = getPrimaryCategory(c.category) || 'Other';
     if (!categories.has(cat)) categories.set(cat, []);
     categories.get(cat)!.push(c);
   }
@@ -1205,12 +1224,13 @@ function generateCompaniesPage(
       const jobCount = companyJobs?.get(c.id)?.length ?? 0;
 
       const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
+      const displayCat = getPrimaryCategory(c.category);
 
       companyRows += `<div class="company-card">
   <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
   <p class="card-desc">${desc}</p>
   <div class="card-meta">
-    ${c.category ? `<span class="card-badge">${escapeHtml(c.category)}</span>` : ''}
+    ${displayCat ? `<span class="card-badge">${escapeHtml(displayCat)}</span>` : ''}
     <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
     ${jobCount > 0 ? `<span class="meta-dot">&middot;</span> <span style="color:var(--accent);">${jobCount} open role${jobCount !== 1 ? 's' : ''}</span>` : ''}
     ${sizeLabel ? `<span class="meta-dot">&middot;</span> <span>${escapeHtml(sizeLabel)}</span>` : ''}
@@ -1352,8 +1372,9 @@ function generateCompanyDetailPages(
     const displayDescription = generateCompanyDescription(company);
     body += `<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;">${escapeHtml(displayDescription)}</p>`;
     body += `<div class="article-meta">`;
-    if (company.category) {
-      body += `<span class="company-tag" style="cursor:default;">${escapeHtml(company.category)}</span>`;
+    const displayCategory = getPrimaryCategory(company.category);
+    if (displayCategory) {
+      body += `<span class="company-tag" style="cursor:default;">${escapeHtml(displayCategory)}</span>`;
     }
     if (company.website) {
       body += `<a href="${escapeHtml(company.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(company.website))}</a>`;
@@ -1391,7 +1412,8 @@ function generateCompanyDetailPages(
     if (company.category && company.categorySlug) {
       const relatedCompanies = companies.filter(c => c.categorySlug === company.categorySlug && c.id !== company.id);
       if (relatedCompanies.length > 0) {
-        body += `<div class="section-label">Companies in ${escapeHtml(company.category)}</div>\n`;
+        const displayCategoryLabel = getPrimaryCategory(company.category);
+        body += `<div class="section-label">Companies in ${escapeHtml(displayCategoryLabel || company.category)}</div>\n`;
         body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;margin-bottom:2rem;">\n`;
         // Show up to 6 related companies
         const displayRelated = relatedCompanies.slice(0, 6);
@@ -1404,7 +1426,7 @@ function generateCompanyDetailPages(
         body += `</div>\n`;
         if (relatedCompanies.length > 6) {
           const categorySlug = company.categorySlug.replace(/_/g, '-');
-          body += `<p style="text-align:center;margin-bottom:2rem;"><a href="/categories/${categorySlug}" style="color:var(--accent);">View all ${relatedCompanies.length} companies in ${escapeHtml(company.category)} →</a></p>\n`;
+          body += `<p style="text-align:center;margin-bottom:2rem;"><a href="/categories/${categorySlug}" style="color:var(--accent);">View all ${relatedCompanies.length} companies in ${escapeHtml(displayCategoryLabel || company.category)} →</a></p>\n`;
         }
       }
     }
@@ -1450,8 +1472,9 @@ function generateCompanyDetailPages(
       companyJsonLd['numberOfEmployees'] = employeesObj;
     }
 
-    if (company.category) {
-      companyJsonLd['knowsAbout'] = [company.category, 'Agentic AI', 'AI Accounting'];
+    const cleanedCategory = getPrimaryCategory(company.category);
+    if (cleanedCategory) {
+      companyJsonLd['knowsAbout'] = [cleanedCategory, 'Agentic AI', 'AI Accounting'];
     }
 
     // Add BreadcrumbList schema for better navigation hierarchy
