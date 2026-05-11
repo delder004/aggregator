@@ -360,6 +360,32 @@ function generateHomepage(
     body += `</div>\n`;
   }
 
+  // Companies preview section — top tracked companies by article count
+  if (companies && companies.length > 0) {
+    const topCompanies = [...companies]
+      .filter(c => c.articleCount > 0)
+      .sort((a, b) => b.articleCount - a.articleCount)
+      .slice(0, 8);
+    
+    if (topCompanies.length > 0) {
+      body += `<div class="section-label"><a href="/companies" style="color:inherit;text-decoration:none;">Top Companies</a></div>\n`;
+      body += `<div class="companies-preview-grid">\n`;
+      for (const company of topCompanies) {
+        const href = `/company/${escapeHtml(company.id)}`;
+        const name = escapeHtml(company.name);
+        const category = company.category ? escapeHtml(company.category) : '';
+        const count = company.articleCount;
+        body += `<div class="company-preview-card">
+  <h3><a href="${href}">${name}</a></h3>
+  ${category ? `<div class="company-category">${category}</div>` : ''}
+  <div class="company-articles">${count} article${count !== 1 ? 's' : ''}</div>
+</div>\n`;
+      }
+      body += `</div>\n`;
+      body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>\n`;
+    }
+  }
+
   // Jobs preview section — latest open roles
   if (companyJobs && companyJobs.size > 0) {
     // Collect all jobs and sort by postedAt (most recent first)
