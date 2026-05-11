@@ -43,7 +43,7 @@ export async function getPublishedArticles(
     .prepare(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= ? AND (quality_score >= 30 OR quality_score IS NULL)
-         AND published_at <= datetime('now')
+         AND datetime(published_at) <= datetime('now')
        ORDER BY (relevance_score * 0.5 + COALESCE(quality_score, 0) * 0.3 +
          CASE WHEN julianday('now') - julianday(published_at) < 1 THEN 20
               WHEN julianday('now') - julianday(published_at) < 3 THEN 10
@@ -70,7 +70,7 @@ export async function getArticlesByTag(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= 50
          AND tags LIKE ?
-         AND published_at <= datetime('now')
+         AND datetime(published_at) <= datetime('now')
        ORDER BY published_at DESC
        LIMIT ? OFFSET ?`
     )
@@ -88,7 +88,7 @@ export async function getFeaturedArticles(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= 70
          AND (quality_score >= 50 OR quality_score IS NULL)
-         AND published_at <= datetime('now')
+         AND datetime(published_at) <= datetime('now')
        ORDER BY published_at DESC
        LIMIT ?`
     )
@@ -151,7 +151,7 @@ export async function getArticleCount(
 ): Promise<number> {
   const row = await db
     .prepare(
-      'SELECT COUNT(*) as count FROM articles WHERE is_published = 1 AND relevance_score >= ? AND published_at <= datetime(\'now\')'
+      'SELECT COUNT(*) as count FROM articles WHERE is_published = 1 AND relevance_score >= ? AND datetime(published_at) <= datetime(\'now\')'
     )
     .bind(minScore)
     .first<{ count: number }>();
@@ -175,7 +175,7 @@ export async function getArticleCountByTag(
     .prepare(
       `SELECT COUNT(*) as count FROM articles
        WHERE is_published = 1 AND relevance_score >= 50 AND tags LIKE ?
-         AND published_at <= datetime('now')`
+         AND datetime(published_at) <= datetime('now')`
     )
     .bind(`%"${escapeLike(tag)}"%`)
     .first<{ count: number }>();
@@ -247,7 +247,7 @@ export async function getCompanyArticles(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= 50
          AND company_mentions LIKE ?
-         AND published_at <= datetime('now')
+         AND datetime(published_at) <= datetime('now')
        ORDER BY published_at DESC
        LIMIT ?`
     )
@@ -269,7 +269,7 @@ export async function getAllCompanyArticles(
       `SELECT ac.company_id, a.* FROM article_companies ac
        JOIN articles a ON a.id = ac.article_id
        WHERE a.is_published = 1 AND a.relevance_score >= ?
-         AND a.published_at <= datetime('now')
+         AND datetime(a.published_at) <= datetime('now')
        ORDER BY a.published_at DESC
        LIMIT 2500`
     )
@@ -321,7 +321,7 @@ export async function getRelatedArticles(
        WHERE is_published = 1 AND relevance_score >= ?
          AND id != ?
          AND (${tagConditions})
-         AND published_at <= datetime('now')
+         AND datetime(published_at) <= datetime('now')
        ORDER BY published_at DESC
        LIMIT ?`
     )
@@ -501,7 +501,7 @@ export async function getArticlesInRange(
     .prepare(
       `SELECT * FROM articles
        WHERE is_published = 1 AND relevance_score >= 50
-         AND published_at >= ? AND published_at <= ?
+         AND datetime(published_at) >= datetime(?) AND datetime(published_at) <= datetime(?)
        ORDER BY relevance_score DESC, published_at DESC
        LIMIT ?`
     )
