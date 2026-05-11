@@ -26,6 +26,7 @@ import {
 import { diversifyFeatured, diversifyFeed } from './diversity';
 import { CATEGORIES, getCategoryBySlug } from '../categories';
 import { renderJobPostingsJsonLd } from './jobposting-schema';
+import { getCuratedDescription } from '../company/descriptions';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -96,6 +97,12 @@ function getPrimaryCategory(category: string | null): string | null {
 function generateCompanyDescription(company: Company): string {
   if (company.description) {
     return company.description;
+  }
+
+  // Check for curated description first
+  const curatedDesc = getCuratedDescription(company.id);
+  if (curatedDesc) {
+    return curatedDesc;
   }
 
   // Build a fallback description from available metadata
