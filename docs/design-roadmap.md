@@ -52,22 +52,22 @@ Piccalil.li is a publication; we're a data product. Borrow voice cues, not struc
 
 ---
 
-## Current snapshot (as of 2026-05-07)
+## Current snapshot (as of 2026-05-12)
 
 What the live site looks like today, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
 - **Palette.** Teal accent (`#0f766e` → `#14b8a6` gradient hero), Zinc-style neutrals, dark-mode mirror. Seven source-color badges (HN orange, YouTube red, arXiv crimson, RSS, Substack, Product Hunt, YC) competing for attention in article meta rows.
 - **Typography.** System sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, …`). Headline `h1` is 2.2rem, modest weight progression. No serif. No display face.
 - **Hero.** `linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)` with a descriptive tagline. Three small stats on a row below. Branding-style hero, not positioning-style.
-- **Signal strip.** ✅ Positioned directly under hero (Phase 1A complete). Displays 4 key metrics (Sources, Articles, Companies, Open Roles) in a responsive grid (4 columns on desktop, 2 on mobile). Styled with gray background and centered text. Pulls these metrics out of the footer as promised.
-- **Homepage flow.** Hero → signal strip → featured cards → "Trending This Week" spotlight section (with top companies and insights when available) → latest article list (paginated) → footer. Still chronology-first after the feature section, but signal strip now leads with data.
-- **Article card.** Horizontal `display:flex` with thumbnail, title, source-badge, dot-separated meta row, 2-line summary, tag pills.
-- **Spotlight sections.** "Trending This Week" (social-scored articles from last 7 days), "Top Companies" (articles by count), and "Latest Insight" (when digests exist). These are partial implementations; they touch on 1B/1D behavior but aren't yet the cohesive "What changed this week" section the roadmap describes.
-- **Mobile.** Phase 0 baseline is clean — no regressions observed at iPhone widths. Pagination wraps, signal strip responds, nav doesn't overflow. ✅ Mobile-clean.
+- **Signal strip.** ✅ Positioned directly under hero (Phase 1A complete, PR #42). Displays 4 key metrics (Sources, Articles, Companies, Open Roles) in a responsive grid (4 columns on desktop, 2 on mobile). Styled with gray background and centered text. Pulls these metrics out of the footer as promised.
+- **Featured Stories section.** ✅ 3-column grid on desktop, responsive to 2 cols (900px) and 1 col (580px), positioned above curated sections (Phase 1C complete). Visual treatment is uniform cards; magazine-style hierarchy (lead story + supporting) deferred to Phase 5A.
+- **What Changed This Week section.** ✅ Cohesive editorial section (Phase 1B complete, PR #53) with 3-4 data-driven panels: Trending on Social (top articles by social score from last 7 days), New Roles Posted (latest jobs from last 7 days), and Latest Insight or Most Covered companies. Responsive grid layout (2 cols desktop, 1 col mobile ≤580px).
+- **Top Companies section.** ✅ Top 8 companies by article count with category and article count badges (Phase 1D complete, PR #57). Responsive auto-fit grid (1 col mobile, multi-col desktop). Positioned between "What Changed This Week" and "Open Roles" sections.
+- **Open Roles section.** ✅ Latest 5 open roles with title, company, location (Phase 1E complete, PR #47). Responsive auto-fit grid (1 col mobile, multi-col desktop). Positioned after curated sections and before Latest feed.
+- **Latest feed.** ✅ Demoted as secondary hierarchy (Phase 1F complete, PR #50): wrapped in `.latest-feed` container with upper border separator, reduced margin, and opacity. Still fully functional with pagination and tag filtering.
+- **Mobile.** Phase 0 baseline remains clean — no regressions observed at iPhone widths. Pagination wraps, signal strip responds, nav doesn't overflow, all grid sections stack to 1 column. ✅ Mobile-clean.
 
-**Note on Phase 1 implementation drift:** The current site has started work on 1B (trending section), 1D (top companies), and 1C (featured stories), but they're interleaved rather than in the planned order and not yet refined. Step 1B should establish "What changed this week" as a coherent editorial section with clear labeling and structure, distinct from the later Featured Analysis (1C) and Companies Preview (1D). Future sessions should address: (a) whether to refactor the existing spotlight grid to match 1B's vision, or (b) how to add the missing 1E (Jobs preview) and 1F (demote latest feed) while the spotlight sections are partial. The roadmap remains the target; execution may iterate.
-
-This is a clean, neutral aggregator. The roadmap below moves it toward an opinionated data product.
+**Phase 1 completion:** Homepage is now argument-first, moving from chronology-first (Latest feed) to editorial judgment. The structure is: Hero → Signal strip → Featured → What Changed → Companies → Jobs → Latest. All 6 Phase 1 steps are complete and mobile-clean. Next phase begins visual language refinement (Phase 2: Hero rewrite & visual language).
 
 ---
 
@@ -167,10 +167,11 @@ The agent appends here every time a step ships. Format: `- [step ID] — [PR #N]
 
 - [0A] — PR #36 — Eliminate horizontal overflow on iPhone widths by adding overflow-wrap/word-break to links and text, fixing dropdown min-width with max(), and optimizing pagination with flex-wrap at 580px and 390px breakpoints. — 2026-05-04
 - [1A] — PR #42 — Add signal strip under hero with 4 key metrics (sources, articles, companies, jobs) as the first piece of evidence behind the thesis, using grid layout with responsive breakpoints (4 cols desktop, 2 cols mobile). — 2026-05-06
+- [1C] — PR unknown (prior work) — Featured Stories section established with position above Latest feed. Uses 3-column grid on desktop (responsive to 2 cols at 900px, 1 col at 580px). Visual refinement (lead story + supporting hierarchy) deferred to Phase 5A. — 2026-05-12
 - [1E] — PR #47 — Add homepage Jobs preview showing latest 5 open roles with title, company, location, and link to full `/jobs` page; uses responsive auto-fit grid (1 col on mobile, multi-col on desktop) positioned after spotlight sections and before Latest feed. — 2026-05-08
 - [1F] — PR #50 — Demote the latest feed as secondary hierarchy: wrap in `.latest-feed` container with upper border separator, reduced margin, and opacity to visually distinguish from curated sections (Featured, Open Roles). Latest articles remain fully functional with pagination and tag filtering. — 2026-05-09
 - [1B] — PR #53 — Build a "What changed this week" section with 4 data-driven panels: Trending on Social (top 5 articles by social score), New Roles Posted (jobs from last 7 days), Latest Insight (or Most Covered companies this week). Uses responsive grid (2 cols desktop, 1 col mobile ≤580px). Added `.new-roles-list` and `.new-role-item` CSS. — 2026-05-11
-- [1D] — PR pending — Add homepage Companies preview showing top 8 companies by article count with category and article count; positioned between "What Changed This Week" and "Open Roles" sections. Uses responsive auto-fit grid (1 col on mobile, multi-col on desktop). Added `.companies-preview-grid` and `.company-preview-card` CSS with responsive rules at 768px and 580px. — 2026-05-11
+- [1D] — PR #57 — Add homepage Companies preview showing top 8 companies by article count with category and article count; positioned between "What Changed This Week" and "Open Roles" sections. Uses responsive auto-fit grid (1 col on mobile, multi-col on desktop). Added `.companies-preview-grid` and `.company-preview-card` CSS. — 2026-05-11
 
 ---
 
