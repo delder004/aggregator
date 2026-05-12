@@ -803,6 +803,11 @@ function generateSitemap(
   }
   urls += `  <url><loc>${SITE_URL}/resources</loc><changefreq>daily</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/guide/what-is-agentic-ai</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/big-4-and-ai-adoption</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/ai-tools-for-accountants</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/academic-research</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/ai-regulation-and-compliance</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  urls += `  <url><loc>${SITE_URL}/guide/ai-skills-for-cpas</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/faq</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>\n`;
 
@@ -1094,6 +1099,442 @@ function generateGuidePages(
     ...layoutOpts,
   });
 
+  // ===========================================================================
+  // Guide: Big 4 & AI Adoption
+  // ===========================================================================
+
+  const big4Guide = (): string => {
+    let body = `<h2 class="section-heading">Big 4 & AI Adoption</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">How Deloitte, PwC, EY, and KPMG are integrating AI agents into their audit, tax, and advisory practices — key partnerships, investments, and timelines.</p>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Deloitte</h3>\n`;
+    body += `<p><strong>Focus:</strong> Audit automation, intelligent automation, and AI-powered risk assessment.</p>\n`;
+    body += `<p>Deloitte has launched AI Ladder, an internal program to scale AI across the firm. Key initiatives include:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li>AI-powered audit procedures for transaction sampling and anomaly detection</li>
+<li>Natural language processing for contract and document review</li>
+<li>Internal consulting on enterprise AI governance and compliance</li>
+<li>Partnerships with AI vendors like Palantir and others for industry-specific applications</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">EY (Ernst &amp; Young)</h3>\n`;
+    body += `<p><strong>Focus:</strong> Audit transformation, financial close automation, and risk management.</p>\n`;
+    body += `<p>EY acquired Parthenon (management consulting firm) and YipitData to accelerate AI capabilities. Key initiatives include:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li>EY Audit Innovation Lab — testing autonomous audit agents</li>
+<li>AI-powered continuous auditing and monitoring</li>
+<li>Generative AI for workpaper generation and documentation</li>
+<li>Client advisory on AI regulatory compliance and risk frameworks</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">PwC</h3>\n`;
+    body += `<p><strong>Focus:</strong> Responsible AI, control automation, and intelligent financial operations.</p>\n`;
+    body += `<p>PwC launched the PwC AI Institute and has invested heavily in AI governance. Key initiatives include:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li>AI Control Framework — helping clients implement AI-augmented financial controls</li>
+<li>Automated reconciliation and variance analysis</li>
+<li>AI-powered internal audit and compliance monitoring</li>
+<li>Generative AI for tax research and strategic planning</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">KPMG</h3>\n`;
+    body += `<p><strong>Focus:</strong> Audit quality, data analytics, and transformation consulting.</p>\n`;
+    body += `<p>KPMG has invested in AI capabilities across advisory and audit. Key initiatives include:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li>KPMG Clara — AI-powered audit and finance automation platform</li>
+<li>Audit analytics for pattern recognition and exception management</li>
+<li>Cloud migration and intelligent data management</li>
+<li>External advisory on AI implementation strategies</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Industry Trends</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Timeline Acceleration:</strong> What was 5-year roadmaps is now 12-24 month reality</li>
+<li><strong>Competitive Pressure:</strong> Big 4 firms are racing to avoid disruption by startups</li>
+<li><strong>Regulatory Engagement:</strong> PCAOB, AICPA, and FASB are watching Big 4 AI adoption closely</li>
+<li><strong>Talent Shift:</strong> Partner roles evolving from execution to oversight and strategy</li>
+<li><strong>Client Expectations:</strong> Audit clients expect AI-enhanced procedures; fee compression follows</li>
+</ul>\n`;
+
+    return body;
+  };
+
+  const big4JsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'Big 4 & AI Adoption',
+    'url': `${SITE_URL}/guide/big-4-and-ai-adoption`,
+    'description': 'How Deloitte, PwC, EY, and KPMG are integrating agentic AI into audit, tax, and advisory practices.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+  };
+
+  const big4Breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Resources', 'item': `${SITE_URL}/resources` },
+      { '@type': 'ListItem', 'position': 3, 'name': 'Big 4 & AI Adoption', 'item': `${SITE_URL}/guide/big-4-and-ai-adoption` },
+    ],
+  };
+
+  pages['/guide/big-4-and-ai-adoption'] = layout(big4Guide(), {
+    title: 'Big 4 & AI Adoption — Agentic AI Accounting',
+    description: 'How Deloitte, PwC, EY, and KPMG are integrating AI agents into audit, tax, and advisory.',
+    path: '/guide/big-4-and-ai-adoption',
+    activeTab: 'resources',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [big4JsonLd, big4Breadcrumb] },
+    ...layoutOpts,
+  });
+
+  // ===========================================================================
+  // Guide: AI Tools for Accountants
+  // ===========================================================================
+
+  const toolsGuide = (): string => {
+    let body = `<h2 class="section-heading">AI Tools for Accountants</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">A curated directory of AI-powered tools and platforms for bookkeeping, tax preparation, audit automation, compliance, and financial reporting.</p>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">AI-Native ERP Platforms</h3>\n`;
+    body += `<p>Ground-up accounting platforms built with AI at the core:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Digits</strong> — AI-native accounting with real-time financial visibility and automated accruals</li>
+<li><strong>Campfire</strong> — ERP-native AI for month-end close and financial reconciliation</li>
+<li><strong>DualEntry</strong> — AI-powered general ledger with intelligent categorization</li>
+<li><strong>Rillet</strong> — AI-native platform for high-growth companies</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Bookkeeping &amp; Close Automation</h3>\n`;
+    body += `<p>Tools for transaction processing, reconciliation, and financial close:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Basis</strong> — AI bookkeeping and financial review for CPA firms</li>
+<li><strong>Zeni</strong> — AI-powered bookkeeping platform for startups</li>
+<li><strong>BlackLine</strong> — Cloud accounting with AI-enhanced reconciliation and close management</li>
+<li><strong>Mesh</strong> — AI-powered accruals automation</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Accounts Payable &amp; Expense Management</h3>\n`;
+    body += `<p>Invoice processing, approval workflows, and spend management:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Aqilla</strong> — AI invoice processing from capture to payment</li>
+<li><strong>AppZen</strong> — AI-powered spend audit and fraud detection</li>
+<li><strong>BILL</strong> — AP and expense management with AI optimization</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Audit &amp; Compliance Automation</h3>\n`;
+    body += `<p>AI for audit procedures, evidence gathering, and compliance workflows:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Fieldguide</strong> — AI agents for autonomous audit execution</li>
+<li><strong>Optro</strong> — AI-powered GRC and SOX compliance automation</li>
+<li><strong>Trullion</strong> — AI for audit, revenue recognition, and accounting</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Tax Automation</h3>\n`;
+    body += `<p>AI for tax research, preparation, and compliance:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Blue J</strong> — AI-powered tax research and prediction</li>
+<li><strong>Black Ore</strong> — Tax automation platform for firms</li>
+<li><strong>Kintsugi</strong> — Sales tax compliance automation</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">FP&amp;A &amp; Reporting</h3>\n`;
+    body += `<p>Financial planning, forecasting, and management reporting:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>finquery</strong> — AI-powered financial reporting and consolidation</li>
+<li><strong>RightRev</strong> — AI for FP&amp;A and professional services forecasting</li>
+<li><strong>Numeric</strong> — AI-powered financial close and reporting</li>
+</ul>\n`;
+
+    return body;
+  };
+
+  const toolsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'AI Tools for Accountants',
+    'url': `${SITE_URL}/guide/ai-tools-for-accountants`,
+    'description': 'A curated directory of AI-powered tools for bookkeeping, tax, audit, and financial reporting.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+  };
+
+  const toolsBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Resources', 'item': `${SITE_URL}/resources` },
+      { '@type': 'ListItem', 'position': 3, 'name': 'AI Tools for Accountants', 'item': `${SITE_URL}/guide/ai-tools-for-accountants` },
+    ],
+  };
+
+  pages['/guide/ai-tools-for-accountants'] = layout(toolsGuide(), {
+    title: 'AI Tools for Accountants — Agentic AI Accounting',
+    description: 'A curated directory of AI tools for bookkeeping, tax preparation, audit automation, and financial reporting.',
+    path: '/guide/ai-tools-for-accountants',
+    activeTab: 'resources',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [toolsJsonLd, toolsBreadcrumb] },
+    ...layoutOpts,
+  });
+
+  // ===========================================================================
+  // Guide: Academic Research on AI in Accounting
+  // ===========================================================================
+
+  const researchGuide = (): string => {
+    let body = `<h2 class="section-heading">Academic Research on AI in Accounting</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">Key research papers exploring AI applications in accounting — from machine learning for fraud detection to large language models for financial analysis.</p>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Core Research Areas</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Audit Analytics &amp; Anomaly Detection</strong> — Using ML to identify control failures and unusual transactions</li>
+<li><strong>Fraud Detection</strong> — Pattern recognition and behavioral analysis for financial statement fraud</li>
+<li><strong>Document Understanding</strong> — NLP for extracting financial facts from contracts, invoices, and filings</li>
+<li><strong>Automated Accounting</strong> — Transaction categorization, posting, and journal entry generation</li>
+<li><strong>Tax Compliance</strong> — Rule-based reasoning for tax law application and compliance verification</li>
+<li><strong>AI Governance</strong> — How firms should audit, test, and validate AI-assisted procedures for compliance</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Notable Research Topics</h3>\n`;
+    body += `<div style="background:#f5f3ff;border-left:4px solid #8b5cf6;padding:1.5rem;margin:1.5rem 0;border-radius:0.375rem;">\n`;
+    body += `<p><strong>Auditing AI Systems:</strong> Research on how auditors should adapt their procedures when clients use AI in financial reporting. PCAOB and AICPA are collaborating with academics on this critical gap.</p>\n`;
+    body += `<p style="margin-top:1rem;"><strong>Explainability in Financial AI:</strong> Can machine learning models used in accounting be interpreted by auditors? Regulatory pressure is driving research into explainable AI (XAI) for financial applications.</p>\n`;
+    body += `<p style="margin-top:1rem;"><strong>Agentic Systems &amp; Control Risk:</strong> New research on autonomous agents — how do firms maintain control over AI-driven financial processes? How should sampling and testing strategies adapt?</p>\n`;
+    body += `</div>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Research Sources</h3>\n`;
+    body += `<p>Key venues for AI in accounting research:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>arXiv (CS.AI &amp; CS.LG):</strong> Pre-prints on machine learning and NLP applied to accounting</li>
+<li><strong>Journal of Emerging Technologies in Accounting:</strong> Peer-reviewed research on accounting technology</li>
+<li><strong>Auditing: A Journal of Practice &amp; Theory:</strong> Audit-specific AI and automation research</li>
+<li><strong>Computational Finance &amp; Machine Learning conferences:</strong> Industry-leading work on financial ML</li>
+<li><strong>PCAOB &amp; AICPA research initiatives:</strong> Regulatory bodies commissioning research on AI governance</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Recommended Reading</h3>\n`;
+    body += `<p>Recent papers of interest to accounting professionals:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Explainability in Machine Learning for Financial Audits:</strong> Understanding when and how to trust AI models in audit procedures</li>
+<li><strong>Agentic AI Autonomy &amp; Control Frameworks:</strong> Designing governance for autonomous financial agents</li>
+<li><strong>LLMs for Financial Document Analysis:</strong> Evaluating large language models for contract review and tax compliance</li>
+<li><strong>Continuous Auditing with AI:</strong> Real-time monitoring and anomaly detection in transaction streams</li>
+</ul>\n`;
+
+    return body;
+  };
+
+  const researchJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'Academic Research on AI in Accounting',
+    'url': `${SITE_URL}/guide/academic-research`,
+    'description': 'Key research papers and studies on AI applications in accounting, audit, and financial analysis.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+  };
+
+  const researchBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Resources', 'item': `${SITE_URL}/resources` },
+      { '@type': 'ListItem', 'position': 3, 'name': 'Academic Research', 'item': `${SITE_URL}/guide/academic-research` },
+    ],
+  };
+
+  pages['/guide/academic-research'] = layout(researchGuide(), {
+    title: 'Academic Research on AI in Accounting — Agentic AI Accounting',
+    description: 'Key academic papers on AI, machine learning, and automation in accounting, audit, and financial reporting.',
+    path: '/guide/academic-research',
+    activeTab: 'resources',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [researchJsonLd, researchBreadcrumb] },
+    ...layoutOpts,
+  });
+
+  // ===========================================================================
+  // Guide: AI Regulation & Compliance
+  // ===========================================================================
+
+  const regulationGuide = (): string => {
+    let body = `<h2 class="section-heading">AI Regulation &amp; Compliance</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">How evolving AI regulations affect the accounting profession — standards from AICPA, PCAOB, FASB, SEC, and international bodies on AI use in financial reporting.</p>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">U.S. Regulatory Landscape</h3>\n`;
+
+    body += `<h4 style="margin-top:2rem;margin-bottom:0.75rem;">PCAOB (Public Company Accounting Oversight Board)</h4>\n`;
+    body += `<p>The PCAOB oversees public company audits. Recent focus areas:</p>\n`;
+    body += `<ul style="margin:0.5rem 0 1.5rem 1.5rem;">
+<li><strong>AI-Augmented Audit Procedures:</strong> Guidance on using AI tools in audits while maintaining professional skepticism</li>
+<li><strong>Auditing AI Systems:</strong> How auditors should evaluate client systems that rely on AI for financial reporting</li>
+<li><strong>Testing &amp; Validation:</strong> Standards for testing AI models used in audit procedures (sampling, analytics, exception detection)</li>
+<li><strong>Lookout Statement (2024):</strong> PCAOB issued expectations for audit firms regarding AI governance and risk assessment</li>
+</ul>\n`;
+
+    body += `<h4 style="margin-top:2rem;margin-bottom:0.75rem;">AICPA (American Institute of CPAs)</h4>\n`;
+    body += `<p>The AICPA sets professional standards. Recent initiatives:</p>\n`;
+    body += `<ul style="margin:0.5rem 0 1.5rem 1.5rem;">
+<li><strong>AI Governance Framework:</strong> Developing guidance for firms on using AI in tax, audit, and accounting services</li>
+<li><strong>Competence &amp; Continuing Education:</strong> CPAs must maintain competence in AI tools they use professionally</li>
+<li><strong>Ethical Standards:</strong> AI systems must align with AICPA Code of Conduct (integrity, objectivity, competence)</li>
+<li><strong>Risk Assessment:</strong> Firms must document AI-related risks and mitigation strategies</li>
+</ul>\n`;
+
+    body += `<h4 style="margin-top:2rem;margin-bottom:0.75rem;">FASB &amp; SEC</h4>\n`;
+    body += `<p>Financial reporting standards and disclosure requirements:</p>\n`;
+    body += `<ul style="margin:0.5rem 0 1.5rem 1.5rem;">
+<li><strong>Disclosure of AI Risks:</strong> Companies may be required to disclose risks related to AI in financial reporting and operations</li>
+<li><strong>Internal Control Reporting:</strong> SEC Sarbanes-Oxley requirements extend to AI-augmented processes</li>
+<li><strong>Accuracy &amp; Completeness:</strong> FASB standards on what constitutes reliable financial information when AI is involved</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">International Standards</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>IAASB (International Auditing &amp; Assurance Standards Board):</strong> ISAs and AI guidance for international auditors</li>
+<li><strong>EU AI Act:</strong> Proposed regulations on high-risk AI systems (includes financial services)</li>
+<li><strong>OECD AI Guidelines:</strong> Recommendations on AI governance for organizations</li>
+<li><strong>IFAC (International Federation of Accountants):</strong> Global standards and guidance on professional ethics and competence</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Key Compliance Areas for Firms</h3>\n`;
+    body += `<div style="background:#fef2f2;border-left:4px solid #ef4444;padding:1.5rem;margin:1.5rem 0;border-radius:0.375rem;">\n`;
+    body += `<p><strong>Documentation &amp; Audit Trails:</strong> All AI-assisted procedures must be logged, with clear rationale for decisions.</p>\n`;
+    body += `<p style="margin-top:0.75rem;"><strong>Quality Control:</strong> Firms must test AI systems before deployment. Validation must be documented.</p>\n`;
+    body += `<p style="margin-top:0.75rem;"><strong>Professional Skepticism:</strong> AI cannot replace professional judgment. Auditors must challenge AI outputs.</p>\n`;
+    body += `<p style="margin-top:0.75rem;"><strong>Cybersecurity &amp; Data Privacy:</strong> AI systems handling financial data must comply with cybersecurity and privacy regulations (GDPR, CCPA, etc.).</p>\n`;
+    body += `</div>\n`;
+
+    return body;
+  };
+
+  const regulationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'AI Regulation &amp; Compliance for Accountants',
+    'url': `${SITE_URL}/guide/ai-regulation-and-compliance`,
+    'description': 'Evolving AI regulations and standards from AICPA, PCAOB, FASB, and international bodies affecting accountants and auditors.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+  };
+
+  const regulationBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Resources', 'item': `${SITE_URL}/resources` },
+      { '@type': 'ListItem', 'position': 3, 'name': 'AI Regulation &amp; Compliance', 'item': `${SITE_URL}/guide/ai-regulation-and-compliance` },
+    ],
+  };
+
+  pages['/guide/ai-regulation-and-compliance'] = layout(regulationGuide(), {
+    title: 'AI Regulation &amp; Compliance — Agentic AI Accounting',
+    description: 'Evolving AI regulations and standards for accounting professionals from AICPA, PCAOB, FASB, and international bodies.',
+    path: '/guide/ai-regulation-and-compliance',
+    activeTab: 'resources',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [regulationJsonLd, regulationBreadcrumb] },
+    ...layoutOpts,
+  });
+
+  // ===========================================================================
+  // Guide: AI Skills for CPAs
+  // ===========================================================================
+
+  const skillsGuide = (): string => {
+    let body = `<h2 class="section-heading">AI Skills for CPAs</h2>\n`;
+    body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">The skills accounting professionals need in the AI era — from understanding AI tools to prompt engineering, and how to future-proof your career.</p>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Essential AI Literacy</h3>\n`;
+    body += `<p>Every accountant should understand the fundamentals:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>AI Basics:</strong> How machine learning, neural networks, and LLMs work at a high level</li>
+<li><strong>Agentic AI:</strong> Understanding autonomous systems, workflow automation, and multi-step reasoning</li>
+<li><strong>Limitations &amp; Risks:</strong> Hallucinations, bias, edge cases, and when NOT to trust AI output</li>
+<li><strong>Governance &amp; Compliance:</strong> How regulations (PCAOB, AICPA) expect firms to audit and control AI systems</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Practical Technical Skills</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Prompt Engineering:</strong> Writing effective prompts for LLMs (ChatGPT, Claude) to extract insights, summarize data, or draft documents</li>
+<li><strong>No-Code AI Tools:</strong> Using AI-powered software for bookkeeping, tax prep, audit analytics (Basis, Digits, Fieldguide, etc.)</li>
+<li><strong>Data Literacy:</strong> Understanding data quality, validation, and interpretation for AI-augmented analyses</li>
+<li><strong>Spreadsheet &amp; Automation:</strong> Using AI assistants (GitHub Copilot, ChatGPT Code Interpreter) for Excel, Python, SQL automation</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Advanced: AI for Audit &amp; Assurance</h3>\n`;
+    body += `<p>Specialized skills for audit professionals:</p>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>AI Control Testing:</strong> How to audit client systems that use AI for financial reporting (sampling, exception handling, model validation)</li>
+<li><strong>Anomaly Detection:</strong> Understanding statistical methods and ML algorithms for identifying unusual transactions or patterns</li>
+<li><strong>Continuous Auditing:</strong> Real-time monitoring using AI analytics engines (Workiva, ACL, Alteryx)</li>
+<li><strong>Professional Skepticism in an AI Era:</strong> How to challenge AI outputs and not over-rely on automation</li>
+</ul>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Career Development Path</h3>\n`;
+    body += `<div style="background:#dcfce715;border-left:4px solid #22c55e;padding:1.5rem;margin:1.5rem 0;border-radius:0.375rem;">\n`;
+    body += `<p><strong>Near Term (6–12 months):</strong> Get hands-on with AI tools used in your domain (audit, tax, bookkeeping). Do online courses on prompt engineering and AI fundamentals.</p>\n`;
+    body += `<p style="margin-top:0.75rem;"><strong>Medium Term (1–2 years):</strong> Lead a pilot project using AI tools at your firm. Document lessons learned. Contribute to firm AI governance policies.</p>\n`;
+    body += `<p style="margin-top:0.75rem;"><strong>Long Term (2+ years):</strong> Become a trusted advisor on AI strategy. Understand vendor evaluation, risk assessment, and ROI measurement for AI implementations.</p>\n`;
+    body += `</div>\n`;
+
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Learning Resources</h3>\n`;
+    body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
+<li><strong>Prompt Engineering Courses:</strong> Coursera, Udemy, OpenAI tutorials</li>
+<li><strong>AI for Accountants Webinars:</strong> AICPA, state CPA societies, firm training</li>
+<li><strong>Platforms:</strong> ChatGPT, Claude, Copilot (hands-on experience)</li>
+<li><strong>Publications:</strong> This site, CPA Practice Advisor, Accounting Today, Journal of Accountancy</li>
+<li><strong>Certifications:</strong> Some firms offer internal AI competency certifications</li>
+</ul>\n`;
+
+    return body;
+  };
+
+  const skillsJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Guide',
+    'name': 'AI Skills for CPAs',
+    'url': `${SITE_URL}/guide/ai-skills-for-cpas`,
+    'description': 'Essential AI skills for accounting professionals — from AI literacy to prompt engineering and auditing AI systems.',
+    'author': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+    },
+  };
+
+  const skillsBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': SITE_URL },
+      { '@type': 'ListItem', 'position': 2, 'name': 'Resources', 'item': `${SITE_URL}/resources` },
+      { '@type': 'ListItem', 'position': 3, 'name': 'AI Skills for CPAs', 'item': `${SITE_URL}/guide/ai-skills-for-cpas` },
+    ],
+  };
+
+  pages['/guide/ai-skills-for-cpas'] = layout(skillsGuide(), {
+    title: 'AI Skills for CPAs — Agentic AI Accounting',
+    description: 'Essential AI skills for accounting professionals — prompt engineering, AI literacy, and how to future-proof your career.',
+    path: '/guide/ai-skills-for-cpas',
+    activeTab: 'resources',
+    jsonLd: { '@context': 'https://schema.org', '@graph': [skillsJsonLd, skillsBreadcrumb] },
+    ...layoutOpts,
+  });
+
   return pages;
 }
 
@@ -1137,30 +1578,35 @@ function generateResourcesPage(
       typeColor: 'background:#16a34a15;color:#16a34a;',
       title: 'Big 4 &amp; AI Adoption',
       desc: 'How Deloitte, PwC, EY, and KPMG are integrating AI agents into their audit, tax, and advisory practices. Key partnerships and investments.',
+      url: '/guide/big-4-and-ai-adoption',
     },
     {
       type: 'Technology',
       typeColor: 'background:#f59e0b15;color:#f59e0b;',
       title: 'AI Tools for Accountants',
       desc: 'A curated directory of AI-powered tools for bookkeeping, tax preparation, audit automation, compliance monitoring, and financial reporting.',
+      url: '/guide/ai-tools-for-accountants',
     },
     {
       type: 'Research',
       typeColor: 'background:#8b5cf615;color:#8b5cf6;',
       title: 'Academic Research',
       desc: 'Key academic papers exploring AI applications in accounting — from machine learning for fraud detection to NLP for financial document analysis.',
+      url: '/guide/academic-research',
     },
     {
       type: 'Regulatory',
       typeColor: 'background:#ef444415;color:#ef4444;',
       title: 'AI Regulation &amp; Compliance',
       desc: 'How evolving AI regulations affect the accounting profession. Standards from AICPA, PCAOB, FASB, and international bodies on AI use in financial reporting.',
+      url: '/guide/ai-regulation-and-compliance',
     },
     {
       type: 'Career',
       typeColor: 'background:#0d948815;color:#0d9488;',
       title: 'AI Skills for CPAs',
       desc: 'The skills accounting professionals need in the AI era. From prompt engineering to understanding AI audit tools, and how to future-proof your career.',
+      url: '/guide/ai-skills-for-cpas',
     },
   ];
 
