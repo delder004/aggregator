@@ -26,6 +26,7 @@ import { blogScraperCollector } from './collectors/blogscraper';
 import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
 import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats, discoverNewCompanies, createDiscoveredCompany, insertSource } from './company/tracker';
 import { probeWebsite, discoverBlog, probeJobBoards, MAX_ENRICHMENTS_PER_RUN } from './company/enricher';
+import { generateCompanyInsights } from './insights/company-insights';
 import {
   getPublishedArticles,
   getFeaturedArticles,
@@ -928,6 +929,13 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
               companyArticles = await getAllCompanyArticles(this.env.DB);
             } catch (err) {
               console.error('Failed to fetch company articles:', err);
+            }
+
+            // Generate fresh company insights (capped at 10 per run)
+            try {
+              await generateCompanyInsights(this.env);
+            } catch (err) {
+              console.error('Failed to generate company insights:', err);
             }
 
             let companyInsights = new Map<string, CompanyInsight>();
