@@ -38,7 +38,6 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'hmrc': 'UK tax authority with emerging AI capabilities for tax compliance and digital tax reporting.',
 
   // FP&A & Reporting
-  'finquery': 'Financial reporting and consolidation platform with AI-driven variance analysis and predictive analytics.',
   'rightrev': 'FP&A platform for professional services firms using AI for forecasting and variance analysis.',
 
   // Supporting Infrastructure
@@ -50,6 +49,16 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'inside-public-accounting': 'News outlet covering accounting firm trends, mergers, and technology adoption in the Big 4 and regional firms.',
   'cpa-practice-advisor': 'Publication for accounting professionals covering technology, regulation, and business trends.',
 
+  // AI Accounting Platforms (High-Coverage)
+  'sierra': 'AI-powered accounting platform focused on automating bookkeeping and compliance workflows for growing companies.',
+  'parallel': 'AI-native financial operations platform automating accounting and close processes for high-growth companies.',
+  'helloleo': 'AI-powered accounting platform providing intelligent document processing and expense categorization automation.',
+
+  // High-Coverage Companies (Missing Descriptions)
+  'infinite': 'AI-powered financial operations platform for mid-market and enterprise accounting teams.',
+  'finquery': 'Financial reporting and consolidation platform with AI-driven variance analysis and predictive analytics.',
+  'withum': 'Accounting and advisory firm providing AI-enhanced tax and audit services.',
+
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
   'anthropic': 'AI safety company behind Claude, used by accounting platforms for reasoning tasks and compliance analysis.',
@@ -57,6 +66,7 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'stripe': 'Payment processing platform with AI-powered financial insights and automated accounting integration.',
   'amazon-web-services': 'Cloud infrastructure provider powering many AI-native accounting platforms.',
   'google': 'Technology company behind foundational AI models and cloud infrastructure used in accounting solutions.',
+  'y-combinator': 'Startup accelerator and venture capital firm backing many AI-powered accounting and finance automation companies.',
 };
 
 /**
