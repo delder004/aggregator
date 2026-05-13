@@ -162,7 +162,7 @@ a.logo{text-decoration:none;}
 
 /* Hero section */
 .hero{
-  background:linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+  background:#0a1929;
   padding:3rem 0;
   margin-bottom:0;
   color:#fff;
