@@ -759,11 +759,26 @@ function generateFaqPage(layoutOpts: Partial<LayoutOptions>): Record<string, str
 
   body += `</ul>\n`;
 
+  // Build FAQPage schema for rich snippet support in search results
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.a,
+      },
+    })),
+  };
+
   return {
     '/faq': layout(body, {
       title: 'FAQ',
       description: 'Frequently asked questions about Agentic AI Accounting — how it works, sources, scoring, and more.',
       path: '/faq',
+      jsonLd: faqJsonLd,
       ...layoutOpts,
     }),
   };
