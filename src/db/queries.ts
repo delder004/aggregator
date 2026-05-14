@@ -151,7 +151,7 @@ export async function getArticleCount(
 ): Promise<number> {
   const row = await db
     .prepare(
-      'SELECT COUNT(*) as count FROM articles WHERE is_published = 1 AND relevance_score >= ? AND datetime(published_at) <= datetime(\'now\')'
+      'SELECT COUNT(*) as count FROM articles WHERE is_published = 1 AND relevance_score >= ? AND (quality_score >= 30 OR quality_score IS NULL) AND datetime(published_at) <= datetime(\'now\')'
     )
     .bind(minScore)
     .first<{ count: number }>();
