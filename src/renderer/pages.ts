@@ -683,12 +683,46 @@ function generateAboutPage(layoutOpts: Partial<LayoutOptions>): Record<string, s
   </p>
 </div>`;
 
+  const aboutJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}#organization`,
+        name: 'Agentic AI Accounting',
+        url: SITE_URL,
+        description:
+          'Daily curated news, companies, and jobs in agentic AI for accounting, audit, tax, and bookkeeping. Updated hourly from 110+ sources with AI relevance scoring.',
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/og.png` },
+        email: 'hello@agenticaiccounting.com',
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}#website`,
+        name: 'Agentic AI Accounting',
+        url: SITE_URL,
+        publisher: { '@id': `${SITE_URL}#organization` },
+      },
+      {
+        '@type': 'AboutPage',
+        '@id': `${SITE_URL}/about`,
+        url: `${SITE_URL}/about`,
+        name: 'About — Agentic AI Accounting',
+        description:
+          'About Agentic AI Accounting — an automated news aggregator for AI in accounting, audit, tax, and bookkeeping.',
+        isPartOf: { '@id': `${SITE_URL}#website` },
+        about: { '@id': `${SITE_URL}#organization` },
+      },
+    ],
+  };
+
   return {
     '/about': layout(body, {
       title: 'About',
       description:
         'About Agentic AI Accounting — an automated news aggregator for AI in accounting, audit, tax, and bookkeeping.',
       path: '/about',
+      jsonLd: aboutJsonLd,
       ...layoutOpts,
     }),
   };
@@ -1652,12 +1686,36 @@ function generateResourcesPage(
 </div>\n`;
   body += `</div>\n`;
 
+  const resourcesJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}#organization`,
+        name: 'Agentic AI Accounting',
+        url: SITE_URL,
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/og.png` },
+      },
+      {
+        '@type': 'CollectionPage',
+        '@id': `${SITE_URL}/resources`,
+        url: `${SITE_URL}/resources`,
+        name: 'Resources — Agentic AI Accounting',
+        description:
+          'Insights, guides, and essential resources for understanding AI in accounting.',
+        isPartOf: { '@id': `${SITE_URL}#website` },
+        publisher: { '@id': `${SITE_URL}#organization` },
+      },
+    ],
+  };
+
   const pages: Record<string, string> = {
     '/resources': layout(body, {
       title: 'Resources',
       description: 'Insights, guides, and essential resources for understanding AI in accounting.',
       path: '/resources',
       activeTab: 'resources',
+      jsonLd: resourcesJsonLd,
       ...layoutOpts,
     }),
   };
