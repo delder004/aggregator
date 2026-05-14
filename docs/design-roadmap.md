@@ -52,13 +52,13 @@ Piccalil.li is a publication; we're a data product. Borrow voice cues, not struc
 
 ---
 
-## Current snapshot (as of 2026-05-12)
+## Current snapshot (as of 2026-05-14)
 
 What the live site looks like today, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
-- **Palette.** Teal accent (`#0f766e` → `#14b8a6` gradient hero), Zinc-style neutrals, dark-mode mirror. Seven source-color badges (HN orange, YouTube red, arXiv crimson, RSS, Substack, Product Hunt, YC) competing for attention in article meta rows.
+- **Palette.** Teal accent (`#0f766e` → `#14b8a6` on elements), Zinc-style neutrals, dark-mode mirror. Seven source-color badges (HN orange, YouTube red, arXiv crimson, RSS, Substack, Product Hunt, YC) competing for attention in article meta rows.
 - **Typography.** System sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, …`). Headline `h1` is 2.2rem, modest weight progression. No serif. No display face.
-- **Hero.** `linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)` with a descriptive tagline. Three small stats on a row below. Branding-style hero, not positioning-style.
+- **Hero.** ✅ Flat deep navy background (`#0a1929`, Phase 2A complete, PR #62) with white text. Descriptive tagline ("The latest on AI agents in accounting..."). Small stats on a row below. Editorial surface, not branding-style gradient.
 - **Signal strip.** ✅ Positioned directly under hero (Phase 1A complete, PR #42). Displays 4 key metrics (Sources, Articles, Companies, Open Roles) in a responsive grid (4 columns on desktop, 2 on mobile). Styled with gray background and centered text. Pulls these metrics out of the footer as promised.
 - **Featured Stories section.** ✅ 3-column grid on desktop, responsive to 2 cols (900px) and 1 col (580px), positioned above curated sections (Phase 1C complete). Visual treatment is uniform cards; magazine-style hierarchy (lead story + supporting) deferred to Phase 5A.
 - **What Changed This Week section.** ✅ Cohesive editorial section (Phase 1B complete, PR #53) with 3-4 data-driven panels: Trending on Social (top articles by social score from last 7 days), New Roles Posted (latest jobs from last 7 days), and Latest Insight or Most Covered companies. Responsive grid layout (2 cols desktop, 1 col mobile ≤580px).
@@ -172,7 +172,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [PR #N]
 - [1F] — PR #50 — Demote the latest feed as secondary hierarchy: wrap in `.latest-feed` container with upper border separator, reduced margin, and opacity to visually distinguish from curated sections (Featured, Open Roles). Latest articles remain fully functional with pagination and tag filtering. — 2026-05-09
 - [1B] — PR #53 — Build a "What changed this week" section with 4 data-driven panels: Trending on Social (top 5 articles by social score), New Roles Posted (jobs from last 7 days), Latest Insight (or Most Covered companies this week). Uses responsive grid (2 cols desktop, 1 col mobile ≤580px). Added `.new-roles-list` and `.new-role-item` CSS. — 2026-05-11
 - [1D] — PR #57 — Add homepage Companies preview showing top 8 companies by article count with category and article count; positioned between "What Changed This Week" and "Open Roles" sections. Uses responsive auto-fit grid (1 col on mobile, multi-col on desktop). Added `.companies-preview-grid` and `.company-preview-card` CSS. — 2026-05-11
-- [2A] — PR pending — Replace teal gradient hero with flat deep navy (#0a1929) editorial surface for understated, professional aesthetic. CSS-only change to `.hero` rule; no HTML changes. Improves visual hierarchy and reduces visual noise, aligning with Phase 2 visual language refinement. — 2026-05-13
+- [2A] — PR #62 — Replace teal gradient hero with flat deep navy (#0a1929) editorial surface for understated, professional aesthetic. CSS-only change to `.hero` rule; no HTML changes. Improves visual hierarchy and reduces visual noise, aligning with Phase 2 visual language refinement. — 2026-05-13
 
 ---
 
