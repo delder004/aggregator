@@ -216,8 +216,8 @@ function generateHomepage(
     : 0;
   const heroHtml = `<div class="hero">
   <div class="container">
-    <h1>AI + Accounting News</h1>
-    <p>Your daily source for the latest in agentic AI for accounting, audit, tax, and bookkeeping. Automatically curated and AI-scored from ${stats ? stats.sources : '50'}+ sources.</p>
+    <h1>AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring.</h1>
+    <p>Automatically curated and AI-scored from ${stats ? stats.sources : '50'}+ sources.</p>
     <div class="hero-stats">
       <div class="hero-stat"><span class="hero-stat-value">${stats ? stats.articles.toLocaleString() : '0'}</span><span class="hero-stat-label">Articles Published</span></div>
       <div class="hero-stat"><span class="hero-stat-value">${companies ? companies.length : '0'}</span><span class="hero-stat-label">Companies Tracked</span></div>
