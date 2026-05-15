@@ -58,6 +58,11 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'infinite': 'AI-powered financial operations platform for mid-market and enterprise accounting teams.',
   'finquery': 'Financial reporting and consolidation platform with AI-driven variance analysis and predictive analytics.',
   'withum': 'Accounting and advisory firm providing AI-enhanced tax and audit services.',
+  'docyt': 'AI-powered bookkeeping and accounting automation platform that automates transaction categorization, reconciliation, and month-end close for businesses and accounting firms.',
+  'kpmg': 'Big Four professional services firm using AI agents through KPMG Clara platform to automate audit procedures, expense testing, and financial analysis.',
+  'image-relay': 'Digital asset management platform helping accounting and professional services firms organize and streamline document workflows.',
+  'artifact': 'AI-powered platform that generates and manages structured content for various applications and integrations.',
+  'vitreous-world': 'Technology and solutions company operating in the digital transformation and enterprise software space.',
 
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
