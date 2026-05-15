@@ -344,10 +344,30 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
           }
           console.log(`New articles after dedup: ${newArticles.length}`);
 
+          // Filter out articles with future-dated published_at timestamps
+          const now = new Date();
+          const validArticles = newArticles.filter((article) => {
+            try {
+              const pubDate = new Date(article.publishedAt);
+              if (pubDate > now) {
+                console.warn(`Skipping future-dated article: ${article.url} (published: ${article.publishedAt})`);
+                return false;
+              }
+              return true;
+            } catch {
+              console.warn(`Skipping article with invalid date: ${article.url} (published: ${article.publishedAt})`);
+              return false;
+            }
+          });
+          const skippedFutureCount = newArticles.length - validArticles.length;
+          if (skippedFutureCount > 0) {
+            console.log(`Skipped ${skippedFutureCount} future-dated articles`);
+          }
+
           let insertedCount = 0;
           const fetchedAt = nowIso();
-          for (let i = 0; i < newArticles.length; i += 50) {
-            const batch = newArticles.slice(i, i + 50);
+          for (let i = 0; i < validArticles.length; i += 50) {
+            const batch = validArticles.slice(i, i + 50);
             const stmts = batch.map((article) => this.env.DB
               .prepare(
                 `INSERT OR IGNORE INTO articles
