@@ -173,6 +173,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [PR #N]
 - [1B] — PR #53 — Build a "What changed this week" section with 4 data-driven panels: Trending on Social (top 5 articles by social score), New Roles Posted (jobs from last 7 days), Latest Insight (or Most Covered companies this week). Uses responsive grid (2 cols desktop, 1 col mobile ≤580px). Added `.new-roles-list` and `.new-role-item` CSS. — 2026-05-11
 - [1D] — PR #57 — Add homepage Companies preview showing top 8 companies by article count with category and article count; positioned between "What Changed This Week" and "Open Roles" sections. Uses responsive auto-fit grid (1 col on mobile, multi-col on desktop). Added `.companies-preview-grid` and `.company-preview-card` CSS. — 2026-05-11
 - [2A] — PR #62 — Replace teal gradient hero with flat deep navy (#0a1929) editorial surface for understated, professional aesthetic. CSS-only change to `.hero` rule; no HTML changes. Improves visual hierarchy and reduces visual noise, aligning with Phase 2 visual language refinement. — 2026-05-13
+- [2B] — PR pending — Sharpen hero headline from "AI + Accounting News" + supporting text to thesis-style line "AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring." Updated `<h1>` and streamlined `<p>` to source attribution only. Shifts voice from news-focused to impact-focused, signaling editorial judgment. — 2026-05-15
 
 ---
 
