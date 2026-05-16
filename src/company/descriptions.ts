@@ -33,6 +33,9 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   // Compliance & Regulatory
   'logicgate': 'GRC platform with AI features for risk assessment, audit management, and compliance automation.',
   'incliva': 'Compliance automation platform for financial services using AI to streamline regulatory reporting.',
+  'auditboard': 'Internal audit and compliance management platform with AI automation for audit planning, evidence management, and SOX compliance.',
+  'midship': 'AI-powered compliance automation platform for financial services and regulated industries.',
+  'aicpa': 'American Institute of CPAs, the national professional association setting accounting standards and providing resources on AI adoption and compliance.',
 
   // Tax Automation
   'hmrc': 'UK tax authority with emerging AI capabilities for tax compliance and digital tax reporting.',
@@ -48,6 +51,7 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'accountingweb': 'Accounting news and resource site covering technology adoption in accounting practices.',
   'inside-public-accounting': 'News outlet covering accounting firm trends, mergers, and technology adoption in the Big 4 and regional firms.',
   'cpa-practice-advisor': 'Publication for accounting professionals covering technology, regulation, and business trends.',
+  'journal-of-accountancy': 'Official magazine of the AICPA covering accounting, audit, tax, and business trends for accounting professionals.',
 
   // AI Accounting Platforms (High-Coverage)
   'sierra': 'AI-powered accounting platform focused on automating bookkeeping and compliance workflows for growing companies.',
@@ -64,6 +68,23 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'artifact': 'AI-powered platform that generates and manages structured content for various applications and integrations.',
   'vitreous-world': 'Technology and solutions company operating in the digital transformation and enterprise software space.',
 
+  // Additional High-Traffic Companies
+  'emburse': 'Spend management and business payments platform with AI-powered invoice processing and expense automation.',
+  'suralink': 'Cloud accounting and financial management platform for accounting firms and their clients.',
+  'sikich': 'Professional consulting and accounting services firm integrating AI tools into tax, audit, and advisory services.',
+  'zoho-finance': 'Cloud-based financial accounting and management platform with integrated AI automation features.',
+  'instead': 'AI-powered accounting platform automating bookkeeping and financial reporting for SMBs.',
+  'bots-for-that': 'No-code automation platform for accounting workflows, enabling creation of AI bots without coding.',
+  'iplicit': 'AI accounting platform automating transaction categorization, reconciliation, and financial reporting.',
+  'canopy': 'AI-powered practice management platform for accounting firms with integrated client collaboration tools.',
+  'netsuite': 'Cloud-based ERP platform offering accounting, financial management, and reporting with AI-enhanced features.',
+  'cbiz': 'Professional accounting and advisory services firm leveraging AI for tax, audit, and compliance workflows.',
+  'dext': 'Cloud accounting software automating receipt capture, expense categorization, and bookkeeping workflows.',
+  'zoho': 'Cloud business software suite offering accounting, ERP, and CRM with integrated AI automation.',
+  'vertex': 'Enterprise tax software platform with AI-powered tax compliance and reporting automation.',
+  'cima': 'Professional body for management accountants advancing AI adoption in financial management roles.',
+  'spec27': 'AI-powered accounting platform focused on automation and financial intelligence.',
+
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
   'anthropic': 'AI safety company behind Claude, used by accounting platforms for reasoning tasks and compliance analysis.',
@@ -72,6 +93,7 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'amazon-web-services': 'Cloud infrastructure provider powering many AI-native accounting platforms.',
   'google': 'Technology company behind foundational AI models and cloud infrastructure used in accounting solutions.',
   'y-combinator': 'Startup accelerator and venture capital firm backing many AI-powered accounting and finance automation companies.',
+  'nvidia': 'AI infrastructure and computing company whose GPUs power many machine learning and AI models in financial services.',
 };
 
 /**
