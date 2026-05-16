@@ -2033,10 +2033,15 @@ function generateCompanyDetailPages(
       }
     }
 
-    // Article feed
+    // Article feed (capped at 10 to keep page weight < 50KB)
+    const articlesPerCompanyPage = 10;
     if (articles.length > 0) {
       body += `<div class="section-label">Recent Coverage</div>\n`;
-      body += renderTimeGrouped(articles);
+      const displayArticles = articles.slice(0, articlesPerCompanyPage);
+      body += renderTimeGrouped(displayArticles);
+      if (articles.length > articlesPerCompanyPage) {
+        body += `<p style="text-align:center;margin-top:1.5rem;"><a href="/companies" style="color:var(--accent);">View all ${articles.length} articles about ${escapeHtml(name)} →</a></p>\n`;
+      }
     } else {
       body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No articles yet for ${name}. Check back soon.</p>`;
     }
