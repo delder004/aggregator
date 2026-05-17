@@ -1867,7 +1867,7 @@ ${companyRows}`;
       'position': idx + 1,
       'name': c.name,
       'url': `${SITE_URL}/company/${c.id}`,
-      'description': c.description,
+      'description': generateCompanyDescription(c),
     })),
   };
 
