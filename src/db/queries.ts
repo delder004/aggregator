@@ -913,5 +913,21 @@ export async function cleanupStaleArticleCompanyLinks(
     )
     .bind(MIN_PUBLISH_SCORE)
     .run();
-  return result.meta.changes ?? 0;
+  const deletedCount = result.meta.changes ?? 0;
+
+  // After cleanup, sync all company article_count values to match actual link counts.
+  // This ensures stale counts don't appear on the site after articles are unpublished.
+  if (deletedCount > 0) {
+    await db
+      .prepare(
+        `UPDATE companies SET
+           article_count = COALESCE((
+             SELECT COUNT(*) FROM article_companies WHERE company_id = companies.id
+           ), 0)
+         WHERE is_active = 1`
+      )
+      .run();
+  }
+
+  return deletedCount;
 }
