@@ -168,11 +168,17 @@ a.logo{text-decoration:none;}
   color:#fff;
 }
 .hero h1{
-  font-size:2.2rem;
+  font-size:3.4rem;
   font-weight:800;
-  line-height:1.2;
+  line-height:1.15;
   margin-bottom:0.75rem;
-  letter-spacing:-0.03em;
+  letter-spacing:-0.04em;
+}
+@media(max-width:900px){
+  .hero h1{font-size:2.8rem;}
+}
+@media(max-width:640px){
+  .hero h1{font-size:2rem;}
 }
 .hero p{
   font-size:1.05rem;
@@ -302,11 +308,14 @@ a.logo{text-decoration:none;}
   flex-shrink:0;
 }
 .section-heading{
-  font-size:1.3rem;
+  font-size:1.8rem;
   font-weight:700;
   color:var(--text);
   margin:2rem 0 1rem;
-  letter-spacing:-0.02em;
+  letter-spacing:-0.03em;
+}
+@media(max-width:640px){
+  .section-heading{font-size:1.4rem;}
 }
 
 /* Latest feed — demoted secondary hierarchy (Phase 1F) */
