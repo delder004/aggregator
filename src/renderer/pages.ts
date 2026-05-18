@@ -2116,13 +2116,15 @@ function generateCompanyDetailPages(
       '@graph': [companyJsonLd, breadcrumbList],
     };
 
+    // Exclude global stats from company pages to avoid showing stale timestamps
+    const { stats, ...companyLayoutOpts } = layoutOpts;
     pages[path] = layout(body, {
       title: company.name,
       description: company.description || `Latest news and articles about ${company.name} in AI-powered accounting.`,
       path,
       activeTab: 'companies',
       jsonLd: jsonLdGraph,
-      ...layoutOpts,
+      ...companyLayoutOpts,
     });
   }
 
@@ -2395,6 +2397,8 @@ function generateCategoryDetailPages(
       '@graph': [catJsonLd, catBreadcrumbList],
     };
 
+    // Exclude global stats from category detail pages to avoid showing stale timestamps
+    const { stats, ...categoryLayoutOpts } = layoutOpts;
     pages[path] = layout(body, {
       title: `${cat.label} — AI Accounting Companies`,
       description: `${cat.description} ${cos.length} compan${cos.length === 1 ? 'y' : 'ies'} tracked.`,
@@ -2402,7 +2406,7 @@ function generateCategoryDetailPages(
       activeTab: 'companies',
       noindex: cos.length === 0,
       jsonLd: catJsonLdGraph,
-      ...layoutOpts,
+      ...categoryLayoutOpts,
     });
   }
 
@@ -2458,6 +2462,8 @@ function generateMapPage(
 
   body += `<p style="color:var(--text-tertiary);font-size:0.78rem;margin-top:1.5rem;text-align:center;">Tracking ${companies.length} companies. Updated hourly.</p>\n`;
 
+  // Exclude global stats from market map to avoid showing stale timestamps
+  const { stats, ...mapLayoutOpts } = layoutOpts;
   return {
     '/map': layout(body, {
       title: 'Market Map',
@@ -2465,7 +2471,7 @@ function generateMapPage(
         'A live market map of companies building agentic AI for accounting — categorized and sized by coverage. Updated hourly.',
       path: '/map',
       activeTab: 'companies',
-      ...layoutOpts,
+      ...mapLayoutOpts,
       jsonLd: {
         '@context': 'https://schema.org',
         '@graph': [
@@ -2599,6 +2605,9 @@ function generateJobsPage(
 ): Record<string, string> {
   const pages: Record<string, string> = {};
 
+  // Exclude global stats from job pages to avoid showing stale timestamps
+  const { stats, ...jobLayoutOpts } = layoutOpts;
+
   // Create company map for JobPosting schema generation
   const companyMap = new Map(companies.map(c => [c.id, c]));
 
@@ -2683,7 +2692,7 @@ function generateJobsPage(
       description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
       path,
       activeTab: 'jobs',
-      ...layoutOpts,
+      ...jobLayoutOpts,
     });
   }
 
@@ -2702,7 +2711,7 @@ function generateJobsPage(
       description: 'Remote roles at AI accounting companies.',
       path: '/jobs/remote',
       activeTab: 'jobs',
-      ...layoutOpts,
+      ...jobLayoutOpts,
     });
   }
 
@@ -2722,7 +2731,7 @@ function generateJobsPage(
       description: `${dept} roles at AI accounting companies.`,
       path: `/jobs/dept/${slug}`,
       activeTab: 'jobs',
-      ...layoutOpts,
+      ...jobLayoutOpts,
     });
   }
 
@@ -2742,7 +2751,7 @@ function generateJobsPage(
       description: `AI accounting roles in ${loc}.`,
       path: `/jobs/location/${slug}`,
       activeTab: 'jobs',
-      ...layoutOpts,
+      ...jobLayoutOpts,
     });
   }
 
@@ -2762,7 +2771,7 @@ function generateJobsPage(
       description: `Open roles at ${c.name}.`,
       path: `/jobs/company/${slug}`,
       activeTab: 'jobs',
-      ...layoutOpts,
+      ...jobLayoutOpts,
     });
   }
 
