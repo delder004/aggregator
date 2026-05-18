@@ -84,6 +84,36 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'vertex': 'Enterprise tax software platform with AI-powered tax compliance and reporting automation.',
   'cima': 'Professional body for management accountants advancing AI adoption in financial management roles.',
   'spec27': 'AI-powered accounting platform focused on automation and financial intelligence.',
+  
+  // Big 4 & Major Professional Services (critical for accounting coverage)
+  'grant-thornton': 'Global professional services firm using AI-powered audit agents and data analytics across audit, tax, and advisory practices.',
+  'deloitte': 'Big Four professional services firm deploying agentic AI and LLM technologies across audit, tax compliance, and financial advisory services.',
+  'ernst-young-ey': 'Big Four consulting and accounting firm leveraging AI agents to automate audit procedures, internal controls testing, and regulatory compliance.',
+  
+  // Key Cloud & Data Infrastructure Supporting AI Accounting
+  'snowflake': 'Cloud data platform enabling AI accounting solutions through unified data management, semantic layers, and multi-party data sharing for financial operations.',
+  
+  // Additional Companies with Coverage
+  'receiptbot': 'AI-powered receipt and expense scanning platform automating document capture and data extraction for accounting workflows.',
+  'paperless': 'Digital workflow automation platform helping accounting firms manage documents and automate routine accounting processes.',
+  'atlar': 'AI-powered financial operations platform providing real-time visibility and intelligent automation for accounting workflows.',
+  'kepler': 'Financial planning and reporting platform with AI-driven insights for forecasting and variance analysis.',
+  'tally-solutions': 'Enterprise accounting software provider offering traditional ERP solutions increasingly incorporating AI-powered features.',
+  'tallyprime': 'Modern accounting software combining traditional and AI-powered automation for Indian SMB accountants.',
+  'shapes': 'AI-powered financial operations platform automating close, consolidation, and reporting for modern finance teams.',
+  'the-millennial-cpa': 'CPA practice and accounting content platform covering technology adoption and AI implementation for modern accounting professionals.',
+  
+  // Emerging & Startup Platforms
+  'artifact-ai': 'AI platform focused on content generation and structured data processing for knowledge work including financial documentation.',
+  'vorim-ai': 'AI-powered platform for financial intelligence and analysis in accounting workflows.',
+  'stampli': 'Accounts payable automation platform using AI for invoice capture, approval, and payment processing.',
+  'maisk': 'AI platform providing intelligent automation and process optimization for accounting and financial operations.',
+  'crane-ledger': 'Blockchain-based general ledger platform with AI-powered reconciliation for transparent accounting.',
+  'trintech': 'Financial close and consolidation software company providing accounting workflow automation with AI enhancements.',
+  'orderwise': 'Accounting and business management software with AI-enhanced features for SMB accounting workflows.',
+  'reframe': 'AI-powered financial analysis and insights platform helping accounting teams make data-driven decisions.',
+  'j-p-morgan': 'Global investment bank and financial services giant advancing AI and automation across treasury, accounting, and compliance operations.',
+  'lovable': 'AI-powered platform for rapid application development, used by accounting firms to build custom accounting automation solutions.',
 
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
