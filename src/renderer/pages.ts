@@ -958,6 +958,7 @@ export function generateAllPages(
     Object.assign(pages, generateCategoriesPage(companies, articleMap, layoutOpts));
     Object.assign(pages, generateCategoryDetailPages(companies, articleMap, jobsMap, articles, layoutOpts));
     Object.assign(pages, generateMapPage(companies, articleMap, layoutOpts));
+    Object.assign(pages, generateGuidesPages(companies, articleMap, layoutOpts));
   }
   Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
 
@@ -2503,6 +2504,141 @@ function generateMapPage(
       },
     }),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Guides
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate static guide pages linked from /resources.
+ * Guides provide curated, in-depth content around topics like "AI Tools for Accountants",
+ * "Big 4 & AI Adoption", etc. These drive internal linking and improve SEO.
+ */
+function generateGuidesPages(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+
+  // Guide: AI Tools for Accountants
+  // This guide highlights top AI-powered accounting tools tracked on the site
+  {
+    // Sort companies by article count (most covered first)
+    const topCompanies = [...companies]
+      .sort((a, b) => b.articleCount - a.articleCount)
+      .filter(c => c.articleCount > 0) // Only show companies with actual coverage
+      .slice(0, 30); // Limit to top 30
+
+    let body = `<div class="section-label"><a href="/resources" style="color:var(--text-tertiary);">Resources</a> &rsaquo; Guides</div>\n`;
+    body += `<h1 style="font-size:1.8rem;font-weight:700;margin-bottom:0.5rem;margin-top:1rem;">AI Tools &amp; Software for Accountants</h1>\n`;
+    body += `<p style="color:var(--text-secondary);font-size:1rem;margin-bottom:1.5rem;line-height:1.6;">A curated directory of the leading AI-powered tools for bookkeeping, tax preparation, audit automation, compliance monitoring, and financial reporting. These companies are actively building and shipping agentic AI for accounting.</p>\n`;
+
+    body += `<div style="background-color:var(--bg-secondary);padding:1rem;border-radius:0.5rem;margin-bottom:1.5rem;border-left:4px solid var(--accent);">`;
+    body += `<p style="margin:0;color:var(--text-secondary);font-size:0.9rem;"><strong>Updated daily:</strong> This guide reflects real-time coverage from our news aggregator — companies are ranked by how often they appear in recent AI-accounting industry news.</p>`;
+    body += `</div>\n`;
+
+    // Group by primary category for organization
+    const byCategory = new Map<string, Company[]>();
+    for (const c of topCompanies) {
+      const cat = getPrimaryCategory(c.category) || 'Other';
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat)!.push(c);
+    }
+
+    // Render each category grouping
+    for (const [catLabel, cos] of byCategory) {
+      body += `<h2 style="margin-top:1.5rem;margin-bottom:0.5rem;font-size:1.2rem;font-weight:600;">${escapeHtml(catLabel)}</h2>\n`;
+      body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem;">\n`;
+
+      for (const c of cos.slice(0, 6)) { // Up to 6 per category for readability
+        const articleCount = companyArticles.get(c.id)?.length ?? 0;
+        const desc = generateCompanyDescription(c);
+
+        body += `<div style="border:1px solid var(--border);border-radius:0.5rem;padding:1rem;">`;
+        body += `<h3 style="margin:0 0 0.3rem 0;"><a href="/company/${escapeHtml(c.id)}" style="color:var(--accent);text-decoration:none;">${escapeHtml(c.name)}</a></h3>`;
+        body += `<p style="margin:0 0 0.5rem 0;color:var(--text-secondary);font-size:0.9rem;line-height:1.5;">${escapeHtml(desc)}</p>`;
+        body += `<div style="font-size:0.85rem;color:var(--text-tertiary);">`;
+        body += `<span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>`;
+        if (c.website) {
+          body += `<span style="margin-left:0.5rem;"><a href="${escapeHtml(c.website)}" rel="noopener" target="_blank" style="color:var(--accent);">${escapeHtml(safeHostname(c.website))}</a></span>`;
+        }
+        body += `</div>`;
+        body += `</div>\n`;
+      }
+
+      body += `</div>\n`;
+
+      if (cos.length > 6) {
+        const categorySlug = byCategory.size === 1 ? '' : `-${slugify(catLabel)}`;
+        body += `<p style="text-align:center;margin-bottom:1rem;font-size:0.9rem;"><a href="/companies" style="color:var(--accent);">Browse all ${cos.length} companies in ${escapeHtml(catLabel)} →</a></p>\n`;
+      }
+    }
+
+    body += `<div style="margin-top:2rem;padding:1rem;background-color:var(--bg-secondary);border-radius:0.5rem;">`;
+    body += `<h3 style="margin-top:0;">Didn't find what you're looking for?</h3>`;
+    body += `<p style="margin:0.5rem 0 0 0;color:var(--text-secondary);">Browse the complete <a href="/companies">company tracker</a> with ${companies.length} AI-powered accounting companies, or explore by <a href="/categories">category</a>.</p>`;
+    body += `</div>\n`;
+
+    // Breadcrumb schema
+    const guideBreadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Resources',
+          'item': `${SITE_URL}/resources`,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 3,
+          'name': 'AI Tools for Accountants',
+          'item': `${SITE_URL}/guide/ai-tools-for-accountants`,
+        },
+      ],
+    };
+
+    // CollectionPage schema for the guide
+    const guideJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'AI Tools & Software for Accountants',
+      'url': `${SITE_URL}/guide/ai-tools-for-accountants`,
+      'description':
+        'Curated directory of leading AI-powered accounting tools including bookkeeping automation, audit software, tax preparation, and compliance tools.',
+      'itemListElement': topCompanies.slice(0, 15).map((c, idx) => ({
+        '@type': 'Thing',
+        'position': idx + 1,
+        'name': c.name,
+        'url': `${SITE_URL}/company/${c.id}`,
+        'description': generateCompanyDescription(c),
+      })),
+    };
+
+    pages['/guide/ai-tools-for-accountants'] = layout(body, {
+      title: 'AI Tools & Software for Accountants',
+      description:
+        'Curated directory of the best AI-powered tools for bookkeeping, audit, tax, compliance, and financial reporting. Updated daily with real coverage data.',
+      path: '/guide/ai-tools-for-accountants',
+      activeTab: 'resources',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@graph': [guideJsonLd, guideBreadcrumb],
+      },
+      ...layoutOpts,
+    });
+  }
+
+  return pages;
 }
 
 // ---------------------------------------------------------------------------
