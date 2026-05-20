@@ -2027,10 +2027,9 @@ function generateCompanyDetailPages(
           body += `<a href="/company/${escapeHtml(relComp.id)}" style="padding:0.75rem;border:1px solid var(--border);border-radius:0.25rem;text-decoration:none;color:inherit;transition:background-color 0.2s;display:block;"><div style="font-weight:600;color:var(--accent);">${escapeHtml(relComp.name)}</div>${relDesc}${relMeta}</a>\n`;
         }
         body += `</div>\n`;
-        if (relatedCompanies.length > 6) {
-          const categorySlug = company.categorySlug.replace(/_/g, '-');
-          body += `<p style="text-align:center;margin-bottom:2rem;"><a href="/categories/${categorySlug}" style="color:var(--accent);">View all ${relatedCompanies.length} companies in ${escapeHtml(displayCategoryLabel || company.category)} →</a></p>\n`;
-        }
+        // Always show "View all" link to category page when there are related companies, regardless of count
+        const categorySlug = company.categorySlug.replace(/_/g, '-');
+        body += `<p style="text-align:center;margin-bottom:2rem;"><a href="/categories/${categorySlug}" style="color:var(--accent);">View all ${relatedCompanies.length} companies in ${escapeHtml(displayCategoryLabel || company.category)} →</a></p>\n`;
       }
     }
 
