@@ -47,11 +47,11 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'optro': 'Cloud audit and compliance platform (formerly AuditBoard) with AI-native automation for SOX compliance and internal audit.',
 
   // News/Publishing (for completeness, though marked as sources)
-  'accounting-today': 'News publication covering accounting, tax, and audit trends including AI and automation adoption.',
-  'accountingweb': 'Accounting news and resource site covering technology adoption in accounting practices.',
-  'inside-public-accounting': 'News outlet covering accounting firm trends, mergers, and technology adoption in the Big 4 and regional firms.',
-  'cpa-practice-advisor': 'Publication for accounting professionals covering technology, regulation, and business trends.',
-  'journal-of-accountancy': 'Official magazine of the AICPA covering accounting, audit, tax, and business trends for accounting professionals.',
+  'accounting-today': 'Leading news publication for accounting professionals covering tax, audit, and technology trends with dedicated coverage of AI and accounting automation adoption.',
+  'accountingweb': 'Premier accounting news and resource platform covering technology adoption, AI trends, and innovation in accounting practices.',
+  'inside-public-accounting': 'News outlet tracking accounting firm trends, M&A activity, talent, and technology adoption across Big 4 and regional accounting firms.',
+  'cpa-practice-advisor': 'Key publication for CPA firms and accounting professionals covering technology trends, regulation changes, and business strategies.',
+  'journal-of-accountancy': 'Official magazine of the AICPA for accounting professionals covering accounting standards, audit, tax, business trends, and AI adoption.',
 
   // AI Accounting Platforms (High-Coverage)
   'sierra': 'AI-powered accounting platform focused on automating bookkeeping and compliance workflows for growing companies.',
@@ -67,6 +67,10 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'image-relay': 'Digital asset management platform helping accounting and professional services firms organize and streamline document workflows.',
   'artifact': 'AI-powered platform that generates and manages structured content for various applications and integrations.',
   'vitreous-world': 'Technology and solutions company operating in the digital transformation and enterprise software space.',
+  'amazon-web-services': 'Cloud infrastructure and AI services platform powering many AI-native accounting solutions and financial operations automation systems.',
+  'y-combinator': 'Startup accelerator and venture investor backing many AI-powered accounting, finance automation, and fintech companies.',
+  'slack': 'Workplace communication platform integrating with accounting tools to enable collaborative finance workflows and automation.',
+  'stripe': 'Payment processing platform with AI-powered financial insights and automated accounting integration for online businesses.',
 
   // Additional High-Traffic Companies
   'emburse': 'Spend management and business payments platform with AI-powered invoice processing and expense automation.',
@@ -118,11 +122,7 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
   'anthropic': 'AI safety company behind Claude, used by accounting platforms for reasoning tasks and compliance analysis.',
-  'slack': 'Workplace communication platform integrating with accounting tools for collaborative finance workflows.',
-  'stripe': 'Payment processing platform with AI-powered financial insights and automated accounting integration.',
-  'amazon-web-services': 'Cloud infrastructure provider powering many AI-native accounting platforms.',
   'google': 'Technology company behind foundational AI models and cloud infrastructure used in accounting solutions.',
-  'y-combinator': 'Startup accelerator and venture capital firm backing many AI-powered accounting and finance automation companies.',
   'nvidia': 'AI infrastructure and computing company whose GPUs power many machine learning and AI models in financial services.',
 };
 
