@@ -827,7 +827,8 @@ function generateSitemap(
   tags: string[],
   totalLatestPages: number,
   totalJobPages: number,
-  companies?: Company[]
+  companies?: Company[],
+  totalCompanyPages: number = 1
 ): string {
   const now = new Date().toISOString().split('T')[0];
 
@@ -844,6 +845,9 @@ function generateSitemap(
   }
 
   urls += `  <url><loc>${SITE_URL}/companies</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  for (let i = 2; i <= totalCompanyPages; i++) {
+    urls += `  <url><loc>${SITE_URL}/companies/page/${i}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
+  }
   urls += `  <url><loc>${SITE_URL}/categories</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/map</loc><changefreq>hourly</changefreq><priority>0.7</priority></url>\n`;
   urls += `  <url><loc>${SITE_URL}/jobs</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>\n`;
@@ -964,12 +968,16 @@ export function generateAllPages(
 
   pages['/og.png'] = generateOgImagePng();
 
+  // Calculate total company pages (30 per page)
+  const totalCompanyPages = companies ? Math.ceil(companies.length / 30) : 1;
+
   pages['/sitemap.xml'] = generateSitemap(
     articles,
     effectiveTags,
     totalLatestPages,
     totalJobPages,
-    companies
+    companies,
+    totalCompanyPages
   );
 
   return pages;
@@ -1806,30 +1814,42 @@ function generateCompaniesPage(
   companyJobs: Map<string, CompanyJob[]>,
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
+  const pages: Record<string, string> = {};
   const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
 
-  // Group companies by category
-  const categories = new Map<string, Company[]>();
-  for (const c of sorted) {
-    const cat = getPrimaryCategory(c.category) || 'Other';
-    if (!categories.has(cat)) categories.set(cat, []);
-    categories.get(cat)!.push(c);
-  }
+  // Paginate companies: 30 per page to keep payload under 50KB
+  const companiesPerPage = 30;
+  const companyPages = paginate(sorted, companiesPerPage);
+  const totalPages = companyPages.length;
 
-  let companyRows = '';
-  for (const [category, cos] of categories) {
-    companyRows += `<h2 class="section-heading">${escapeHtml(category)}</h2>\n`;
-    companyRows += `<div class="company-grid">\n`;
-    for (const c of cos) {
-      const name = escapeHtml(c.name);
-      const desc = escapeHtml(generateCompanyDescription(c));
-      const articleCount = companyArticles.get(c.id)?.length ?? 0;
-      const jobCount = companyJobs?.get(c.id)?.length ?? 0;
+  const subNav = categoriesSubNav('companies');
 
-      const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
-      const displayCat = getPrimaryCategory(c.category);
+  for (let i = 0; i < companyPages.length; i++) {
+    const pageNum = i + 1;
+    const pageCompanies = companyPages[i];
 
-      companyRows += `<div class="company-card">
+    // Group this page's companies by category
+    const categories = new Map<string, Company[]>();
+    for (const c of pageCompanies) {
+      const cat = getPrimaryCategory(c.category) || 'Other';
+      if (!categories.has(cat)) categories.set(cat, []);
+      categories.get(cat)!.push(c);
+    }
+
+    let companyRows = '';
+    for (const [category, cos] of categories) {
+      companyRows += `<h2 class="section-heading">${escapeHtml(category)}</h2>\n`;
+      companyRows += `<div class="company-grid">\n`;
+      for (const c of cos) {
+        const name = escapeHtml(c.name);
+        const desc = escapeHtml(generateCompanyDescription(c));
+        const articleCount = companyArticles.get(c.id)?.length ?? 0;
+        const jobCount = companyJobs?.get(c.id)?.length ?? 0;
+
+        const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
+        const displayCat = getPrimaryCategory(c.category);
+
+        companyRows += `<div class="company-card">
   <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
   <p class="card-desc">${desc}</p>
   <div class="card-meta">
@@ -1840,72 +1860,73 @@ function generateCompaniesPage(
     ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(c.website))}</a>` : ''}
   </div>
 </div>\n`;
+      }
+      companyRows += `</div>\n`;
     }
-    companyRows += `</div>\n`;
-  }
 
-  const subNav = categoriesSubNav('companies');
-  const body = companies.length === 0
-    ? `<h2 class="section-heading">Companies &amp; Startups</h2>
+    const body = sorted.length === 0
+      ? `<h2 class="section-heading">Companies &amp; Startups</h2>
 ${subNav}
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet. Check back soon.</p>`
-    : `
+      : `
 <h2 class="section-heading">Companies &amp; Startups in AI Accounting</h2>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
-  Tracking ${companies.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
+  Tracking ${sorted.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
 </p>
 ${subNav}
-${companyRows}`;
+${companyRows}${pagination(pageNum, totalPages, '/companies')}`;
 
-  const companiesJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    'name': 'AI Accounting Companies & Startups',
-    'url': `${SITE_URL}/companies`,
-    'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
-    'itemListElement': companies.slice(0, 20).map((c, idx) => ({
-      '@type': 'Thing',
-      'position': idx + 1,
-      'name': c.name,
-      'url': `${SITE_URL}/company/${c.id}`,
-      'description': generateCompanyDescription(c),
-    })),
-  };
+    const companiesJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'AI Accounting Companies & Startups',
+      'url': `${SITE_URL}/companies`,
+      'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+      'itemListElement': pageCompanies.slice(0, 30).map((c, idx) => ({
+        '@type': 'Thing',
+        'position': idx + 1,
+        'name': c.name,
+        'url': `${SITE_URL}/company/${c.id}`,
+        'description': generateCompanyDescription(c),
+      })),
+    };
 
-  const companiesBreadcrumb = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    'itemListElement': [
-      {
-        '@type': 'ListItem',
-        'position': 1,
-        'name': 'Home',
-        'item': SITE_URL,
-      },
-      {
-        '@type': 'ListItem',
-        'position': 2,
-        'name': 'Companies',
-        'item': `${SITE_URL}/companies`,
-      },
-    ],
-  };
+    const companiesBreadcrumb = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': 'Companies',
+          'item': `${SITE_URL}/companies`,
+        },
+      ],
+    };
 
-  const companiesJsonLdGraph = {
-    '@context': 'https://schema.org',
-    '@graph': [companiesJsonLd, companiesBreadcrumb],
-  };
+    const companiesJsonLdGraph = {
+      '@context': 'https://schema.org',
+      '@graph': [companiesJsonLd, companiesBreadcrumb],
+    };
 
-  return {
-    '/companies': layout(body, {
-      title: 'Companies',
+    const path = pageNum === 1 ? '/companies' : `/companies/page/${pageNum}`;
+    pages[path] = layout(body, {
+      title: pageNum === 1 ? 'Companies' : `Companies — Page ${pageNum}`,
       description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
-      path: '/companies',
+      path,
       activeTab: 'companies',
       jsonLd: companiesJsonLdGraph,
       ...layoutOpts,
-    }),
-  };
+    });
+  }
+
+  return pages;
 }
 
 // ---------------------------------------------------------------------------
