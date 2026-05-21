@@ -454,10 +454,28 @@ a.source-name:hover{text-decoration:underline;}
 /* Featured section */
 .featured-grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:1rem;
+  grid-template-columns:repeat(2,1fr);
+  gap:1.5rem;
   margin-bottom:1rem;
 }
+/* Hero/lead featured card — first child, spans full width with larger treatment */
+.featured-card:nth-child(1){
+  grid-column:1/-1;
+  padding:2rem;
+  background:var(--featured-bg);
+  border:2px solid var(--featured-border);
+}
+.featured-card:nth-child(1) .article-title{
+  font-size:1.4rem;
+  font-weight:700;
+  line-height:1.35;
+}
+.featured-card:nth-child(1) .article-summary{
+  -webkit-line-clamp:4;
+  line-height:1.6;
+  font-size:1rem;
+}
+/* Supporting featured cards — smaller, uniform treatment */
 .featured-card{
   background:var(--bg-card);
   border:1px solid var(--border);
@@ -466,14 +484,28 @@ a.source-name:hover{text-decoration:underline;}
   box-shadow:var(--shadow);
   transition:box-shadow 0.2s, transform 0.2s;
 }
+.featured-card:nth-child(n+2){
+  padding:1.25rem;
+  border:1px solid var(--border);
+  background:var(--bg-card);
+}
 .featured-card:hover{
   box-shadow:var(--shadow-lg);
   transform:translateY(-2px);
+}
+.featured-card:nth-child(n+2) .article-title{
+  font-size:0.95rem;
+  font-weight:500;
+  line-height:1.4;
 }
 .featured-card .article-title{font-size:1rem;line-height:1.4;}
 .featured-card .article-summary{
   -webkit-line-clamp:3;
   line-height:1.5;
+}
+.featured-card:nth-child(n+2) .article-summary{
+  -webkit-line-clamp:2;
+  font-size:0.9rem;
 }
 .article-summary-link{color:inherit;text-decoration:none;display:block;}
 .article-summary-link:hover .article-summary{color:var(--accent);}
@@ -1010,12 +1042,14 @@ a.source-name:hover{text-decoration:underline;}
 /* Responsive */
 @media (max-width:900px){
   .featured-grid{grid-template-columns:repeat(2,1fr);}
+  .featured-card:nth-child(1) .article-title{font-size:1.2rem;}
   .company-grid{grid-template-columns:repeat(2,1fr);}
   .resource-grid{grid-template-columns:repeat(2,1fr);}
   .footer-grid{grid-template-columns:1fr 1fr;}
   .hero h1{font-size:1.8rem;}
 }
 @media (max-width:768px){
+  .featured-card:nth-child(1) .article-title{font-size:1.1rem;}
   .spotlight-grid{grid-template-columns:1fr;}
   .job-grid{grid-template-columns:1fr;}
   .jobs-preview-grid{grid-template-columns:1fr;}
@@ -1026,6 +1060,9 @@ a.source-name:hover{text-decoration:underline;}
 }
 @media (max-width:580px){
   .featured-grid{grid-template-columns:1fr;}
+  .featured-card:nth-child(1){grid-column:1;}
+  .featured-card:nth-child(1) .article-title{font-size:1rem;}
+  .featured-card:nth-child(1) .article-summary{-webkit-line-clamp:3;}
   .company-grid{grid-template-columns:1fr;}
   .job-grid{grid-template-columns:1fr;}
   .jobs-preview-grid{grid-template-columns:1fr;}
