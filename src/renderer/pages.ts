@@ -571,6 +571,32 @@ function generateTagPages(
       },
     };
 
+    // Add BreadcrumbList schema for tag pages
+    const tagBreadcrumbList = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': SITE_URL,
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
+          'name': tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1),
+          'item': `${SITE_URL}${basePath}`,
+        },
+      ],
+    };
+
+    // Combine CollectionPage and BreadcrumbList into a graph
+    const tagJsonLdGraph = {
+      '@context': 'https://schema.org',
+      '@graph': [tagJsonLd, tagBreadcrumbList],
+    };
+
     pages[basePath] = layout(body, {
       title: `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`,
       description: `Articles about ${tagLabel} in AI-powered accounting.`,
@@ -578,7 +604,7 @@ function generateTagPages(
       activeTag: tag,
       activeTab: 'news',
       noindex: filtered.length < 5,
-      jsonLd: tagJsonLd,
+      jsonLd: tagJsonLdGraph,
       ...layoutOpts,
     });
 
