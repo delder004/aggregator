@@ -1941,6 +1941,8 @@ ${companyRows}${pagination(pageNum, totalPages, '/companies')}`;
       '@graph': [companiesJsonLd, companiesBreadcrumb],
     };
 
+    // Exclude global stats from companies list pages to avoid showing stale timestamps
+    const { stats, ...companiesLayoutOpts } = layoutOpts;
     const path = pageNum === 1 ? '/companies' : `/companies/page/${pageNum}`;
     pages[path] = layout(body, {
       title: pageNum === 1 ? 'Companies' : `Companies — Page ${pageNum}`,
@@ -1948,7 +1950,7 @@ ${companyRows}${pagination(pageNum, totalPages, '/companies')}`;
       path,
       activeTab: 'companies',
       jsonLd: companiesJsonLdGraph,
-      ...layoutOpts,
+      ...companiesLayoutOpts,
     });
   }
 
