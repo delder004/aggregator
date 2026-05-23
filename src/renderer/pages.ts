@@ -1971,6 +1971,8 @@ ${pagination(pageNum, totalPages, sortType === 'recent' ? '/companies' : `/compa
         '@graph': [companiesJsonLd, companiesBreadcrumb],
       };
 
+      // Exclude global stats from companies list pages to avoid showing stale timestamps
+      const { stats, ...companiesLayoutOpts } = layoutOpts;
       const pathSuffix = sortType === 'recent' ? '' : `/by-${sortType}`;
       const path = pageNum === 1 ? `/companies${pathSuffix}` : `/companies${pathSuffix}/page/${pageNum}`;
       const title = pageNum === 1 ? 'Companies' : `Companies — Page ${pageNum}`;
@@ -1981,7 +1983,7 @@ ${pagination(pageNum, totalPages, sortType === 'recent' ? '/companies' : `/compa
         path,
         activeTab: 'companies',
         jsonLd: companiesJsonLdGraph,
-        ...layoutOpts,
+        ...companiesLayoutOpts,
       });
     }
   }
