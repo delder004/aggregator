@@ -931,3 +931,56 @@ export async function cleanupStaleArticleCompanyLinks(
 
   return deletedCount;
 }
+
+/**
+ * Sync curated company descriptions into the database.
+ * Updates company records with descriptions from the curated list,
+ * only if the company exists and currently has no description.
+ */
+export async function syncCuratedCompanyDescriptions(
+  db: D1Database,
+  curatedDescriptions: Record<string, string>
+): Promise<number> {
+  let updateCount = 0;
+
+  // Batch updates in groups of 100 to avoid excessive subrequests
+  const companyIds = Object.keys(curatedDescriptions);
+  for (let i = 0; i < companyIds.length; i += 100) {
+    const batch = companyIds.slice(i, i + 100);
+    const updates: Array<{
+      id: string;
+      description: string;
+    }> = [];
+
+    // For each company in this batch, check if it exists and has no description
+    const placeholders = batch.map(() => '?').join(',');
+    const result = await db
+      .prepare(`SELECT id, description FROM companies WHERE id IN (${placeholders})`)
+      .bind(...batch)
+      .all();
+
+    for (const row of result.results) {
+      const companyId = row.id as string;
+      // Only update if description is NULL or empty
+      if (!row.description || row.description === '') {
+        const curatedDesc = curatedDescriptions[companyId];
+        if (curatedDesc) {
+          updates.push({ id: companyId, description: curatedDesc });
+        }
+      }
+    }
+
+    // Execute batch updates
+    if (updates.length > 0) {
+      const updateStmts = updates.map((item) =>
+        db
+          .prepare(`UPDATE companies SET description = ? WHERE id = ?`)
+          .bind(item.description, item.id)
+      );
+      await db.batch(updateStmts);
+      updateCount += updates.length;
+    }
+  }
+
+  return updateCount;
+}
