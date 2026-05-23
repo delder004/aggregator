@@ -560,6 +560,92 @@ a.source-name:hover{text-decoration:underline;}
 .company-card .card-meta{font-size:0.73rem;color:var(--text-tertiary);display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
 .company-card .card-badge{display:inline-block;font-size:0.65rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:100px;background:var(--accent-subtle);color:var(--accent);}
 
+/* Companies table */
+.sort-links{
+  display:flex;
+  gap:0.5rem;
+  margin:1rem 0;
+  flex-wrap:wrap;
+}
+.sort-link{
+  padding:0.4rem 0.8rem;
+  font-size:0.85rem;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--bg-secondary);
+  color:var(--text-secondary);
+  text-decoration:none;
+  transition:all 0.2s;
+}
+.sort-link:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+.sort-link.active{
+  background:var(--accent-subtle);
+  border-color:var(--accent);
+  color:var(--accent);
+  font-weight:600;
+}
+.table-container{
+  overflow-x:auto;
+  margin:1rem 0;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--bg-card);
+}
+.companies-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.9rem;
+}
+.companies-table thead{
+  background:var(--bg-secondary);
+  border-bottom:2px solid var(--border);
+}
+.companies-table th{
+  padding:0.75rem 1rem;
+  text-align:left;
+  font-weight:600;
+  color:var(--text);
+  font-size:0.85rem;
+  white-space:nowrap;
+}
+.companies-table tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background 0.2s;
+}
+.companies-table tbody tr:hover{
+  background:var(--bg-secondary);
+}
+.companies-table td{
+  padding:0.75rem 1rem;
+  color:var(--text-secondary);
+}
+.table-name{
+  font-weight:500;
+  color:var(--text);
+}
+.table-name a{
+  color:var(--accent);
+  text-decoration:none;
+}
+.table-name a:hover{
+  text-decoration:underline;
+}
+.table-category{
+  font-size:0.8rem;
+}
+.table-count{
+  text-align:center;
+  font-weight:500;
+  color:var(--text);
+}
+.table-date{
+  font-size:0.8rem;
+  white-space:nowrap;
+}
+
 /* Market map */
 .market-map{
   display:flex;
@@ -1059,6 +1145,9 @@ a.source-name:hover{text-decoration:underline;}
   .hero{padding:2.5rem 0;}
   .hero p{font-size:0.95rem;}
   .site-tagline{display:none;}
+  .companies-table th,.companies-table td{padding:0.6rem 0.75rem;font-size:0.8rem;}
+  .table-date{display:none;}
+  .companies-table th:nth-child(5),.companies-table td:nth-child(5){display:none;}
 }
 @media (max-width:580px){
   .featured-grid{grid-template-columns:1fr;}
