@@ -1834,6 +1834,8 @@ function generateResourcesPage(
 // Companies page
 // ---------------------------------------------------------------------------
 
+type CompanySortType = 'recent' | 'articles' | 'jobs';
+
 function generateCompaniesPage(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
@@ -1841,117 +1843,149 @@ function generateCompaniesPage(
   layoutOpts: Partial<LayoutOptions>
 ): Record<string, string> {
   const pages: Record<string, string> = {};
-  const sorted = [...companies].sort((a, b) => b.articleCount - a.articleCount);
 
-  // Paginate companies: 30 per page to keep payload under 50KB
-  const companiesPerPage = 30;
-  const companyPages = paginate(sorted, companiesPerPage);
-  const totalPages = companyPages.length;
+  // Generate pages for each sort type
+  const sortTypes: CompanySortType[] = ['recent', 'articles', 'jobs'];
+  for (const sortType of sortTypes) {
+    const sorted = [...companies].sort((a, b) => {
+      switch (sortType) {
+        case 'articles':
+          return b.articleCount - a.articleCount;
+        case 'jobs':
+          return (companyJobs?.get(b.id)?.length ?? 0) - (companyJobs?.get(a.id)?.length ?? 0);
+        case 'recent':
+        default:
+          const aDate = new Date(a.lastMentionedAt || a.addedAt).getTime();
+          const bDate = new Date(b.lastMentionedAt || b.addedAt).getTime();
+          return bDate - aDate;
+      }
+    });
 
-  const subNav = categoriesSubNav('companies');
+    // Paginate: 40 per page for tables to stay under 50KB
+    const companiesPerPage = 40;
+    const companyPages = paginate(sorted, companiesPerPage);
+    const totalPages = companyPages.length;
 
-  for (let i = 0; i < companyPages.length; i++) {
-    const pageNum = i + 1;
-    const pageCompanies = companyPages[i];
+    const subNav = categoriesSubNav('companies');
 
-    // Group this page's companies by category
-    const categories = new Map<string, Company[]>();
-    for (const c of pageCompanies) {
-      const cat = getPrimaryCategory(c.category) || 'Other';
-      if (!categories.has(cat)) categories.set(cat, []);
-      categories.get(cat)!.push(c);
-    }
+    // Sort link headers
+    const sortLinks = [
+      { type: 'recent' as CompanySortType, label: 'Last Mentioned', active: sortType === 'recent' },
+      { type: 'articles' as CompanySortType, label: 'Articles', active: sortType === 'articles' },
+      { type: 'jobs' as CompanySortType, label: 'Open Roles', active: sortType === 'jobs' },
+    ];
 
-    let companyRows = '';
-    for (const [category, cos] of categories) {
-      companyRows += `<h2 class="section-heading">${escapeHtml(category)}</h2>\n`;
-      companyRows += `<div class="company-grid">\n`;
-      for (const c of cos) {
-        const name = escapeHtml(c.name);
-        const desc = escapeHtml(generateCompanyDescription(c));
+    const sortLinksHtml = `<div class="sort-links">
+  ${sortLinks.map(link => {
+    const href = link.type === 'recent' ? '/companies' : `/companies/by-${link.type}`;
+    const ariaLabel = link.active ? `${link.label} (current)` : link.label;
+    return `<a href="${href}" class="sort-link${link.active ? ' active' : ''}" aria-label="${ariaLabel}">${link.label}</a>`;
+  }).join('\n  ')}
+</div>\n`;
+
+    for (let i = 0; i < companyPages.length; i++) {
+      const pageNum = i + 1;
+      const pageCompanies = companyPages[i];
+
+      // Build table rows
+      let tableBody = '';
+      for (const c of pageCompanies) {
         const articleCount = companyArticles.get(c.id)?.length ?? 0;
         const jobCount = companyJobs?.get(c.id)?.length ?? 0;
+        const lastMentioned = c.lastMentionedAt ? new Date(c.lastMentionedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Never';
+        const displayCat = getPrimaryCategory(c.category) || 'Other';
 
-        const sizeLabel = companySizeLabel(c.employeeCountMin ?? null, c.employeeCountMax ?? null);
-        const displayCat = getPrimaryCategory(c.category);
-
-        companyRows += `<div class="company-card">
-  <h3><a href="/company/${escapeHtml(c.id)}">${name}</a></h3>
-  <p class="card-desc">${desc}</p>
-  <div class="card-meta">
-    ${displayCat ? `<span class="card-badge">${escapeHtml(displayCat)}</span>` : ''}
-    <span>${articleCount} article${articleCount !== 1 ? 's' : ''}</span>
-    ${jobCount > 0 ? `<span class="meta-dot">&middot;</span> <span style="color:var(--accent);">${jobCount} open role${jobCount !== 1 ? 's' : ''}</span>` : ''}
-    ${sizeLabel ? `<span class="meta-dot">&middot;</span> <span>${escapeHtml(sizeLabel)}</span>` : ''}
-    ${c.website ? `<span class="meta-dot">&middot;</span> <a href="${escapeHtml(c.website)}" rel="noopener" target="_blank">${escapeHtml(safeHostname(c.website))}</a>` : ''}
-  </div>
-</div>\n`;
+        tableBody += `<tr>
+    <td class="table-name"><a href="/company/${escapeHtml(c.id)}">${escapeHtml(c.name)}</a></td>
+    <td class="table-category">${escapeHtml(displayCat)}</td>
+    <td class="table-count">${articleCount}</td>
+    <td class="table-count">${jobCount}</td>
+    <td class="table-date">${lastMentioned}</td>
+  </tr>\n`;
       }
-      companyRows += `</div>\n`;
-    }
 
-    const body = sorted.length === 0
-      ? `<h2 class="section-heading">Companies &amp; Startups</h2>
+      const body = sorted.length === 0
+        ? `<h2 class="section-heading">Companies &amp; Startups</h2>
 ${subNav}
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No companies tracked yet. Check back soon.</p>`
-      : `
+        : `
 <h2 class="section-heading">Companies &amp; Startups in AI Accounting</h2>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
-  Tracking ${sorted.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping.
+  Tracking ${sorted.length} companies building AI-powered tools for accounting, audit, tax, and bookkeeping. ${sortType !== 'recent' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
 </p>
 ${subNav}
-${companyRows}${pagination(pageNum, totalPages, '/companies')}`;
+${sortLinksHtml}
+<div class="table-container">
+  <table class="companies-table">
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Category</th>
+        <th>Articles</th>
+        <th>Roles</th>
+        <th>Last Mentioned</th>
+      </tr>
+    </thead>
+    <tbody>
+${tableBody}    </tbody>
+  </table>
+</div>
+${pagination(pageNum, totalPages, sortType === 'recent' ? '/companies' : `/companies/by-${sortType}`)}`;
 
-    const companiesJsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      'name': 'AI Accounting Companies & Startups',
-      'url': `${SITE_URL}/companies`,
-      'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
-      'itemListElement': pageCompanies.slice(0, 30).map((c, idx) => ({
-        '@type': 'Thing',
-        'position': idx + 1,
-        'name': c.name,
-        'url': `${SITE_URL}/company/${c.id}`,
-        'description': generateCompanyDescription(c),
-      })),
-    };
+      const companiesJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'AI Accounting Companies & Startups',
+        'url': `${SITE_URL}/companies`,
+        'description': 'Directory of companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+        'itemListElement': pageCompanies.slice(0, 30).map((c, idx) => ({
+          '@type': 'Thing',
+          'position': idx + 1,
+          'name': c.name,
+          'url': `${SITE_URL}/company/${c.id}`,
+          'description': generateCompanyDescription(c),
+        })),
+      };
 
-    const companiesBreadcrumb = {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      'itemListElement': [
-        {
-          '@type': 'ListItem',
-          'position': 1,
-          'name': 'Home',
-          'item': SITE_URL,
-        },
-        {
-          '@type': 'ListItem',
-          'position': 2,
-          'name': 'Companies',
-          'item': `${SITE_URL}/companies`,
-        },
-      ],
-    };
+      const companiesBreadcrumb = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Home',
+            'item': SITE_URL,
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'Companies',
+            'item': `${SITE_URL}/companies`,
+          },
+        ],
+      };
 
-    const companiesJsonLdGraph = {
-      '@context': 'https://schema.org',
-      '@graph': [companiesJsonLd, companiesBreadcrumb],
-    };
+      const companiesJsonLdGraph = {
+        '@context': 'https://schema.org',
+        '@graph': [companiesJsonLd, companiesBreadcrumb],
+      };
 
-    // Exclude global stats from companies list pages to avoid showing stale timestamps
-    const { stats, ...companiesLayoutOpts } = layoutOpts;
-    const path = pageNum === 1 ? '/companies' : `/companies/page/${pageNum}`;
-    pages[path] = layout(body, {
-      title: pageNum === 1 ? 'Companies' : `Companies — Page ${pageNum}`,
-      description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
-      path,
-      activeTab: 'companies',
-      jsonLd: companiesJsonLdGraph,
-      ...companiesLayoutOpts,
-    });
+      // Exclude global stats from companies list pages to avoid showing stale timestamps
+      const { stats, ...companiesLayoutOpts } = layoutOpts;
+      const pathSuffix = sortType === 'recent' ? '' : `/by-${sortType}`;
+      const path = pageNum === 1 ? `/companies${pathSuffix}` : `/companies${pathSuffix}/page/${pageNum}`;
+      const title = pageNum === 1 ? 'Companies' : `Companies — Page ${pageNum}`;
+
+      pages[path] = layout(body, {
+        title,
+        description: 'Companies and startups building agentic AI for accounting, audit, tax, and bookkeeping.',
+        path,
+        activeTab: 'companies',
+        jsonLd: companiesJsonLdGraph,
+        ...companiesLayoutOpts,
+      });
+    }
   }
 
   return pages;
