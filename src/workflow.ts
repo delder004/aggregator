@@ -26,6 +26,7 @@ import { blogScraperCollector } from './collectors/blogscraper';
 import { scoreArticles, MIN_PUBLISH_SCORE } from './scoring/classifier';
 import { getTrackedCompanies, matchArticleToCompanies, linkArticleToCompanies, updateCompanyStats, discoverNewCompanies, createDiscoveredCompany, insertSource } from './company/tracker';
 import { probeWebsite, discoverBlog, probeJobBoards, MAX_ENRICHMENTS_PER_RUN } from './company/enricher';
+import { CURATED_DESCRIPTIONS } from './company/descriptions';
 import { generateCompanyInsights } from './insights/company-insights';
 import {
   getPublishedArticles,
@@ -39,6 +40,7 @@ import {
   getLatestSummaries,
   getArticleCount,
   cleanupStaleArticleCompanyLinks,
+  syncCuratedCompanyDescriptions,
 } from './db/queries';
 import { collectAllJobs, shouldFetchJobs, markJobsFetched, getAllCompanyJobs } from './collectors/jobs';
 import { generateAllPages } from './renderer/pages';
@@ -895,6 +897,36 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
       });
 
       await step.sleep('pre-render-pause', '1 second');
+
+      // Sync curated company descriptions before rendering pages
+      const syncStartedAt = nowIso();
+      const sync = await step.do(
+        'sync-descriptions',
+        {
+          retries: { limit: 1, delay: '5 seconds' },
+        },
+        async () => {
+          try {
+            const updated = await syncCuratedCompanyDescriptions(this.env.DB, CURATED_DESCRIPTIONS);
+            console.log(`Synced ${updated} company descriptions`);
+            return { updated };
+          } catch (err) {
+            console.error('Description sync failed:', err);
+            return {
+              updated: 0,
+              error: err instanceof Error ? err.message : String(err),
+            };
+          }
+        }
+      );
+      await recordStep(this.env, params.pipelineRunId, 'process', stepReports, {
+        stepName: 'sync-descriptions',
+        status: sync.error ? 'error' : 'ok',
+        startedAt: syncStartedAt,
+        completedAt: nowIso(),
+        metrics: { updated: sync.updated },
+        errors: sync.error ? [sync.error] : [],
+      });
 
       const renderStartedAt = nowIso();
       const rendering = await step.do(
