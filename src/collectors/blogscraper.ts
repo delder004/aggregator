@@ -1,5 +1,5 @@
 import type { Collector, CollectedArticle, SourceConfig } from '../types';
-import { sanitizeTitle, extractLeadingDate } from './utils';
+import { sanitizeTitle, extractLeadingDate, decodeHtmlEntities } from './utils';
 
 // Re-export for backwards compatibility
 export { sanitizeTitle } from './utils';
@@ -25,21 +25,21 @@ const LINK_REGEX = /<a\s[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
 // Also handles HTML-escaped tags like &lt;script&gt;...&lt;/script&gt;
 function stripHtml(html: string): string {
   let text = html;
+  
+  // Decode HTML entities first so we can match and remove escaped tags
+  text = decodeHtmlEntities(text);
+  
   // Remove script, style, nav, header, footer tags and their content (literal tags)
   text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
   text = text.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ');
   text = text.replace(/<nav\b[^>]*>[\s\S]*?<\/nav>/gi, ' ');
   text = text.replace(/<header\b[^>]*>[\s\S]*?<\/header>/gi, ' ');
   text = text.replace(/<footer\b[^>]*>[\s\S]*?<\/footer>/gi, ' ');
-  // Also remove HTML-escaped versions of the above tags
-  text = text.replace(/&lt;script\b[^&]*&gt;[\s\S]*?&lt;\/script&gt;/gi, ' ');
-  text = text.replace(/&lt;style\b[^&]*&gt;[\s\S]*?&lt;\/style&gt;/gi, ' ');
-  text = text.replace(/&lt;nav\b[^&]*&gt;[\s\S]*?&lt;\/nav&gt;/gi, ' ');
-  text = text.replace(/&lt;header\b[^&]*&gt;[\s\S]*?&lt;\/header&gt;/gi, ' ');
-  text = text.replace(/&lt;footer\b[^&]*&gt;[\s\S]*?&lt;\/footer&gt;/gi, ' ');
+  
   // Strip remaining literal HTML tags
   text = text.replace(/<[^>]*>/g, ' ');
-  // Collapse multiple whitespace
+  
+  // Collapse multiple whitespace (including newlines)
   text = text.replace(/\s+/g, ' ').trim();
   return text;
 }
@@ -86,6 +86,9 @@ async function extractSnippet(url: string): Promise<string | null> {
     if (!html) return null;
 
     let text = html;
+
+    // Decode HTML entities first
+    text = decodeHtmlEntities(text);
 
     // Remove script, style, nav, header, footer tags and their content
     text = text.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
