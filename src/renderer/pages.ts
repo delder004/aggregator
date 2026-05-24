@@ -2219,15 +2219,42 @@ function generateCompanyDetailPages(
 // ---------------------------------------------------------------------------
 
 /**
+ * Enrich a company's category slug based on free-text `category` field.
+ * If the free-text category indicates FP&A is the primary focus, override
+ * the database slug to surface it on the /categories/fpa-reporting page.
+ * This compensates for companies that were initially bucketed into ai-native-erp
+ * or ai-bookkeeping but have strong FP&A/reporting capabilities as a primary feature.
+ */
+function enrichCategorySlug(company: Company): string {
+  let slug = getCategoryBySlug(company.categorySlug).slug;
+  
+  // If company's free-text category starts with or emphasizes FP&A, reclassify
+  // to fpa-reporting even if initially bucketed elsewhere
+  if (company.category && typeof company.category === 'string') {
+    const cat = company.category.toLowerCase();
+    if (cat.startsWith('fp&a') 
+      || cat.startsWith('fpa ')
+      || cat.startsWith('financial planning')
+      || cat.startsWith('forecasting')
+      || (cat.includes('consolidat') && !cat.startsWith('compliance'))) {
+      return 'fpa-reporting';
+    }
+  }
+  
+  return slug;
+}
+
+/**
  * Bucket every company by its `categorySlug`, defaulting NULL/unknown to 'other'.
  * Returns a map keyed by slug. Categories without companies get an empty array
  * so the index page can show a stub for them too.
+ * Uses enrichCategorySlug to override slugs for FP&A-focused companies.
  */
 function bucketCompaniesBySlug(companies: Company[]): Map<string, Company[]> {
   const buckets = new Map<string, Company[]>();
   for (const cat of CATEGORIES) buckets.set(cat.slug, []);
   for (const c of companies) {
-    const slug = getCategoryBySlug(c.categorySlug).slug;
+    const slug = enrichCategorySlug(c);
     buckets.get(slug)!.push(c);
   }
   return buckets;
