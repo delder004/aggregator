@@ -2787,6 +2787,7 @@ function generateGuidesPages(
 // ---------------------------------------------------------------------------
 
 type EnrichedJob = CompanyJob & { companyName: string; companyId: string };
+type JobSortType = 'posted' | 'company';
 
 /** Slugify a string for URL use. */
 function slugify(str: string): string {
@@ -2875,6 +2876,43 @@ function renderJobCards(jobs: EnrichedJob[]): string {
   return body;
 }
 
+function renderJobsTable(jobs: EnrichedJob[]): string {
+  if (jobs.length === 0) {
+    return `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No matching jobs found.</p>`;
+  }
+
+  let tableBody = '';
+  for (const job of jobs) {
+    const postedDate = job.postedAt ? new Date(job.postedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
+    const location = job.location ? escapeHtml(job.location) : (job.isRemote ? 'Remote' : 'N/A');
+    const dept = job.department ? escapeHtml(job.department) : 'Other';
+
+    tableBody += `<tr>
+    <td class="table-title"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></td>
+    <td class="table-company"><a href="/company/${escapeHtml(job.companyId)}">${escapeHtml(job.companyName)}</a></td>
+    <td class="table-dept">${dept}</td>
+    <td class="table-location">${location}</td>
+    <td class="table-date">${postedDate}</td>
+  </tr>\n`;
+  }
+
+  return `<div class="table-container">
+  <table class="jobs-table">
+    <thead>
+      <tr>
+        <th>Job Title</th>
+        <th>Company</th>
+        <th>Department</th>
+        <th>Location</th>
+        <th>Posted</th>
+      </tr>
+    </thead>
+    <tbody>
+${tableBody}    </tbody>
+  </table>
+</div>\n`;
+}
+
 function generateJobsPage(
   companies: Company[],
   companyJobs: Map<string, CompanyJob[]>,
@@ -2932,48 +2970,122 @@ function generateJobsPage(
 
   const filterNav = jobFilterNav(departments, locations, companyFilterList, '', hasRemote);
 
-  // Main /jobs page (all jobs) - paginated
-  const jobPages = paginate(allJobs, JOBS_PER_PAGE);
-  const totalJobPages = jobPages.length;
-
-  for (let i = 0; i < jobPages.length; i++) {
-    let body = '';
-    if (allJobs.length === 0) {
-      body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
-      body += filterNav;
-      body += `<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`;
-    } else {
-      body += `<h2 class="section-heading">Open Roles in AI Accounting</h2>\n`;
-      body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting.</p>\n`;
-      body += filterNav;
-      body += renderJobCards(jobPages[i]);
-      // Add JobPosting schema for all jobs on this page
-      body += renderJobPostingsJsonLd(jobPages[i], companyMap);
-      if (totalJobPages > 1) {
-        const pageNum = i + 1;
-        body += `<div style="display:flex;justify-content:center;gap:0.5rem;margin-top:2rem;flex-wrap:wrap;align-items:center;">`;
-        if (i > 0) {
-          body += `<a href="${i === 1 ? '/jobs' : `/jobs/page/${i}`}" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:4px;text-decoration:none;color:var(--accent);">← Previous</a>`;
-        }
-        body += `<span style="color:var(--text-secondary);">Page ${pageNum} of ${totalJobPages}</span>`;
-        if (i < jobPages.length - 1) {
-          body += `<a href="/jobs/page/${pageNum + 1}" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:4px;text-decoration:none;color:var(--accent);">Next →</a>`;
-        }
-        body += `</div>`;
+  // Generate sort variants for main /jobs view (table-based)
+  const sortTypes: JobSortType[] = ['posted', 'company'];
+  for (const sortType of sortTypes) {
+    const sorted = [...allJobs].sort((a, b) => {
+      switch (sortType) {
+        case 'company':
+          const cmp = a.companyName.localeCompare(b.companyName);
+          if (cmp !== 0) return cmp;
+          const da = a.postedAt ? new Date(a.postedAt).getTime() : 0;
+          const db = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+          return db - da;
+        case 'posted':
+        default:
+          const da2 = a.postedAt ? new Date(a.postedAt).getTime() : 0;
+          const db2 = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+          if (db2 !== da2) return db2 - da2;
+          return a.companyName.localeCompare(b.companyName);
       }
-    }
-
-    const path = i === 0 ? '/jobs' : `/jobs/page/${i + 1}`;
-    pages[path] = layout(body, {
-      title: totalJobPages > 1 && i > 0 ? `Jobs — Page ${i + 1}` : 'Jobs',
-      description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
-      path,
-      activeTab: 'jobs',
-      ...jobLayoutOpts,
     });
+
+    // Paginate: 40 per page for tables to stay under 50KB
+    const jobsPerPage = 40;
+    const jobPages = paginate(sorted, jobsPerPage);
+    const totalPages = jobPages.length;
+
+    // Sort link headers
+    const sortLinks = [
+      { type: 'posted' as JobSortType, label: 'Recently Posted', active: sortType === 'posted' },
+      { type: 'company' as JobSortType, label: 'By Company', active: sortType === 'company' },
+    ];
+
+    const sortLinksHtml = `<div class="sort-links">
+  ${sortLinks.map(link => {
+    const href = link.type === 'posted' ? '/jobs' : `/jobs/by-${link.type}`;
+    const ariaLabel = link.active ? `${link.label} (current)` : link.label;
+    return `<a href="${href}" class="sort-link${link.active ? ' active' : ''}" aria-label="${ariaLabel}">${link.label}</a>`;
+  }).join('\n  ')}
+</div>\n`;
+
+    for (let i = 0; i < jobPages.length; i++) {
+      const pageNum = i + 1;
+      const pageJobs = jobPages[i];
+
+      const body = allJobs.length === 0
+        ? `<h2 class="section-heading">Open Roles in AI Accounting</h2>
+${filterNav}
+<p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`
+        : `
+<h2 class="section-heading">Open Roles in AI Accounting</h2>
+<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
+  ${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting. ${sortType !== 'posted' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
+</p>
+${filterNav}
+${sortLinksHtml}
+${renderJobsTable(pageJobs)}
+${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${sortType}`)}`;
+
+      const jobsJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'Open Roles in AI Accounting',
+        'url': `${SITE_URL}/jobs`,
+        'description': 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+        'itemListElement': pageJobs.slice(0, 30).map((j, idx) => ({
+          '@type': 'JobPosting',
+          'position': idx + 1,
+          'title': j.title,
+          'hiringOrganization': j.companyName,
+          'jobLocation': j.location || 'Remote',
+        })),
+      };
+
+      const jobsBreadcrumb = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Home',
+            'item': SITE_URL,
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'Jobs',
+            'item': `${SITE_URL}/jobs`,
+          },
+        ],
+      };
+
+      const jobsJsonLdGraph = {
+        '@context': 'https://schema.org',
+        '@graph': [jobsJsonLd, jobsBreadcrumb],
+      };
+
+      // Add JobPosting schema for jobs on this page
+      let bodyWithSchema = body;
+      bodyWithSchema += renderJobPostingsJsonLd(pageJobs, companyMap);
+
+      const pathSuffix = sortType === 'posted' ? '' : `/by-${sortType}`;
+      const path = pageNum === 1 ? `/jobs${pathSuffix}` : `/jobs${pathSuffix}/page/${pageNum}`;
+      const title = pageNum === 1 ? 'Jobs' : `Jobs — Page ${pageNum}`;
+
+      pages[path] = layout(bodyWithSchema, {
+        title,
+        description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+        path,
+        activeTab: 'jobs',
+        jsonLd: jobsJsonLdGraph,
+        ...jobLayoutOpts,
+      });
+    }
   }
 
-  // Remote filter page
+  // Remote filter page (card view)
   if (hasRemote) {
     const remoteJobs = allJobs.filter(j => j.isRemote);
     let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
@@ -2992,7 +3104,7 @@ function generateJobsPage(
     });
   }
 
-  // Department filter pages
+  // Department filter pages (card view)
   for (const dept of departments) {
     const slug = slugify(dept);
     const deptJobs = allJobs.filter(j => j.department === dept);
@@ -3012,7 +3124,7 @@ function generateJobsPage(
     });
   }
 
-  // Location filter pages
+  // Location filter pages (card view)
   for (const loc of locations) {
     const slug = slugify(loc);
     const locJobs = allJobs.filter(j => j.location === loc);
@@ -3032,7 +3144,7 @@ function generateJobsPage(
     });
   }
 
-  // Company filter pages
+  // Company filter pages (card view)
   for (const c of companiesByJobCount) {
     const slug = slugify(c.id);
     const cJobs = allJobs.filter(j => j.companyId === c.id);
