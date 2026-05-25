@@ -906,7 +906,7 @@ export default {
       // Related articles
       if (related.length > 0) {
         detailBody += `<div class="related-section">`;
-        detailBody += `<div class="section-label">Related Articles</div>`;
+        detailBody += `<h2 class="section-heading">Related Articles</h2>`;
         detailBody += related.map(a => articleCard(a)).join('\n');
         detailBody += `</div>`;
       }
