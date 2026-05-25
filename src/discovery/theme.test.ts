@@ -78,6 +78,19 @@ describe('isDenied', () => {
     expect(isDenied('https://someauthor.substack.com')).toBe(true);
   });
 
+  it('blocks Big 4 / consulting firms', () => {
+    expect(isDenied('https://www2.deloitte.com/insights/feed.rss.xml')).toBe(true);
+    expect(isDenied('https://ey.com/en_us/insights/audit-ai')).toBe(true);
+    expect(isDenied('https://kpmg.com/us/en/blogs')).toBe(true);
+    expect(isDenied('https://www.pwc.com/us/en/services/audit')).toBe(true);
+  });
+
+  it('blocks analyst / research publishers', () => {
+    expect(isDenied('https://www.thomsonreuters.com/en/tax-blog')).toBe(true);
+    expect(isDenied('https://www.wolterskluwer.com/expert-insights')).toBe(true);
+    expect(isDenied('https://www.gartner.com/en/research')).toBe(true);
+  });
+
   it('allows unfamiliar domains', () => {
     expect(isDenied('https://acme-ai-audit.com')).toBe(false);
     expect(isDenied('https://blog.smallcpafirm.com')).toBe(false);

@@ -38,10 +38,14 @@ export const FINANCE_TERMS: readonly string[] = [
 
 /**
  * Domains we never want to add as crawled sources even when on-topic.
- * Mainstream news + aggregators belong in a feed reader, not a niche
- * aggregator. We rank against them, not crawl them.
+ * Three buckets:
+ *   - Mainstream news + general aggregators — we rank against them, not crawl them.
+ *   - Big 4 / consulting firms — broad firms whose AI-accounting content is a
+ *     small slice of much larger output; not focused enough to crawl wholesale.
+ *   - Research/analyst publishers — paywalled or generalist; same problem.
  */
 export const DENY_LIST: readonly string[] = [
+  // Mainstream news
   'nytimes.com',
   'wsj.com',
   'reuters.com',
@@ -54,6 +58,7 @@ export const DENY_LIST: readonly string[] = [
   'apnews.com',
   'forbes.com',
   'businessinsider.com',
+  // Tech news
   'techcrunch.com',
   'theverge.com',
   'wired.com',
@@ -61,6 +66,7 @@ export const DENY_LIST: readonly string[] = [
   'engadget.com',
   'mashable.com',
   'venturebeat.com',
+  // Aggregators / social
   'medium.com',
   'substack.com',
   'linkedin.com',
@@ -70,6 +76,24 @@ export const DENY_LIST: readonly string[] = [
   'x.com',
   'facebook.com',
   'wikipedia.org',
+  // Big 4 / consulting firms — too broad to crawl wholesale
+  'deloitte.com',
+  'ey.com',
+  'kpmg.com',
+  'pwc.com',
+  'accenture.com',
+  'mckinsey.com',
+  'bain.com',
+  'bcg.com',
+  'bdo.com',
+  'grantthornton.com',
+  // Research / analyst publishers
+  'thomsonreuters.com',
+  'wolterskluwer.com',
+  'gartner.com',
+  'forrester.com',
+  'idc.com',
+  'statista.com',
 ];
 
 /** True iff `text` contains at least one AI term and one finance term. */

@@ -17,9 +17,21 @@
 
 import type { Env } from '../types';
 import { upsertSourceCandidate } from '../analytics/db';
-import { getAllActiveSources } from '../db/queries';
 import { discoverBlog } from '../company/enricher';
 import { extractRootDomain } from './theme';
+
+/**
+ * Static root domains for source types whose collectors hardcode their
+ * host instead of storing it in the config. Without this map, those
+ * sources slip past loadKnownDomains() and get re-suggested as new
+ * candidates by the discovery pipeline.
+ */
+const SOURCE_TYPE_DOMAINS: Record<string, readonly string[]> = {
+  arxiv: ['arxiv.org'],
+  hn: ['ycombinator.com'],
+  ycombinator: ['ycombinator.com'],
+  youtube: ['youtube.com'],
+};
 import {
   loadSynthesisContext,
   synthesizeKeywords,
@@ -168,13 +180,32 @@ export async function runSourceDiscovery(
 }
 
 async function loadKnownDomains(env: Env): Promise<Set<string>> {
-  const sources = await getAllActiveSources(env.DB);
+  // Read ALL sources (active + inactive). Deactivation is a deliberate
+  // "don't crawl this" signal that should also mean "don't re-suggest" —
+  // otherwise the discovery pipeline keeps surfacing things we explicitly
+  // turned off.
+  const rows = await env.DB
+    .prepare('SELECT source_type, config FROM sources')
+    .all();
   const set = new Set<string>();
-  for (const src of sources) {
-    const candidates = [src.config.url, src.config.website, src.config.feedUrl];
-    for (const c of candidates) {
-      if (typeof c !== 'string') continue;
-      const root = extractRootDomain(c);
+  for (const row of rows.results) {
+    const sourceType = row.source_type as string;
+
+    // Static domains for collectors that don't store a URL in config.
+    for (const d of SOURCE_TYPE_DOMAINS[sourceType] ?? []) {
+      set.add(d);
+    }
+
+    // URL-bearing config fields.
+    let config: Record<string, unknown> = {};
+    try {
+      config = JSON.parse((row.config as string) ?? '{}');
+    } catch {
+      // skip unparseable rows
+    }
+    for (const f of [config.url, config.website, config.feedUrl]) {
+      if (typeof f !== 'string') continue;
+      const root = extractRootDomain(f);
       if (root) set.add(root);
     }
   }
