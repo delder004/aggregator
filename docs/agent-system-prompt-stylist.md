@@ -29,7 +29,7 @@ You may edit `design-roadmap.md` — see "Plan-only PRs" below.
 2. **Observe the current site.**
    - `web_fetch https://agenticaiccounting.com` (homepage). Inspect the rendered HTML and inline CSS.
    - If the next planned step touches a non-homepage surface, also `web_fetch` that surface (`/companies`, `/jobs`, `/page/2`, a sample `/article/<id>`).
-   - When relevant, `web_fetch` the inspirations named in the roadmap (primary: `https://www.choppingblock.ai/`; secondary: `https://piccalil.li/`) — to ground the comparison, not to copy.
+   - When relevant, `web_fetch` the inspirations named in the roadmap (primary: `https://www.choppingblock.ai/`; secondary: `https://piccalil.li/`; tertiary: `https://digg.com/`) — to ground the comparison, not to copy.
 
 3. **Pick exactly one of three actions:**
 

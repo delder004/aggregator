@@ -16,7 +16,7 @@ The current site is competent and neutral. The target site **leads with structur
 
 ## Reference inspirations
 
-Two references, ordered by relevance.
+Three references, ordered by relevance.
 
 ### Primary: [choppingblock.ai](https://www.choppingblock.ai/)
 
@@ -39,6 +39,14 @@ For voice, restraint, and personal-publication feel — applied selectively, not
 - **Numbered article list** as an alternate to cards — confident, scannable, editorial.
 
 Piccalil.li is a publication; we're a data product. Borrow voice cues, not structure.
+
+### Tertiary: [digg.com](https://digg.com/)
+
+The classic aggregator-with-editorial-overlay model. Not a raw feed, not a magazine — a curated firehose with a clear editorial voice on top. Structurally the closest analog to our north star: we are doing for agentic-AI-accounting what digg historically did for general-internet news, with a domain focus and a data-product overlay.
+
+- **Curation as a first-class layer over aggregation.** The implicit message of digg's homepage is "we read everything so you don't have to — here's what matters" — not "here's everything." Our equivalent: featured analysis, "what changed this week," and editorial section labels should always read as judgment, not chronology. The Latest feed is the engine; it is never the entry point.
+
+Don't lift visual specifics — digg has gone through multiple distinct visual eras and the current relaunch is recent. Borrow the *editorial posture* only.
 
 ---
 
