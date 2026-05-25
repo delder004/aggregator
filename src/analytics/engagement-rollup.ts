@@ -114,10 +114,14 @@ export function aggregateSessions(
 
     const startMs = new Date(anchor.ts).getTime();
     const endMs = new Date(last.ts).getTime();
-    const durationSeconds = Math.max(
-      0,
-      Math.floor((endMs - startMs) / 1000)
-    );
+    const deltaMs = endMs - startMs;
+    // Math.max(0, NaN) === NaN — not 0. NaN binds to D1 as NULL, which trips
+    // the NOT NULL constraint on duration_seconds and fails the whole batch.
+    // If either ts is non-parseable (rare AE row-corruption), treat duration
+    // as 0 rather than poisoning the rollup.
+    const durationSeconds = Number.isFinite(deltaMs)
+      ? Math.max(0, Math.floor(deltaMs / 1000))
+      : 0;
 
     const pageCount = pageViews.length;
     const converted = conversions.length > 0 ? 1 : 0;

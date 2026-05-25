@@ -79,6 +79,20 @@ describe('aggregateSessions', () => {
     expect(s2.page_count).toBe(1);
   });
 
+  it('coerces non-parseable timestamps to 0 duration (no NaN leaks to D1)', () => {
+    // Regression: if AE returns an event whose ts is empty/malformed,
+    // new Date(...).getTime() yields NaN. Math.max(0, NaN) is NaN, which
+    // D1 binds as NULL and trips the NOT NULL constraint on
+    // engagement_sessions_daily.duration_seconds, failing the whole batch.
+    const rows = aggregateSessions([
+      ev({ session_id: 'bad', ts: '', path: '/' }),
+      ev({ session_id: 'bad', ts: 'not-a-date', path: '/x' }),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(Number.isFinite(rows[0].duration_seconds)).toBe(true);
+    expect(rows[0].duration_seconds).toBe(0);
+  });
+
   it('sorts events within a session by timestamp regardless of input order', () => {
     const rows = aggregateSessions([
       ev({ ts: '2026-04-27T14:05:00Z', path: '/companies' }),
