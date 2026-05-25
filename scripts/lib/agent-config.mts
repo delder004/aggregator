@@ -15,7 +15,7 @@
 
 import path from "node:path";
 
-export const AGENT_MODEL = "claude-haiku-4-5";
+export const AGENT_MODEL = "claude-sonnet-4-6";
 
 export const AGENT_VARIANTS = ["janitor", "contributor", "stylist"] as const;
 export type AgentVariant = (typeof AGENT_VARIANTS)[number];
