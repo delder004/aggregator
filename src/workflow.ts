@@ -55,7 +55,7 @@ import {
   startTrackedWorkflow,
 } from './runs/service';
 
-const MAX_SCORE_PER_RUN = 50;
+const MAX_SCORE_PER_RUN = 200;
 const SOURCES_PER_BATCH = 10;
 
 interface CollectBatchResult {
@@ -216,9 +216,6 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
       const batchResults: CollectBatchResult[] = [];
       const batchCount = Math.ceil(sources.length / SOURCES_PER_BATCH);
       for (let b = 0; b < batchCount; b++) {
-        if (b > 0) {
-          await step.sleep(`collect-pause-${b}`, '1 second');
-        }
         const start = b * SOURCES_PER_BATCH;
         const batchSources = sources.slice(start, start + SOURCES_PER_BATCH);
         const batchStartedAt = nowIso();
@@ -291,8 +288,6 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
       const allCollected = batchResults.flatMap((result) => result.articles);
       const allSourceUpdates = batchResults.flatMap((result) => result.sourceUpdates);
       console.log(`Total collected: ${allCollected.length} articles from ${sources.length} sources`);
-
-      await step.sleep('pre-store-pause', '1 second');
 
       const storeStartedAt = nowIso();
       const storeResult = await step.do(
@@ -610,8 +605,6 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         errors: scoring.error ? [scoring.error] : [],
       });
 
-      await step.sleep('pre-company-pause', '1 second');
-
       const companyTrackingStartedAt = nowIso();
       const companyTracking = await step.do(
         'company-tracking',
@@ -712,8 +705,6 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         notes: companyTracking.skippedReason ? [companyTracking.skippedReason] : [],
         errors: companyTracking.error ? [companyTracking.error] : [],
       });
-
-      await step.sleep('pre-enrichment-pause', '1 second');
 
       const enrichmentStartedAt = nowIso();
       const enrichment = await step.do(
@@ -852,8 +843,6 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         errors: enrichment.error ? [enrichment.error] : [],
       });
 
-      await step.sleep('pre-jobs-pause', '1 second');
-
       const jobsStartedAt = nowIso();
       const jobCollection = await step.do(
         'collect-jobs',
@@ -895,8 +884,6 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         notes: jobCollection.skipped ? [jobCollection.reason ?? 'Job collection skipped.'] : [],
         errors: jobCollection.error ? [jobCollection.error] : [],
       });
-
-      await step.sleep('pre-render-pause', '1 second');
 
       // Sync curated company descriptions before rendering pages
       const syncStartedAt = nowIso();

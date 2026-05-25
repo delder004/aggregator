@@ -115,8 +115,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     );
     results.push(gscResult);
 
-    await step.sleep('pre-rankings-pause', '2 seconds');
-
     // Step 3: Rankings sweep (current week)
     const rankingsResult = await step.do('rankings', () =>
       this.runNamespace(pipelineRunId, 'rankings', async () => {
@@ -133,8 +131,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     );
     results.push(rankingsResult);
 
-    await step.sleep('pre-competitors-pause', '2 seconds');
-
     // Step 4: Competitor snapshots (previous week)
     const compResult = await step.do('competitors', () =>
       this.runNamespace(pipelineRunId, 'competitors', async () => {
@@ -150,8 +146,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
       }, prevWeek.windowStart, prevWeek.windowEnd)
     );
     results.push(compResult);
-
-    await step.sleep('pre-rollup-pause', '2 seconds');
 
     // Step 5: Article views rollup — uses its own resolved window, NOT
     // prevWeek. The ingest_runs row records the actual fromDate..toDate
@@ -174,8 +168,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     );
     results.push(rollupResult);
 
-    await step.sleep('pre-engagement-pause', '2 seconds');
-
     // Step 5b: Engagement rollup — same window as article-views, separate
     // dataset and separate D1 tables.
     const engagementResult = await step.do('engagement-rollup', () =>
@@ -194,8 +186,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
       }, rollupWindowStartIso, rollupWindowEndIso)
     );
     results.push(engagementResult);
-
-    await step.sleep('pre-autocategorize-pause', '2 seconds');
 
     // Step 5c: Auto-categorize uncategorized companies based on article tags.
     // This enriches company metadata for better SEO and internal linking.
@@ -222,7 +212,6 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
     // newest, least-mature namespace — never blocks consolidation.
     let consolidationResult: { written: boolean; summary?: string } | null = null;
     if (completedCount >= 3) {
-      await step.sleep('pre-consolidation-pause', '5 seconds');
       consolidationResult = await step.do('consolidation', async () => {
         try {
           const r = await runWeeklyConsolidation(this.env, {

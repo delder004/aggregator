@@ -99,7 +99,7 @@ interface ClassifierResponse {
   transcriptSummary?: string;
 }
 
-const CONCURRENCY = 10;
+const CONCURRENCY = 20;
 
 /** Optional social signal data that can be attached to articles before scoring. */
 export interface SocialSignals {
