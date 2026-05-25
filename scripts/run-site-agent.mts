@@ -36,11 +36,13 @@ if (!OWNER || !REPO) {
 
 // The runner has two modes:
 //   1. Goal mode (default) — janitor / contributor / stylist. argv[2] is the
-//      goal string; kickoff includes the goal + open agent PRs context.
+//      goal string; kickoff includes the goal + open agent PRs context +
+//      (if AGENT_VARIANT is set) the variant's own open PRs awaiting feedback.
 //   2. Reviewer mode — set `AGENT_VARIANT=reviewer` and `PR_NUMBER=<n>` in
 //      the environment. argv[2] is ignored. Kickoff tells the agent to
 //      review the specific PR and emit one decision via github_api.
-const IS_REVIEWER = process.env.AGENT_VARIANT === "reviewer";
+const AGENT_VARIANT = process.env.AGENT_VARIANT;
+const IS_REVIEWER = AGENT_VARIANT === "reviewer";
 const PR_NUMBER = process.env.PR_NUMBER;
 
 const GOAL = process.argv[2];
@@ -120,25 +122,33 @@ const GITHUB_HEADERS = {
 const handleGithubApi = (input: unknown): Promise<HandlerResult> =>
   callHttpApi("https://api.github.com", input, GITHUB_HEADERS);
 
+type OpenPr = {
+  number: number;
+  title: string;
+  html_url: string;
+  head: { ref: string };
+};
+
+async function fetchOpenAgentPrs(): Promise<OpenPr[]> {
+  const resp = await fetch(
+    `https://api.github.com/repos/${OWNER}/${REPO}/pulls?state=open&per_page=50`,
+    { headers: GITHUB_HEADERS },
+  );
+  if (!resp.ok) {
+    throw new Error(`list open PRs: HTTP ${resp.status}`);
+  }
+  const prs = (await resp.json()) as OpenPr[];
+  return prs.filter((pr) => pr.head.ref.startsWith("agent/"));
+}
+
 // List currently-open PRs from any agent variant so the kickoff can warn the
 // new session about work already in flight. Filter by branch prefix (agent/*)
 // rather than --author since all variants share one GitHub PAT.
 async function listOpenAgentPrs(): Promise<string> {
   try {
-    const resp = await fetch(
-      `https://api.github.com/repos/${OWNER}/${REPO}/pulls?state=open&per_page=50`,
-      { headers: GITHUB_HEADERS },
-    );
-    if (!resp.ok) return `(failed to list open PRs: HTTP ${resp.status})`;
-    const prs = (await resp.json()) as Array<{
-      number: number;
-      title: string;
-      html_url: string;
-      head: { ref: string };
-    }>;
-    const agentPrs = prs.filter((pr) => pr.head.ref.startsWith("agent/"));
-    if (agentPrs.length === 0) return "(none)";
-    return agentPrs
+    const prs = await fetchOpenAgentPrs();
+    if (prs.length === 0) return "(none)";
+    return prs
       .map(
         (pr) =>
           `- #${pr.number} \`${pr.head.ref}\` — ${pr.title} (${pr.html_url})`,
@@ -146,6 +156,50 @@ async function listOpenAgentPrs(): Promise<string> {
       .join("\n");
   } catch (err) {
     return `(error listing open PRs: ${err instanceof Error ? err.message : String(err)})`;
+  }
+}
+
+// For the variant currently running, return any of its own open PRs whose
+// latest review is CHANGES_REQUESTED. The agent should address these by
+// pushing to the existing branch, not opening a new PR.
+async function listOwnPrsAwaitingFeedback(variant: string): Promise<string> {
+  try {
+    const allPrs = await fetchOpenAgentPrs();
+    const ownPrs = allPrs.filter((pr) =>
+      pr.head.ref.startsWith(`agent/${variant}-`),
+    );
+    if (ownPrs.length === 0) return "(none)";
+
+    const entries: string[] = [];
+    for (const pr of ownPrs) {
+      const reviewsResp = await fetch(
+        `https://api.github.com/repos/${OWNER}/${REPO}/pulls/${pr.number}/reviews?per_page=100`,
+        { headers: GITHUB_HEADERS },
+      );
+      if (!reviewsResp.ok) continue;
+      const reviews = (await reviewsResp.json()) as Array<{
+        state: string;
+        body: string;
+        submitted_at: string;
+        user: { login: string };
+      }>;
+      if (reviews.length === 0) continue;
+      // Latest review across all reviewers — most recent submitted_at wins.
+      const latest = reviews
+        .slice()
+        .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at))[0];
+      if (latest.state !== "CHANGES_REQUESTED") continue;
+      const bodySnippet = (latest.body || "(no body)")
+        .slice(0, 500)
+        .replace(/\s+/g, " ");
+      entries.push(
+        `- #${pr.number} \`${pr.head.ref}\` — ${pr.title} (${pr.html_url})\n  Latest review by @${latest.user.login}: CHANGES_REQUESTED — ${bodySnippet}`,
+      );
+    }
+    if (entries.length === 0) return "(none)";
+    return entries.join("\n");
+  } catch (err) {
+    return `(error listing own PRs: ${err instanceof Error ? err.message : String(err)})`;
   }
 }
 
@@ -169,8 +223,9 @@ const session = await client.beta.sessions.create({
 });
 console.log(`session ${session.id} created`);
 
-const kickoff = IS_REVIEWER
-  ? `You are reviewing PR #${PR_NUMBER} on \`${OWNER}/${REPO}\`.
+let kickoff: string;
+if (IS_REVIEWER) {
+  kickoff = `You are reviewing PR #${PR_NUMBER} on \`${OWNER}/${REPO}\`.
 
 The repo is mounted at /workspace/aggregator (main branch) for context reads. Do not modify or push anything — your only output is through \`github_api\` calls.
 
@@ -181,8 +236,17 @@ Starting points:
 
 Required check runs on this repo are \`test\` and (for any \`agent/*\` branch) \`agent-pr-allowlist\`. Both must conclude \`success\` before you may merge. If any check is still \`queued\` or \`in_progress\`, use the polling pattern in your system prompt (max 10 polls × 30s = 5 minutes).
 
-Follow the decision matrix in your system prompt. Emit exactly one action (approve+merge, request-changes, or escalate). Report what you did and the PR URL as your final message.`
-  : `Goal for this session:
+Follow the decision matrix in your system prompt. Emit exactly one action (approve+merge, request-changes, or escalate). Report what you did and the PR URL as your final message.`;
+} else {
+  const openAgentPrs = await listOpenAgentPrs();
+  const feedbackSection = AGENT_VARIANT
+    ? `Your own open PRs awaiting feedback — address these FIRST before shipping new work. To address: \`git fetch origin <branch> && git checkout <branch>\`, edit, commit, and \`git push origin <branch>\`. Do NOT open a new PR; pushing to the existing branch re-triggers review.
+
+${await listOwnPrsAwaitingFeedback(AGENT_VARIANT)}
+
+`
+    : "";
+  kickoff = `Goal for this session:
 
 ${GOAL}
 
@@ -192,10 +256,11 @@ Context for the custom tools:
 - \`cf_api\`: your Cloudflare account_id is \`${CF_ACCOUNT_ID}\`. The D1 database_id is in /workspace/aggregator/wrangler.toml.
 - \`github_api\`: this repo is \`${OWNER}/${REPO}\`. Use that in any '/repos/{owner}/{repo}/...' path.
 
-Open agent PRs already in flight — do not duplicate or conflict with these. If your planned change overlaps a branch below, pick a different scope or close the existing PR first:
-${await listOpenAgentPrs()}
+${feedbackSection}Open agent PRs already in flight — do not duplicate or conflict with these. If your planned change overlaps a branch below, pick a different scope or close the existing PR first:
+${openAgentPrs}
 
 Follow the goal and your system prompt. If you ship a PR, validate with \`npm run typecheck\` + \`npm test\` and open it via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message, or — if the goal and system prompt allow stopping without a PR (e.g. nothing high-confidence to ship) — say so and stop.`;
+}
 
 const [, stream] = await Promise.all([
   client.beta.sessions.events.send(session.id, {
