@@ -645,6 +645,62 @@ a.source-name:hover{text-decoration:underline;}
   font-size:0.8rem;
   white-space:nowrap;
 }
+.jobs-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.9rem;
+}
+.jobs-table thead{
+  background:var(--bg-secondary);
+  border-bottom:2px solid var(--border);
+}
+.jobs-table th{
+  padding:0.75rem 1rem;
+  text-align:left;
+  font-weight:600;
+  color:var(--text);
+  font-size:0.85rem;
+  white-space:nowrap;
+}
+.jobs-table tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background 0.2s;
+}
+.jobs-table tbody tr:hover{
+  background:var(--bg-secondary);
+}
+.jobs-table td{
+  padding:0.75rem 1rem;
+  color:var(--text-secondary);
+}
+.table-title{
+  font-weight:500;
+  color:var(--text);
+}
+.table-title a{
+  color:var(--accent);
+  text-decoration:none;
+}
+.table-title a:hover{
+  text-decoration:underline;
+}
+.table-company{
+  font-weight:500;
+  color:var(--text);
+}
+.table-company a{
+  color:var(--accent);
+  text-decoration:none;
+}
+.table-company a:hover{
+  text-decoration:underline;
+}
+.table-dept{
+  font-size:0.8rem;
+}
+.table-location{
+  font-size:0.8rem;
+}
 
 /* Market map */
 .market-map{
@@ -1148,6 +1204,8 @@ a.source-name:hover{text-decoration:underline;}
   .companies-table th,.companies-table td{padding:0.6rem 0.75rem;font-size:0.8rem;}
   .table-date{display:none;}
   .companies-table th:nth-child(5),.companies-table td:nth-child(5){display:none;}
+  .jobs-table th,.jobs-table td{padding:0.6rem 0.75rem;font-size:0.8rem;}
+  .jobs-table th:nth-child(5),.jobs-table td:nth-child(5){display:none;}
 }
 @media (max-width:580px){
   .featured-grid{grid-template-columns:1fr;}
