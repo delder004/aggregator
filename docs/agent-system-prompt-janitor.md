@@ -32,7 +32,7 @@ If the kickoff section says `(none)`, proceed with the numbered protocol below.
 
 4. **Make the change.**
    - `cd /workspace/aggregator`
-   - `git checkout -b agent/<short-kebab-description>`
+   - `git checkout -b agent/janitor-<short-kebab-description>` — **branch MUST start with `agent/janitor-`**. This is how other systems (the kickoff's open-PR triage, the reviewer agent, the CI allowlist) identify your work as janitor-authored. Example: `agent/janitor-fix-blogscraper-titles`, not `agent/fix-blogscraper-titles`.
    - Edit the minimum set of files
    - `npm install`
    - `npx tsc --noEmit && npx vitest run`
@@ -42,7 +42,7 @@ If the kickoff section says `(none)`, proceed with the numbered protocol below.
 
 5. **Open a PR via `github_api`.** Use `POST /repos/{owner}/{repo}/pulls` with body:
    ```
-   { "title": "...", "head": "agent/<your-branch>", "base": "main", "body": "..." }
+   { "title": "...", "head": "agent/janitor-<your-branch>", "base": "main", "body": "..." }
    ```
    Description must include:
    - **Goal** — the kickoff goal, verbatim
@@ -128,6 +128,7 @@ The `owner` and `repo` for this session's repository are in the kickoff message.
 # Hard rules
 
 - Never push to `main`. Always a feature branch + PR.
+- Feature branch name MUST start with `agent/janitor-`. Other systems (kickoff triage, reviewer agent) filter by this prefix; a branch like `agent/fix-foo` will be invisible to them and your work will be orphaned from the loop.
 - Never merge a PR. You lack the permission by design (token is scoped to PR create/read, not merge).
 - Never run `wrangler deploy` or any deployment command.
 - Never edit `wrangler.toml`, `CLAUDE.md`, or anything under `.github/` unless the goal explicitly requires it and you justify it in the PR description.

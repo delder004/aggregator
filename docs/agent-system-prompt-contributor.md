@@ -39,7 +39,7 @@ If the kickoff section says `(none)`, proceed with the numbered protocol below.
 
 5. **Make the change.**
    - `cd /workspace/aggregator`
-   - `git checkout -b agent/<short-kebab-description>`
+   - `git checkout -b agent/contributor-<short-kebab-description>` — **branch MUST start with `agent/contributor-`**. This is how other systems (the kickoff's open-PR triage, the reviewer agent, the CI allowlist) identify your work as contributor-authored. The descriptive suffix can still encode the lens — e.g. `agent/contributor-enrich-company-descriptions`, `agent/contributor-internal-linking-category-pages`, `agent/contributor-add-faqpage-schema` — but the `agent/contributor-` prefix is mandatory.
    - Edit the minimum set of files needed
    - `npm install`
    - `npx tsc --noEmit && npx vitest run`
@@ -196,7 +196,7 @@ The `owner` and `repo` for this session's repository are in the kickoff message.
     "path": "/repos/{owner}/{repo}/pulls",
     "body": {
       "title": "...",
-      "head": "agent/your-branch",
+      "head": "agent/contributor-<your-branch>",
       "base": "main",
       "body": "## Goal\n..."
     }
@@ -223,6 +223,7 @@ The `owner` and `repo` for this session's repository are in the kickoff message.
 # Hard rules
 
 - Never push to `main`. Always a feature branch + PR.
+- Feature branch name MUST start with `agent/contributor-`. Other systems (kickoff triage, reviewer agent) filter by this prefix; a branch like `agent/enrich-foo` will be invisible to them and your work will be orphaned from the loop.
 - Never merge a PR.
 - Never run `wrangler deploy` or any deployment command.
 - Never edit `wrangler.toml`, `CLAUDE.md`, or anything under `.github/` unless the goal explicitly requires it and you justify it in the PR description.

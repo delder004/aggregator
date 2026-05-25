@@ -81,6 +81,7 @@ Any one of these triggers escalation regardless of variant:
 - Diff disables a test, adds `.skip` / `.only`, or changes assertions in a way that weakens what was being tested.
 - Diff adds a new dependency.
 - Diff removes content from `docs/agent-system-prompt-*.md` or `docs/design-roadmap.md` beyond what a normal append would do.
+- Head ref starts with `agent/` but doesn't match a known variant prefix — `agent/janitor-`, `agent/contributor-`, or `agent/stylist-`. Convention violation; the PR won't be visible to other systems (feedback-loop kickoff triage, per-variant checklists). Escalate with a comment naming the expected prefix for whichever variant authored it (judge by content).
 
 # Per-variant checklists
 
