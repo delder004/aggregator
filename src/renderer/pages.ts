@@ -2014,7 +2014,7 @@ function renderJobsSection(jobs: CompanyJob[], companyName: string): string {
     return a.localeCompare(b);
   });
 
-  let html = `<div class="section-label">Open Roles (${jobs.length})</div>\n`;
+  let html = `<h2 class="section-heading">Open Roles (${jobs.length})</h2>\n`;
 
   for (const dept of sortedDepts) {
     const deptJobs = departments.get(dept)!;
@@ -2078,9 +2078,8 @@ function generateCompanyDetailPages(
 
     // Company insight (AI-generated overview)
     if (insight) {
-      body += `<div class="insight-card" style="margin:1rem 0;">`;
-      body += `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">`;
-      body += `<span class="insight-badge daily">${escapeHtml(company.name)} Insights</span>`;
+      body += `<h2 class="section-heading" style="margin:1rem 0 0.5rem 0;">${escapeHtml(company.name)} Insights</h2>`;
+      body += `<div class="insight-card" style="margin:0 0 1rem 0;">`;
       body += `<span style="font-size:0.72rem;color:var(--text-tertiary);">Updated ${new Date(insight.generatedAt).toLocaleDateString()}</span>`;
       body += `</div>`;
       body += `<div class="insight-content" style="padding:0;">\n${insight.contentHtml}\n</div>`;
@@ -2099,7 +2098,7 @@ function generateCompanyDetailPages(
       const relatedCompanies = companies.filter(c => c.categorySlug === company.categorySlug && c.id !== company.id);
       if (relatedCompanies.length > 0) {
         const displayCategoryLabel = getPrimaryCategory(company.category);
-        body += `<div class="section-label">Companies in ${escapeHtml(displayCategoryLabel || company.category)}</div>\n`;
+        body += `<h2 class="section-heading">Companies in ${escapeHtml(displayCategoryLabel || company.category)}</h2>\n`;
         body += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;margin-bottom:2rem;">\n`;
         // Show up to 6 related companies
         const displayRelated = relatedCompanies.slice(0, 6);
@@ -2119,7 +2118,7 @@ function generateCompanyDetailPages(
     // Article feed (capped at 10 to keep page weight < 50KB)
     const articlesPerCompanyPage = 10;
     if (articles.length > 0) {
-      body += `<div class="section-label">Recent Coverage</div>\n`;
+      body += `<h2 class="section-heading">Recent Coverage</h2>\n`;
       const displayArticles = articles.slice(0, articlesPerCompanyPage);
       body += renderTimeGrouped(displayArticles);
       if (articles.length > articlesPerCompanyPage) {
