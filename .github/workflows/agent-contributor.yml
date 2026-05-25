@@ -37,6 +37,7 @@ jobs:
           AGGREGATOR_AGENT_ID: ${{ secrets.AGGREGATOR_CONTRIBUTOR_AGENT_ID }}
           AGGREGATOR_ENV_ID: ${{ secrets.AGGREGATOR_ENV_ID }}
           GITHUB_REPO_TOKEN: ${{ secrets.AGENT_GITHUB_PAT }}
+          AGENT_VARIANT: contributor
           GITHUB_REPO_URL: https://github.com/${{ github.repository }}
           GOAL_INPUT: ${{ inputs.goal }}
         run: |
