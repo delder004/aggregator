@@ -1,23 +1,32 @@
 // Shared agent configuration used by both `setup-site-agent.mts` (initial
 // create) and `migrate-agent.mts` (subsequent updates).
 //
-// Three agent variants ship from this file:
-//   - janitor    — find-and-fix correctness/quality bugs (existing behavior)
+// Four agent variants ship from this file:
+//   - janitor     — find-and-fix correctness/quality bugs
 //   - contributor — make targeted content/UX/SEO improvements via lens-based
 //                   investigation (added 2026-04-27)
-//   - stylist    — incrementally restyle the renderer toward the design
-//                  roadmap (`docs/design-roadmap.md`); one bounded visual
-//                  change per session (added 2026-05-03)
+//   - stylist     — incrementally restyle the renderer toward the design
+//                   roadmap (`docs/design-roadmap.md`); one bounded visual
+//                   change per session (added 2026-05-03)
+//   - reviewer    — review agent-authored PRs and decide approve+merge /
+//                   request-changes / escalate (added 2026-05-25)
 //
-// All three share the same model, custom tools, and toolset. They differ
-// only in name, description, system prompt path, and which env var holds
-// their agent ID.
+// All variants share the same custom tools and toolset. They differ in
+// name, description, system prompt path, which env var holds their agent
+// ID, and (optionally) which model they use — reviewer runs on Opus since
+// reviewing diffs is judgment-heavy / coordinator-class work.
 
 import path from "node:path";
 
-export const AGENT_MODEL = "claude-sonnet-4-6";
+// Default model for variants that don't specify their own.
+export const AGENT_MODEL_DEFAULT = "claude-sonnet-4-6";
 
-export const AGENT_VARIANTS = ["janitor", "contributor", "stylist"] as const;
+export const AGENT_VARIANTS = [
+  "janitor",
+  "contributor",
+  "stylist",
+  "reviewer",
+] as const;
 export type AgentVariant = (typeof AGENT_VARIANTS)[number];
 
 export interface VariantConfig {
@@ -26,6 +35,8 @@ export interface VariantConfig {
   description: string;
   systemPromptPath: string;
   agentIdEnvVar: string;
+  // Optional model override. If unset, AGENT_MODEL_DEFAULT applies.
+  model?: string;
 }
 
 const DOCS_DIR = "docs";
@@ -55,7 +66,20 @@ const VARIANT_CONFIGS: Record<AgentVariant, VariantConfig> = {
     systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-stylist.md"),
     agentIdEnvVar: "AGGREGATOR_STYLIST_AGENT_ID",
   },
+  reviewer: {
+    variant: "reviewer",
+    agentName: "aggregator-reviewer",
+    description:
+      "Reviewer agent for agenticaiccounting.com. Triggered per PR-event on agent-authored branches. Reads the PR, the diff, and CI status; decides approve+merge, request-changes, or escalate to human. Runs on Opus — judgment-heavy / coordinator-class work.",
+    systemPromptPath: path.join(DOCS_DIR, "agent-system-prompt-reviewer.md"),
+    agentIdEnvVar: "AGGREGATOR_REVIEWER_AGENT_ID",
+    model: "claude-opus-4-7",
+  },
 };
+
+export function modelFor(variant: VariantConfig): string {
+  return variant.model ?? AGENT_MODEL_DEFAULT;
+}
 
 export function getVariantConfig(variant: string): VariantConfig {
   if (!(AGENT_VARIANTS as readonly string[]).includes(variant)) {

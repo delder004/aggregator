@@ -11,8 +11,8 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   AGENT_MCP_SERVERS,
-  AGENT_MODEL,
   AGENT_TOOLS,
+  modelFor,
   variantFromArgv,
 } from "./lib/agent-config.mts";
 
@@ -44,7 +44,7 @@ if (!envId) {
 
 const agent = await client.beta.agents.create({
   name: variant.agentName,
-  model: AGENT_MODEL,
+  model: modelFor(variant),
   system: SYSTEM_PROMPT,
   description: variant.description,
   tools: AGENT_TOOLS,
