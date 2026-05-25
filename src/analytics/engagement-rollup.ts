@@ -375,6 +375,21 @@ export async function runEngagementRollup(
   const sessions = aggregateSessions(normalized);
   const paths = aggregatePaths(normalized, sessions);
 
+  // Smoke alarm for silent data-loss: if AE returned events but aggregation
+  // produced zero sessions, something dropped data between the SQL response
+  // and the writes (bad session_id derivation, an aggressive filter, a bug
+  // in the aggregator). Page-views are always tagged with a session_id by
+  // the writer, so this state is unexpected in practice. Throw loudly so it
+  // lands in pipeline_runs as a failure instead of returning a quiet zero.
+  if (rows.length > 0 && sessions.length === 0) {
+    throw new Error(
+      `Engagement rollup scanned ${rows.length} events but produced 0 sessions ` +
+        `for window ${fromDate} → ${toDate}. This is almost always silent ` +
+        `data loss — inspect the AE row format, session_id presence, and ` +
+        `aggregateSessions filters.`,
+    );
+  }
+
   // D1 batched upserts.
   if (sessions.length > 0) {
     const stmts = sessions.map((s) =>

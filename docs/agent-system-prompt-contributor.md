@@ -115,14 +115,56 @@ Pick **one** per session. Each lens names the data source(s) you should use and 
 
 ## 7. Engagement diagnosis (data-grounded)
 
-**Source data**:
-- `cf_api` D1 query against `engagement_path_daily` — find paths where `entries >> exits` (good landing, bad onward navigation), `bounces / unique_sessions` is high (bouncy entries), or `views > 100` and `conversions = 0` over a 30-day window.
-- `cf_api` D1 query against `engagement_sessions_daily` — derive site-wide bounce rate, session-length distribution, and conversion rate by inbound `first_referrer`.
-- Cross-reference with `next_path_top` to see what the dominant onward path is from each entry — and whether it makes sense.
+**Source data**: `engagement_path_daily` and `engagement_sessions_daily` in D1. ~6 weeks of clean data as of 2026-05-25.
 
-**Typical PR shape**: a *targeted* change against a specific leak — a clearer CTA on a high-bounce landing page, an inline newsletter signup mid-article, a "next article" anchor on detail pages, a more discoverable cross-link from a high-traffic page that has no exits. Every PR description must cite the specific path + metric the change is targeting and the expected post-merge shift.
+**Three concrete query patterns — pick one per session, don't survey all:**
 
-This lens requires at least **7 days of post-instrumentation data** before it produces useful signal — sessions and conversions are sparse over short windows. If the data is too thin, pick another lens.
+**(a) The "viral but bouncy" pattern.** A page Google sends real traffic to where every visitor leaves immediately. The highest-leverage place to add internal linking, related-content sections, or stronger CTAs.
+
+```sql
+SELECT path, SUM(views) AS views,
+       SUM(bounces) AS bounces,
+       1.0 * SUM(bounces) / SUM(unique_sessions) AS bounce_rate
+  FROM engagement_path_daily
+ WHERE view_date >= date('now', '-30 days')
+ GROUP BY path
+HAVING views > 100 AND bounce_rate > 0.9
+ ORDER BY views DESC
+ LIMIT 20;
+```
+
+A real example caught by this query: `/article/<id>` for "MTD for IT: How Dext Solo Reduces Manual Work with AI" — 1,275 sessions in one week, 100% bounce, 0 conversions. Clear SEO win + UX leak.
+
+**(b) The "dead-end" pattern.** Pages with no meaningful onward navigation — `next_path_top IS NULL` or `entries ≈ exits`. Candidates for a "Related" section, sidebar links, or a "next" anchor.
+
+```sql
+SELECT path, SUM(views) AS views, SUM(entries) AS entries, SUM(exits) AS exits,
+       MAX(next_path_top) AS sample_next_path
+  FROM engagement_path_daily
+ WHERE view_date >= date('now', '-30 days')
+ GROUP BY path
+HAVING views > 50 AND (sample_next_path IS NULL OR exits >= entries * 0.95)
+ ORDER BY views DESC
+ LIMIT 20;
+```
+
+**(c) The "zero-conversion" pattern.** High-traffic paths over a long window with no newsletter signups. Either nobody's seeing a CTA, the CTA is wrong, or the audience isn't conversion-shaped for that page.
+
+```sql
+SELECT path, SUM(views) AS views, SUM(conversions) AS conv
+  FROM engagement_path_daily
+ WHERE view_date >= date('now', '-30 days')
+ GROUP BY path
+HAVING views > 200 AND conv = 0
+ ORDER BY views DESC
+ LIMIT 20;
+```
+
+**Cross-reference with `next_path_top`** to see the dominant onward path from any high-traffic page — and judge whether that destination makes editorial sense (e.g., "homepage → article → another article in the same category" is healthy; "homepage → exit" is the leak).
+
+**Typical PR shape**: a *targeted* change against a specific leak. Examples: a "Related articles" section on article detail pages caught by pattern (a) or (b); an inline newsletter signup mid-article on a high-traffic path caught by (c); a category-link sidebar on company pages caught by (b). Every PR description must cite the specific path + the query that surfaced it + the expected post-merge shift in the relevant metric (bounce rate, conversion rate, exit rate).
+
+This lens has steady weekly data as of 2026-05-25. Don't fall back to other lenses unless the engagement queries genuinely surface nothing actionable.
 
 # Site surfaces (current)
 
