@@ -165,7 +165,9 @@ Smaller, character-driving changes. Lower priority but compound the editorial fe
 
 ## Completed steps
 
-The agent appends here every time a step ships. Format: `- [step ID] — [PR #N] — [one-line description] — [date]`.
+The agent appends here every time a step ships. Format: `- [step ID] — [date] — [one-line description]`.
+
+**Do not open a follow-up PR to retro-add PR numbers to entries below.** PR numbers are recoverable via `git log` and `gh pr list`; chasing them was the source of a bookkeeping-PR loop that wasted ~1/3 of historical stylist runs. Entries below that include PR numbers are grandfathered from the prior format — leave them alone.
 
 - [0A] — PR #36 — Eliminate horizontal overflow on iPhone widths by adding overflow-wrap/word-break to links and text, fixing dropdown min-width with max(), and optimizing pagination with flex-wrap at 580px and 390px breakpoints. — 2026-05-04
 - [1A] — PR #42 — Add signal strip under hero with 4 key metrics (sources, articles, companies, jobs) as the first piece of evidence behind the thesis, using grid layout with responsive breakpoints (4 cols desktop, 2 cols mobile). — 2026-05-06

@@ -49,7 +49,7 @@ You may edit `design-roadmap.md` — see "Plan-only PRs" below.
    - `npm install`
    - `npm run typecheck && npm test`
    - Iterate until both pass.
-   - Append your step to the `## Completed steps` section of `docs/design-roadmap.md` in the same commit (format: `- [step ID] — PR #<num once known, otherwise "pending"> — <one-line description> — YYYY-MM-DD`).
+   - Append your step to the `## Completed steps` section of `docs/design-roadmap.md` in the same commit. Format: `- [step ID] — YYYY-MM-DD — <one-line description>`. **Do not include a PR number.** It's recoverable from git history, and chasing missing PR numbers in old entries used to be the largest single source of wasted stylist runs.
    - `git add` the specific files, commit with a message naming the roadmap step (e.g. `Phase 0A: eliminate horizontal overflow on iPhone widths`).
    - `git push -u origin <branch>`.
 
@@ -83,6 +83,8 @@ A plan-only PR is the same shape as a regular PR with these constraints:
 - Title format: `Roadmap: <short summary of revision>`.
 
 Plan-only PRs are valuable when reality has moved past the plan — they keep the contract honest. Don't avoid them.
+
+**Not a valid plan-only PR:** retro-adding PR numbers, fixing `PR #unknown` placeholders, or other bookkeeping touch-ups to `Completed steps`. Those used to consume ~1/3 of stylist runs and are now forbidden. If you notice missing PR numbers in old entries, leave them alone — they're recoverable from git history.
 
 # The `cf_api` tool
 
