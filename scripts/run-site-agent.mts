@@ -34,9 +34,22 @@ if (!OWNER || !REPO) {
   process.exit(1);
 }
 
+// The runner has two modes:
+//   1. Goal mode (default) — janitor / contributor / stylist. argv[2] is the
+//      goal string; kickoff includes the goal + open agent PRs context.
+//   2. Reviewer mode — set `AGENT_VARIANT=reviewer` and `PR_NUMBER=<n>` in
+//      the environment. argv[2] is ignored. Kickoff tells the agent to
+//      review the specific PR and emit one decision via github_api.
+const IS_REVIEWER = process.env.AGENT_VARIANT === "reviewer";
+const PR_NUMBER = process.env.PR_NUMBER;
+
 const GOAL = process.argv[2];
-if (!GOAL) {
+if (!IS_REVIEWER && !GOAL) {
   console.error(`Usage: tsx scripts/run-site-agent.mts "<goal>"`);
+  process.exit(1);
+}
+if (IS_REVIEWER && !PR_NUMBER) {
+  console.error(`Reviewer mode requires PR_NUMBER env var`);
   process.exit(1);
 }
 
@@ -136,10 +149,14 @@ async function listOpenAgentPrs(): Promise<string> {
   }
 }
 
+const sessionTitle = IS_REVIEWER
+  ? `reviewer: PR #${PR_NUMBER}`
+  : `site-agent: ${GOAL!.slice(0, 60)}`;
+
 const session = await client.beta.sessions.create({
   agent: AGENT_ID,
   environment_id: ENV_ID,
-  title: `site-agent: ${GOAL.slice(0, 60)}`,
+  title: sessionTitle,
   resources: [
     {
       type: "github_repository",
@@ -152,9 +169,20 @@ const session = await client.beta.sessions.create({
 });
 console.log(`session ${session.id} created`);
 
-const openAgentPrs = await listOpenAgentPrs();
+const kickoff = IS_REVIEWER
+  ? `You are reviewing PR #${PR_NUMBER} on \`${OWNER}/${REPO}\`.
 
-const kickoff = `Goal for this session:
+The repo is mounted at /workspace/aggregator (main branch) for context reads. Do not modify or push anything — your only output is through \`github_api\` calls.
+
+Starting points:
+- PR metadata: \`GET /repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}\`
+- Per-file diff: \`GET /repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}/files\`
+- CI status: \`GET /repos/${OWNER}/${REPO}/commits/{head.sha}/check-runs\` (use the head SHA from the PR metadata)
+
+Required check runs on this repo are \`test\` and (for any \`agent/*\` branch) \`agent-pr-allowlist\`. Both must conclude \`success\` before you may merge. If any check is still \`queued\` or \`in_progress\`, use the polling pattern in your system prompt (max 10 polls × 30s = 5 minutes).
+
+Follow the decision matrix in your system prompt. Emit exactly one action (approve+merge, request-changes, or escalate). Report what you did and the PR URL as your final message.`
+  : `Goal for this session:
 
 ${GOAL}
 
@@ -165,7 +193,7 @@ Context for the custom tools:
 - \`github_api\`: this repo is \`${OWNER}/${REPO}\`. Use that in any '/repos/{owner}/{repo}/...' path.
 
 Open agent PRs already in flight — do not duplicate or conflict with these. If your planned change overlaps a branch below, pick a different scope or close the existing PR first:
-${openAgentPrs}
+${await listOpenAgentPrs()}
 
 Follow the goal and your system prompt. If you ship a PR, validate with \`npm run typecheck\` + \`npm test\` and open it via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message, or — if the goal and system prompt allow stopping without a PR (e.g. nothing high-confidence to ship) — say so and stop.`;
 
