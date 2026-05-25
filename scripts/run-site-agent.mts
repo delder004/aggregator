@@ -97,13 +97,44 @@ const handleCfApi = (input: unknown): Promise<HandlerResult> =>
     authorization: `Bearer ${CF_API_TOKEN}`,
   });
 
+const GITHUB_HEADERS = {
+  authorization: `Bearer ${GITHUB_REPO_TOKEN}`,
+  accept: "application/vnd.github+json",
+  "x-github-api-version": "2022-11-28",
+  "user-agent": "aggregator-agent/0.1",
+};
+
 const handleGithubApi = (input: unknown): Promise<HandlerResult> =>
-  callHttpApi("https://api.github.com", input, {
-    authorization: `Bearer ${GITHUB_REPO_TOKEN}`,
-    accept: "application/vnd.github+json",
-    "x-github-api-version": "2022-11-28",
-    "user-agent": "aggregator-agent/0.1",
-  });
+  callHttpApi("https://api.github.com", input, GITHUB_HEADERS);
+
+// List currently-open PRs from any agent variant so the kickoff can warn the
+// new session about work already in flight. Filter by branch prefix (agent/*)
+// rather than --author since all variants share one GitHub PAT.
+async function listOpenAgentPrs(): Promise<string> {
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${OWNER}/${REPO}/pulls?state=open&per_page=50`,
+      { headers: GITHUB_HEADERS },
+    );
+    if (!resp.ok) return `(failed to list open PRs: HTTP ${resp.status})`;
+    const prs = (await resp.json()) as Array<{
+      number: number;
+      title: string;
+      html_url: string;
+      head: { ref: string };
+    }>;
+    const agentPrs = prs.filter((pr) => pr.head.ref.startsWith("agent/"));
+    if (agentPrs.length === 0) return "(none)";
+    return agentPrs
+      .map(
+        (pr) =>
+          `- #${pr.number} \`${pr.head.ref}\` — ${pr.title} (${pr.html_url})`,
+      )
+      .join("\n");
+  } catch (err) {
+    return `(error listing open PRs: ${err instanceof Error ? err.message : String(err)})`;
+  }
+}
 
 const session = await client.beta.sessions.create({
   agent: AGENT_ID,
@@ -121,6 +152,8 @@ const session = await client.beta.sessions.create({
 });
 console.log(`session ${session.id} created`);
 
+const openAgentPrs = await listOpenAgentPrs();
+
 const kickoff = `Goal for this session:
 
 ${GOAL}
@@ -130,6 +163,9 @@ Your repo is mounted at /workspace/aggregator.
 Context for the custom tools:
 - \`cf_api\`: your Cloudflare account_id is \`${CF_ACCOUNT_ID}\`. The D1 database_id is in /workspace/aggregator/wrangler.toml.
 - \`github_api\`: this repo is \`${OWNER}/${REPO}\`. Use that in any '/repos/{owner}/{repo}/...' path.
+
+Open agent PRs already in flight — do not duplicate or conflict with these. If your planned change overlaps a branch below, pick a different scope or close the existing PR first:
+${openAgentPrs}
 
 Follow the goal and your system prompt. If you ship a PR, validate with \`npm run typecheck\` + \`npm test\` and open it via \`github_api\`. Report the PR URL (from the response's \`html_url\` field) as your final message, or — if the goal and system prompt allow stopping without a PR (e.g. nothing high-confidence to ship) — say so and stop.`;
 
