@@ -139,32 +139,34 @@ When spawning agents for parallel work in this repo:
 
 ## Automated site agents
 
-Three Anthropic **Managed Agents** run daily against this repo, sequentially. Each agent opens at most one PR per session. All PRs require human review before merge.
+Four Anthropic **Managed Agents** run against this repo. Three are scheduled (janitor / contributor / stylist) and open at most one PR per session. The fourth (reviewer) is triggered per PR-event on agent-authored branches and decides whether to auto-merge, request changes, or escalate to a human. Reviewer decisions are autonomous up to its escalation threshold; PRs it escalates wait for human review.
 
 | Variant | When | Scope | Agent ID secret | System prompt |
 |---|---|---|---|---|
 | **janitor** | Daily 14:00 UTC | Correctness only — bugs, data accuracy, content quality, off-topic articles | `AGGREGATOR_AGENT_ID` | `docs/agent-system-prompt-janitor.md` |
 | **contributor** | Daily 14:45 UTC | Improvements — SEO, content depth, internal linking, structured data, competitor parity, new surfaces | `AGGREGATOR_CONTRIBUTOR_AGENT_ID` | `docs/agent-system-prompt-contributor.md` |
 | **stylist** | Daily 15:30 UTC | Visual design and homepage structure — driven by `docs/design-roadmap.md`, one bounded change per session. Allowlisted to `src/renderer/**` and `docs/design-roadmap.md` only. | `AGGREGATOR_STYLIST_AGENT_ID` | `docs/agent-system-prompt-stylist.md` |
+| **reviewer** | Per PR-event on `agent/*` branches | Read the PR + diff + CI; decide approve+squash-merge, request-changes, or escalate (`needs-human-review` label). Runs on Opus — judgment-heavy. | `AGGREGATOR_REVIEWER_AGENT_ID` | `docs/agent-system-prompt-reviewer.md` |
 
-The split keeps each session focused on one mental model. The janitor's prompt defers improvement work to the contributor; the contributor's prompt defers correctness bugs to the janitor; the stylist's prompt defers correctness to the janitor and content/SEO to the contributor.
+The split keeps each session focused on one mental model. The janitor's prompt defers improvement work to the contributor; the contributor's prompt defers correctness bugs to the janitor; the stylist's prompt defers correctness to the janitor and content/SEO to the contributor. The reviewer never opens PRs — it only reads and decides.
 
 The **stylist** is roadmap-driven rather than lens-driven: it reads `docs/design-roadmap.md` (north star, references — primarily choppingblock.ai, secondarily piccalil.li — phased plan, completed-steps log), compares to the live site, and either ships the next planned step or opens a plan-only PR revising the roadmap. Phase 0 of the roadmap is a permanent mobile gate — every stylist PR must verify desktop and iPhone-width layouts are clean.
 
 ### Running them
 
-- **Automatic:** GH Actions crons. Workflows: `.github/workflows/agent-janitor.yml`, `agent-contributor.yml`, and `agent-stylist.yml`.
-- **Manual dispatch:** GitHub → Actions → pick the workflow → **Run workflow** (optional `goal` input overrides the default).
-- **Local ad-hoc:** `AGGREGATOR_AGENT_ID=<id> npx tsx --env-file=scripts/.env scripts/run-site-agent.mts "<goal>"` from the repo root. Set `AGGREGATOR_AGENT_ID` to whichever variant's ID you want to invoke.
+- **Automatic:** GH Actions. Crons for janitor / contributor / stylist (`.github/workflows/agent-janitor.yml`, `agent-contributor.yml`, `agent-stylist.yml`); `pull_request`-triggered for reviewer (`agent-reviewer.yml`, fires only when `head_ref` starts with `agent/`).
+- **Manual dispatch:** GitHub → Actions → pick the workflow → **Run workflow**. Janitor / contributor / stylist accept an optional `goal` override; reviewer accepts a `pr_number` for ad-hoc re-runs.
+- **Local ad-hoc (goal mode — janitor / contributor / stylist):** `AGGREGATOR_AGENT_ID=<id> npx tsx --env-file=scripts/.env scripts/run-site-agent.mts "<goal>"`. Set `AGGREGATOR_AGENT_ID` to whichever variant's ID.
+- **Local ad-hoc (reviewer mode):** `AGENT_VARIANT=reviewer PR_NUMBER=<n> AGGREGATOR_AGENT_ID=$AGGREGATOR_REVIEWER_AGENT_ID npx tsx --env-file=scripts/.env scripts/run-site-agent.mts`. The runner detects reviewer mode from the env vars; argv is unused.
 
 ### Layout
 
 - `scripts/setup-site-agent.mts <variant>` — one-time creator per variant. First call also creates the shared `aggregator-env` environment; later calls reuse it.
 - `scripts/migrate-agent.mts <variant>` — re-apply the current `lib/agent-config.mts` + system prompt to the live agent for that variant. Idempotent; run after changing either.
-- `scripts/run-site-agent.mts` — per-session runner, variant-agnostic. Reads `AGGREGATOR_AGENT_ID` from env. Handles `cf_api` and `github_api` custom tool calls host-side; the agent never sees the underlying tokens.
-- `scripts/lib/agent-config.mts` — shared source of truth for model, tools, MCP servers, and the per-variant config (`getVariantConfig`).
-- `scripts/inspect-session.mts` / `cleanup-orphans.mts` / `update-agent-model.mts` — debugging helpers.
-- `docs/agent-system-prompt-janitor.md` / `agent-system-prompt-contributor.md` / `agent-system-prompt-stylist.md` — the system prompts each agent loads.
+- `scripts/run-site-agent.mts` — per-session runner. Two modes: goal mode (default; argv[2] is the goal) and reviewer mode (set `AGENT_VARIANT=reviewer` + `PR_NUMBER=<n>`). Reads `AGGREGATOR_AGENT_ID` from env. Handles `cf_api` and `github_api` custom tool calls host-side; the agent never sees the underlying tokens.
+- `scripts/lib/agent-config.mts` — shared source of truth for tools, MCP servers, and the per-variant config (`getVariantConfig`). Model is per-variant via `modelFor()` — defaults to `claude-sonnet-4-6`, overridable per variant (reviewer = `claude-opus-4-7`).
+- `scripts/inspect-session.mts` / `inspect-agents.mts` / `cleanup-orphans.mts` / `update-agent-model.mts` — debugging helpers.
+- `docs/agent-system-prompt-janitor.md` / `-contributor.md` / `-stylist.md` / `-reviewer.md` — the system prompts each agent loads.
 - `docs/design-roadmap.md` — the stylist's contract. Edited by both humans and the stylist agent (plan-only PRs allowed).
 - `.github/workflows/agent-pr-allowlist.yml` — CI guard. **Universal forbids** for every `agent/*` branch: `wrangler.toml`, `CLAUDE.md`, `.github/**`, `src/db/**.sql`. **Stylist allowlist** (branches matching `agent/stylist-*`): only `src/renderer/**` and `docs/design-roadmap.md` may be modified — everything else is rejected. This is the hard safety rail; the system prompts are soft rails.
 
@@ -180,13 +182,14 @@ Stored in GH repo Secrets (used by the scheduled workflows) and mirrored in loca
 | `AGGREGATOR_AGENT_ID` | Janitor Managed Agent ID |
 | `AGGREGATOR_CONTRIBUTOR_AGENT_ID` | Contributor Managed Agent ID |
 | `AGGREGATOR_STYLIST_AGENT_ID` | Stylist Managed Agent ID |
+| `AGGREGATOR_REVIEWER_AGENT_ID` | Reviewer Managed Agent ID |
 | `AGGREGATOR_ENV_ID` | Shared Managed Agent environment ID |
 | `AGENT_GITHUB_PAT` / `GITHUB_REPO_TOKEN` | Fine-grained GH PAT with Contents/PRs/Issues/Metadata/Actions/Commit-statuses on this repo. Used both for the session's `github_repository` mount (via Anthropic's git proxy) and for the `github_api` custom tool. Same value under both names (GH Actions secret uses `AGENT_GITHUB_PAT`; local `.env` uses `GITHUB_REPO_TOKEN`). |
 | `GITHUB_REPO_URL` | `https://github.com/<owner>/<repo>` — derived from `${{ github.repository }}` in CI; explicit in local `.env`. |
 
 ### Architecture in one line
 
-GH Actions (or local script) → `sessions.create()` → Anthropic hosts the container + agent loop → agent calls `cf_api` / `github_api` → runner fulfills them host-side with our tokens → agent opens a PR on `agent/*` branch → allowlist CI + human review → merge.
+GH Actions (cron for the three producers, `pull_request` for the reviewer, or local script) → `sessions.create()` → Anthropic hosts the container + agent loop → agent calls `cf_api` / `github_api` → runner fulfills them host-side with our tokens → producer agents open a PR on `agent/*` branch → allowlist CI + test CI run → reviewer agent decides approve+merge / request-changes / escalate → human reviews only the escalations.
 
 No MCP servers (Anthropic's MCP proxy was unreliable for both CF and GitHub MCPs during initial setup). The `cf_api` / `github_api` custom tools keep auth on our side and sidestep the proxy entirely.
 
@@ -194,16 +197,17 @@ No MCP servers (Anthropic's MCP proxy was unreliable for both CF and GitHub MCPs
 
 - **System prompt:** edit the variant's prompt file, then `npx tsx --env-file=scripts/.env scripts/migrate-agent.mts <variant>`. Creates a new immutable agent version; next session picks it up.
 - **Model / tools / description:** edit `scripts/lib/agent-config.mts`, then `migrate-agent.mts <variant>` for each variant you want updated.
-- **Schedule / goal:** edit the variant's workflow file (`agent-janitor.yml`, `agent-contributor.yml`, or `agent-stylist.yml`).
+- **Schedule / goal:** edit the variant's workflow file (`agent-janitor.yml`, `agent-contributor.yml`, `agent-stylist.yml`, or `agent-reviewer.yml`).
 - **Stylist roadmap:** edit `docs/design-roadmap.md` directly. The stylist agent reads it every session and may also propose edits via plan-only PRs.
 - **Allowlist:** edit `.github/workflows/agent-pr-allowlist.yml`.
 
 ### Bootstrapping a new variant
 
-If you add a fourth variant (e.g., a "growth" agent), the steps are:
+If you add a fifth variant, the steps are:
 
-1. Add an entry to `VARIANT_CONFIGS` in `scripts/lib/agent-config.mts`.
+1. Add an entry to `VARIANT_CONFIGS` and append the name to `AGENT_VARIANTS` in `scripts/lib/agent-config.mts`. Add `model:` if you want to override the default.
 2. Write `docs/agent-system-prompt-<variant>.md`.
 3. Run `npx tsx --env-file=scripts/.env scripts/setup-site-agent.mts <variant>`. Save the printed agent ID into the GH secret named in `agentIdEnvVar` (and mirror to local `scripts/.env`).
 4. Add `.github/workflows/agent-<variant>.yml`.
 5. If the variant needs scope tighter than the universal allowlist, extend `.github/workflows/agent-pr-allowlist.yml` with branch-pattern-aware rules (see the existing stylist block as a model).
+6. If the variant is a reviewer-style consumer (reads PRs rather than opens them), set `AGENT_VARIANT=<variant>` in the workflow and add a branch in `run-site-agent.mts` for the variant's kickoff shape.
