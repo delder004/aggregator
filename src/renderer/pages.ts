@@ -384,6 +384,39 @@ function generateHomepage(
       body += `</div>\n`;
       body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>\n`;
     }
+
+    // Emerging Companies section — recently added companies with few or no articles
+    const emergingCompanies = [...companies]
+      .filter(c => c.articleCount <= 2)
+      .sort((a, b) => {
+        // Sort by: first, companies with some coverage; second, by added date (newest first)
+        if (a.articleCount !== b.articleCount) {
+          return b.articleCount - a.articleCount;
+        }
+        const aDate = a.addedAt ? new Date(a.addedAt).getTime() : 0;
+        const bDate = b.addedAt ? new Date(b.addedAt).getTime() : 0;
+        return bDate - aDate;
+      })
+      .slice(0, 6);
+
+    if (emergingCompanies.length > 0) {
+      body += `<div class="section-label"><a href="/companies" style="color:inherit;text-decoration:none;">Emerging Companies</a></div>\n`;
+      body += `<div class="companies-preview-grid">\n`;
+      for (const company of emergingCompanies) {
+        const href = `/company/${escapeHtml(company.id)}`;
+        const name = escapeHtml(company.name);
+        const category = company.category ? escapeHtml(company.category) : '';
+        const count = company.articleCount;
+        const badgeLabel = count === 0 ? 'New' : `${count} article${count !== 1 ? 's' : ''}`;
+        body += `<div class="company-preview-card">
+  <h3><a href="${href}">${name}</a></h3>
+  ${category ? `<div class="company-category">${category}</div>` : ''}
+  <div class="company-articles">${badgeLabel}</div>
+</div>\n`;
+      }
+      body += `</div>\n`;
+      body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>\n`;
+    }
   }
 
   // Jobs preview section — latest open roles
