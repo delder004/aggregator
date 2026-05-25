@@ -145,12 +145,18 @@ Make our aggregated data feel like a tool. All "sortable" surfaces are static �
 
 ### Phase 4 — Dual-narrative spine
 
-The structural anchor — but only after Phase 1 has proven that "what's changing" panels work, and after the data mapping is credible.
+The structural anchor. People-frame chosen over the original tools-frame because it's more symmetric and more in line with the choppingblock.ai analog (jobs vanishing / jobs paying $1M+): people changes are easier to feel than tooling changes. Surface order:
 
-- **4A — Define the taxonomy.** Decide which existing tags/scoring signals map to "Work being automated" (manual reconciliations, basic tax prep, audit sampling, AP coding, …) vs. "Tools/companies gaining ground" (firms shipping agents, AI-native startups, new roles). May live in `src/renderer/diversity.ts` or a new module. **The agent ships a plan-only PR proposing the taxonomy and waits for human approval before implementing — taxonomy is editorial judgment, not styling.**
-- **4B — Build "Work being automated" homepage section.** Replaces or upgrades the looser Phase 1B "What changed this week" panels on one side. Red-tinted indicators, ↓ direction. Driven by the Phase 4A taxonomy.
-- **4C — Build "Tools/companies gaining ground" homepage section.** Parallel structure. Green-tinted indicators, ↑ direction.
-- **4D — Connect them visually.** Side-by-side on desktop, stacked on mobile. Shared headline scaffold. Visual contrast (color, icon, tone) that makes the dual narrative the editorial centerpiece.
+- **Left column — "Accountant work disappearing"** — workflows AI is taking over. Tag-driven (audit, tax, bookkeeping, payroll, compliance, …).
+- **Right column — "New accounting roles emerging"** — roles being *created* by the shift. Currently blocked: we have no data layer for role emergence — article tags signal company momentum, not role emergence; the jobs board has titles but no "is this new?" signal. See 4A.5.
+
+Steps:
+
+- **4A — Define the taxonomy (left column).** ✅ Shipped as `src/renderer/dual-narrative.ts` with `AUTOMATED_WORK_TAGS` + `isAutomatedWorkArticle()`. The right-column data layer is deferred to 4A.5 — every neither-bucket tag is documented inline with reasoning so future revisits are honest.
+- **4A.5 — Define the "emerging role" signal (right column data layer).** Human-led (editorial judgment about what counts as an emerging role in accounting). Options sketched in `dual-narrative.ts`: (a) curated allow-list of role-title fragments — "AI", "Agent", "Automation", "Augmented", "Implementation"; (b) LLM classification at jobs ingest into a new tag set; (c) punt to "Companies hiring this week," losing the role-emergence frame. Until this ships, 4C cannot render.
+- **4B — Build "Accountant work disappearing" homepage section.** Renders left column standalone using 4A. Subdued red indicators, ↓ direction. Can ship today — unblocked.
+- **4C — Build "New accounting roles emerging" homepage section.** Renders right column. Blocked on 4A.5. Subdued green indicators, ↑ direction.
+- **4D — Connect them visually.** Side-by-side on desktop, stacked on mobile. Shared headline scaffold. Visual contrast (color, icon, tone) that makes the dual narrative the editorial centerpiece. Blocked on 4B + 4C both shipped.
 
 ### Phase 5 — Editorial hierarchy
 
@@ -193,6 +199,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [date] 
 - [2F] — PR #89 — Add serif editorial typeface to all major headlines: `.hero h1`, `.section-heading`, `.article-detail h1`, `.about-content h1/h2`, `.insight-header h1`, `.insight-content h2/h3`. Uses system serif stack `ui-serif, Georgia, serif` (no self-hosted webfont) paired with existing system sans for body text, fitting within 50KB page budget. Enhances editorial voice and visual hierarchy without client JS. Mobile responsive by inheritance. — 2026-05-22
 - [3A] — PR #92 — Companies as a dense static table: replace card grid with tabular view (name, category, articles, jobs, last mentioned). Pre-render alternate sort URLs (`/companies/by-articles`, `/companies/by-jobs`, `/companies/by-recent`) with sort link headers showing active sort. Table uses responsive overflow-x on desktop, hides last-mentioned column on mobile ≤768px to save space. Pagination: 40 companies per page to stay under 50KB. CSS-only changes to renderer; no database schema changes. Mobile responsive with responsive table and hidden columns at breakpoints. — 2026-05-23
 - [3B] — PR pending — Jobs as a dense static table: replace card grid with tabular view (job title, company, department, location, posted date). Pre-render alternate sort URLs (`/jobs/by-company`) with sort link headers showing active sort (default: recently posted). Table uses responsive overflow-x on desktop, hides posted-date column on mobile ≤768px to save space. Pagination: 40 jobs per page to stay under 50KB. Keeps filter pages (dept, location, company, remote) with card view for browsable experience; focuses table view on main `/jobs` gateway. Mobile responsive with responsive table and hidden columns at breakpoints. — 2026-05-25
+- [4A] — 2026-05-25 — Define dual-narrative taxonomy as `src/renderer/dual-narrative.ts` (`AUTOMATED_WORK_TAGS` + `isAutomatedWorkArticle()`). Reframed Phase 4 from tools-frame to people-frame ("Accountant work disappearing" / "New accounting roles emerging"). Right column deferred to 4A.5 because no data layer exists for role emergence; reasoning documented inline in the module. Unblocks 4B (left column renders standalone); 4C waits on 4A.5.
 
 ---
 
