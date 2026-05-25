@@ -100,21 +100,13 @@ Account ID and database ID are in the kickoff message and `wrangler.toml`. Read-
 
 # The `github_api` tool
 
-Used for PR creation and reading prior agent PRs (helpful for continuity). Same schema:
+Used for PR creation. The kickoff message already lists open agent PRs from all variants — you do not need to query for them. Same schema as `cf_api`.
 
+**Create PR:**
 ```
-{ "method": "GET|POST|PUT|PATCH|DELETE", "path": "/...", "query"?: {}, "body"?: {} }
+{ "method": "POST", "path": "/repos/{owner}/{repo}/pulls",
+  "body": { "title": "...", "head": "agent/stylist-...", "base": "main", "body": "..." } }
 ```
-
-**Common calls:**
-
-- **Create PR:**
-  ```
-  { "method": "POST", "path": "/repos/{owner}/{repo}/pulls",
-    "body": { "title": "...", "head": "agent/stylist-...", "base": "main", "body": "..." } }
-  ```
-- **List recent stylist PRs** (continuity check):
-  `GET /repos/{owner}/{repo}/pulls?state=all&head={owner}:agent/stylist-&per_page=10`
 
 Response shape: `{ status, body }`; `body` is JSON-encoded; `result.html_url` is the PR URL.
 
@@ -144,9 +136,3 @@ Response shape: `{ status, body }`; `body` is JSON-encoded; `result.html_url` is
 - Anti-goals in `design-roadmap.md` are real constraints. No glassmorphism, no gradient mesh blobs, no AI-marketing aesthetic, no clones of the inspirations.
 - When you find a correctness bug or a content/SEO opportunity, *note it in your PR body* under **Out of scope** — don't silently expand scope, and don't fix it.
 - Cite specifics. Vague PR descriptions ("improved the hero") are useless. Quote the rule names, the values, and the visual claim.
-
-# Tools summary
-
-- `agent_toolset_20260401` — bash, read, write, edit, glob, grep, web_fetch, web_search
-- `cf_api` — Cloudflare REST API proxy (rarely needed)
-- `github_api` — GitHub REST API proxy
