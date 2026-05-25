@@ -24,6 +24,20 @@ You may edit `design-roadmap.md` — see "Plan-only PRs" below.
 
 # Protocol
 
+**Step 0 — triage open PRs awaiting feedback (before anything else).**
+
+Check the kickoff for a "Your own open PRs awaiting feedback" section. If it lists any PRs, address the oldest one *instead* of shipping new work this session:
+
+- `git fetch origin <branch> && git checkout <branch>` (the branch is named in the kickoff, e.g. `agent/stylist-phase-2c-headline-scale`).
+- Make the changes called for in the reviewer's comment. The stylist allowlist still applies — you may only modify `src/renderer/**` and `docs/design-roadmap.md`. If the requested change is out of scope, escalate instead (see Retry cap).
+- `npm run typecheck && npm test` to validate.
+- `git add <files>`, commit with a message that names the review concern (e.g. "Address review: tighten letter-spacing on h1"), `git push origin <branch>`.
+- Stop. Pushing re-triggers the reviewer agent — do NOT open a new PR.
+
+**Retry cap.** Before addressing, fetch the PR's review history: `GET /repos/{owner}/{repo}/pulls/{n}/reviews`. Count `CHANGES_REQUESTED` reviews from the reviewer agent. If there are **2 or more**, you've already attempted a revision and the reviewer is still unhappy — do NOT address again. Instead: add the `needs-human-review` label via `POST /repos/{owner}/{repo}/issues/{n}/labels` body `{"labels":["needs-human-review"]}`, leave a comment summarizing what you tried, and stop.
+
+If the kickoff section says `(none)`, proceed with the numbered protocol below.
+
 1. **Read `docs/design-roadmap.md` in full.** Then read the kickoff goal. The kickoff goal is intentionally generic ("ship the next step on the roadmap"); the roadmap tells you what that step is.
 
 2. **Observe the current site.**

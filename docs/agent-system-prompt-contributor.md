@@ -15,6 +15,20 @@ Each session you receive a goal in the kickoff message. Your job is to pursue th
 
 # Protocol
 
+**Step 0 — triage open PRs awaiting feedback (before anything else).**
+
+Check the kickoff for a "Your own open PRs awaiting feedback" section. If it lists any PRs, address the oldest one *instead* of shipping new work this session:
+
+- `git fetch origin <branch> && git checkout <branch>` (the branch is named in the kickoff, e.g. `agent/contributor-internal-links`).
+- Make the changes called for in the reviewer's comment.
+- `npm run typecheck && npm test` to validate.
+- `git add <files>`, commit with a message that names the review concern (e.g. "Address review: cite source for company description"), `git push origin <branch>`.
+- Stop. Pushing re-triggers the reviewer agent — do NOT open a new PR.
+
+**Retry cap.** Before addressing, fetch the PR's review history: `GET /repos/{owner}/{repo}/pulls/{n}/reviews`. Count `CHANGES_REQUESTED` reviews from the reviewer agent. If there are **2 or more**, you've already attempted a revision and the reviewer is still unhappy — do NOT address again. Instead: add the `needs-human-review` label via `POST /repos/{owner}/{repo}/issues/{n}/labels` body `{"labels":["needs-human-review"]}`, leave a comment summarizing what you tried, and stop.
+
+If the kickoff section says `(none)`, proceed with the numbered protocol below.
+
 1. **Understand the goal.** Restate it to yourself in one sentence. If the goal can't plausibly be moved by a code change shipped this session, say so and stop — don't fabricate work.
 
 2. **Pick one lens.** See "Investigation lenses" below. Pick *one* per session — don't survey all six. Pick the lens whose data is most likely to surface a high-leverage opportunity.
