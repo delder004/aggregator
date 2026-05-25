@@ -11,6 +11,7 @@ import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
 import { runWeeklyConsolidation } from './consolidation/service';
 import { autoCategorizUncategorizedCompanies } from './db/auto-categorizer';
+import { runSourceDiscovery } from './discovery/source-discovery';
 
 /**
  * IngestWorkflow — weekly capture-layer orchestrator.
@@ -234,10 +235,40 @@ export class IngestWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
       );
     }
 
+    // Step 7: Source discovery — runs unconditionally and degrades
+    // gracefully when GSC/rankings/competitors signals are missing. Writes
+    // unfamiliar on-theme domains to source_candidates for the contributor
+    // agent to approve.
+    const discoveryResult = await step.do('source-discovery', () =>
+      this.runNamespace(
+        pipelineRunId,
+        'source-discovery',
+        async () => {
+          const r = await runSourceDiscovery(this.env);
+          return {
+            queriesSynthesized: r.queriesSynthesized,
+            serpResults: r.serpStats.totalResults,
+            filteredOffTheme: r.serpStats.filteredOffTheme,
+            filteredDenied: r.serpStats.filteredDenied,
+            filteredKnown: r.serpStats.filteredKnown,
+            domainsAboveThreshold: r.candidatesAboveThreshold,
+            candidatesClassified: r.candidatesClassified,
+            candidatesPromoted: r.candidatesPromoted,
+            classificationRejected: r.classificationRejected,
+            errors: r.errors.length > 0 ? r.errors.slice(0, 5).join('; ') : null,
+          };
+        },
+        currentWeek.windowStart,
+        currentWeek.windowEnd
+      )
+    );
+    results.push(discoveryResult);
+
     console.log(
       `IngestWorkflow finished. completed=${completedCount}, ` +
       `errors=${errorCount}, skipped=${skippedCount}, ` +
-      `consolidation=${consolidationResult?.written ?? 'skipped'}`
+      `consolidation=${consolidationResult?.written ?? 'skipped'}, ` +
+      `discovery=${discoveryResult.metrics.candidatesPromoted ?? 0} promoted`
     );
 
     return { pipelineRunId, results, completedCount, errorCount, skippedCount, consolidationResult };

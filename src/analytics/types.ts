@@ -70,6 +70,9 @@ export type SourceCandidateOrigin =
 
 export type SourceCandidateStatus = 'new' | 'approved' | 'rejected' | 'shipped';
 
+export type BlogProbeResult = 'rss' | 'scraper' | 'none';
+export type ThemeClassification = 'yes' | 'no';
+
 export interface SourceCandidate {
   id: string;
   name: string;
@@ -81,6 +84,14 @@ export interface SourceCandidate {
   firstSeenAt: string;
   updatedAt: string;
   promotedToSourceId: string | null;
+  queriesSeen: string[] | null;
+  domainQueryCount: number | null;
+  blogProbeResult: BlogProbeResult | null;
+  blogProbeUrl: string | null;
+  themeClassification: ThemeClassification | null;
+  themeClassificationReason: string | null;
+  sampleTitle: string | null;
+  sampleSnippet: string | null;
 }
 
 export type IngestNamespace =
@@ -90,7 +101,8 @@ export type IngestNamespace =
   | 'competitors'
   | 'article-views-rollup'
   | 'engagement-rollup'
-  | 'auto-categorize';
+  | 'auto-categorize'
+  | 'source-discovery';
 
 export type IngestRunStatus = 'pending' | 'running' | 'complete' | 'error' | 'skipped';
 

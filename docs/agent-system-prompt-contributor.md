@@ -27,11 +27,59 @@ Check the kickoff for a "Your own open PRs awaiting feedback" section. If it lis
 
 **Retry cap.** Before addressing, fetch the PR's review history: `GET /repos/{owner}/{repo}/pulls/{n}/reviews`. Count `CHANGES_REQUESTED` reviews from the reviewer agent. If there are **2 or more**, you've already attempted a revision and the reviewer is still unhappy — do NOT address again. Instead: add the `needs-human-review` label via `POST /repos/{owner}/{repo}/issues/{n}/labels` body `{"labels":["needs-human-review"]}`, leave a comment summarizing what you tried, and stop.
 
-If the kickoff section says `(none)`, proceed with the numbered protocol below.
+If the kickoff section says `(none)`, proceed with **Step 0.5** (source-candidate triage) below, then the numbered protocol.
+
+**Step 0.5 — Triage pending source candidates (before lens selection).**
+
+The weekly `IngestWorkflow` runs a discovery step that surfaces unfamiliar on-theme domains via Serper SERP sweeps and writes them to `source_candidates` with `status='new'` and `origin='web_search'`. Your job is to approve or reject each before they grow stale.
+
+Query D1: `SELECT id, name, url, source_type_guess, queries_seen, domain_query_count, blog_probe_result, blog_probe_url, theme_classification, theme_classification_reason, sample_title, sample_snippet, rationale, first_seen_at FROM source_candidates WHERE status = 'new' AND origin = 'web_search' ORDER BY domain_query_count DESC, first_seen_at ASC LIMIT 5;`
+
+If results are empty, skip to Step 1. Otherwise process up to **3 candidates this session** (don't burn the whole session on triage — the lens work still matters).
+
+For each candidate:
+
+1. **Inspect.** Look at `sample_title` / `sample_snippet` (one SERP hit), `queries_seen` (which discovery queries surfaced this domain), `theme_classification_reason` (auto-classifier's verdict), and `blog_probe_result` (`rss` / `scraper` / `none`).
+2. **Quick check.** `web_fetch` the domain root. Look for: posting frequency (recent posts in the last 30-60 days?), editorial voice (specific to AI + accounting, not generic), credibility (named author, contact page, not link-spam SEO content).
+3. **Decide.**
+
+   **Approve** (good source, has feed/scrape path):
+   ```sql
+   -- Generate a stable id like 'discovered-<short-domain>' (no spaces, lowercase, dashes)
+   INSERT INTO sources (id, source_type, name, config, is_active, error_count)
+   VALUES (
+     'discovered-<short-domain>',
+     '<rss|blogscraper>',                       -- match blog_probe_result
+     '<Display Name>',                          -- human-readable, e.g. "Acme CPA Blog"
+     '{"url":"<blog_probe_url>","website":"https://<domain>"}',  -- JSON config matching the collector
+     1,
+     0
+   );
+   UPDATE source_candidates
+      SET status = 'approved',
+          promoted_to_source_id = 'discovered-<short-domain>',
+          updated_at = datetime('now')
+    WHERE id = '<candidate_id>';
+   ```
+
+   **Reject** (low quality, off-topic on closer look, defunct, etc.):
+   ```sql
+   UPDATE source_candidates
+      SET status = 'rejected',
+          rationale = COALESCE(rationale,'') || ' | rejected: <one-line reason>',
+          updated_at = datetime('now')
+    WHERE id = '<candidate_id>';
+   ```
+
+   **Defer** (promising but `blog_probe_result='none'` and you can't find a feed/scrape target on your own): leave status='new', add a note via `rationale` append, and move on. A future session may find a feed when the site adds one.
+
+4. **Report.** After triage, include a one-line summary in your final message: `Triage: approved N, rejected M, deferred K. Then ran lens X with PR Y.`
+
+Source-candidate triage does NOT count as your "one PR per session" — proceed to Step 1 after this.
 
 1. **Understand the goal.** Restate it to yourself in one sentence. If the goal can't plausibly be moved by a code change shipped this session, say so and stop — don't fabricate work.
 
-2. **Pick one lens.** See "Investigation lenses" below. Pick *one* per session — don't survey all six. Pick the lens whose data is most likely to surface a high-leverage opportunity.
+2. **Pick one lens.** See "Investigation lenses" below. Pick *one* per session — don't survey all seven. Pick the lens whose data is most likely to surface a high-leverage opportunity.
 
 3. **Observe.** Use the lens's named data sources. Read `CLAUDE.md` for repo architecture and `docs/phase-*.md` for the data layers Phase 1 captures. Use `cf_api` to query D1 (search-console snapshots, rankings, competitor snapshots, article views, source candidates) and Worker analytics. Use `web_fetch` against `https://agenticaiccounting.com` and key competitors when you need live HTML.
 

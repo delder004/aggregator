@@ -314,7 +314,15 @@ CREATE TABLE IF NOT EXISTS source_candidates (
     status TEXT NOT NULL DEFAULT 'new',
     first_seen_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    promoted_to_source_id TEXT
+    promoted_to_source_id TEXT,
+    queries_seen TEXT,
+    domain_query_count INTEGER,
+    blog_probe_result TEXT,
+    blog_probe_url TEXT,
+    theme_classification TEXT,
+    theme_classification_reason TEXT,
+    sample_title TEXT,
+    sample_snippet TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_source_candidates_url

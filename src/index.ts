@@ -23,6 +23,7 @@ import { runSearchConsoleSnapshot } from './analytics/search-console';
 import { runRankingsSweep } from './analytics/rankings';
 import { runCompetitorSnapshots } from './competitors/snapshot';
 import { runWeeklyConsolidation } from './consolidation/service';
+import { runSourceDiscovery } from './discovery/source-discovery';
 import {
   getCfAnalyticsSnapshotById,
   getCompetitorSnapshotById,
@@ -585,6 +586,43 @@ export default {
         const options: { windowStart?: string } = {};
         if (windowParam) options.windowStart = windowParam;
         const result = await runWeeklyConsolidation(env, options);
+        return new Response(JSON.stringify({ status: 'ok', ...result }), {
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            status: 'error',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          }
+        );
+      }
+    }
+
+    // Source discovery: manual trigger. Runs the same orchestrator as the
+    // weekly ingest step; useful for ad-hoc backfills or after seeding new
+    // signals.
+    if (path === '/ops/cron/source-discovery' && request.method === 'POST') {
+      if (!isOpsAuthorized(request, env)) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+      try {
+        const minParam = url.searchParams.get('min_query_count');
+        const maxParam = url.searchParams.get('max_candidates');
+        const options: { minQueryCount?: number; maxCandidates?: number } = {};
+        if (minParam) {
+          const n = Number(minParam);
+          if (Number.isFinite(n)) options.minQueryCount = Math.max(1, Math.floor(n));
+        }
+        if (maxParam) {
+          const n = Number(maxParam);
+          if (Number.isFinite(n)) options.maxCandidates = Math.max(1, Math.floor(n));
+        }
+        const result = await runSourceDiscovery(env, options);
         return new Response(JSON.stringify({ status: 'ok', ...result }), {
           headers: { 'Content-Type': 'application/json; charset=utf-8' },
         });

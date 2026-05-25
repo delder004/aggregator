@@ -687,6 +687,14 @@ export async function upsertSourceCandidate(
     sourceTypeGuess: string | null;
     rationale: string | null;
     origin: SourceCandidateOrigin;
+    queriesSeen?: string[] | null;
+    domainQueryCount?: number | null;
+    blogProbeResult?: 'rss' | 'scraper' | 'none' | null;
+    blogProbeUrl?: string | null;
+    themeClassification?: 'yes' | 'no' | null;
+    themeClassificationReason?: string | null;
+    sampleTitle?: string | null;
+    sampleSnippet?: string | null;
   }
 ): Promise<void> {
   const now = nowIso();
@@ -694,12 +702,23 @@ export async function upsertSourceCandidate(
     .prepare(
       `INSERT INTO source_candidates (
          id, name, url, source_type_guess, rationale, origin, status,
-         first_seen_at, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?)
+         first_seen_at, updated_at,
+         queries_seen, domain_query_count, blog_probe_result, blog_probe_url,
+         theme_classification, theme_classification_reason,
+         sample_title, sample_snippet
+       ) VALUES (?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (url) DO UPDATE SET
          updated_at = excluded.updated_at,
          rationale = COALESCE(excluded.rationale, source_candidates.rationale),
-         source_type_guess = COALESCE(excluded.source_type_guess, source_candidates.source_type_guess)`
+         source_type_guess = COALESCE(excluded.source_type_guess, source_candidates.source_type_guess),
+         queries_seen = COALESCE(excluded.queries_seen, source_candidates.queries_seen),
+         domain_query_count = COALESCE(excluded.domain_query_count, source_candidates.domain_query_count),
+         blog_probe_result = COALESCE(excluded.blog_probe_result, source_candidates.blog_probe_result),
+         blog_probe_url = COALESCE(excluded.blog_probe_url, source_candidates.blog_probe_url),
+         theme_classification = COALESCE(excluded.theme_classification, source_candidates.theme_classification),
+         theme_classification_reason = COALESCE(excluded.theme_classification_reason, source_candidates.theme_classification_reason),
+         sample_title = COALESCE(excluded.sample_title, source_candidates.sample_title),
+         sample_snippet = COALESCE(excluded.sample_snippet, source_candidates.sample_snippet)`
     )
     .bind(
       generateId(),
@@ -709,7 +728,15 @@ export async function upsertSourceCandidate(
       candidate.rationale,
       candidate.origin,
       now,
-      now
+      now,
+      candidate.queriesSeen ? JSON.stringify(candidate.queriesSeen) : null,
+      candidate.domainQueryCount ?? null,
+      candidate.blogProbeResult ?? null,
+      candidate.blogProbeUrl ?? null,
+      candidate.themeClassification ?? null,
+      candidate.themeClassificationReason ?? null,
+      candidate.sampleTitle ?? null,
+      candidate.sampleSnippet ?? null
     )
     .run();
 }
@@ -733,7 +760,20 @@ export async function listSourceCandidates(
         )
         .bind(limit);
   const result = await stmt.all();
-  return result.results.map((row) => ({
+  return result.results.map(mapSourceCandidateRow);
+}
+
+function mapSourceCandidateRow(row: Record<string, unknown>): SourceCandidate {
+  const queriesSeenRaw = row.queries_seen as string | null | undefined;
+  let queriesSeen: string[] | null = null;
+  if (queriesSeenRaw) {
+    try {
+      queriesSeen = JSON.parse(queriesSeenRaw) as string[];
+    } catch {
+      queriesSeen = null;
+    }
+  }
+  return {
     id: row.id as string,
     name: row.name as string,
     url: row.url as string,
@@ -744,7 +784,15 @@ export async function listSourceCandidates(
     firstSeenAt: row.first_seen_at as string,
     updatedAt: row.updated_at as string,
     promotedToSourceId: (row.promoted_to_source_id as string | null) ?? null,
-  }));
+    queriesSeen,
+    domainQueryCount: nullableNumber(row.domain_query_count),
+    blogProbeResult: (row.blog_probe_result as 'rss' | 'scraper' | 'none' | null) ?? null,
+    blogProbeUrl: (row.blog_probe_url as string | null) ?? null,
+    themeClassification: (row.theme_classification as 'yes' | 'no' | null) ?? null,
+    themeClassificationReason: (row.theme_classification_reason as string | null) ?? null,
+    sampleTitle: (row.sample_title as string | null) ?? null,
+    sampleSnippet: (row.sample_snippet as string | null) ?? null,
+  };
 }
 
 // -- ingest_runs --
