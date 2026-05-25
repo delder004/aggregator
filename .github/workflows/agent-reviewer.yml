@@ -1,0 +1,45 @@
+name: agent-reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review (for ad-hoc re-runs)'
+        required: true
+        type: string
+
+jobs:
+  review:
+    # Only fire on agent-authored PRs. Human PRs are reviewed by humans.
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'agent/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: agent-reviewer-pr-${{ github.event.pull_request.number || inputs.pr_number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run reviewer agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          # Reviewer-specific agent ID. Same shared environment as the others.
+          AGGREGATOR_AGENT_ID: ${{ secrets.AGGREGATOR_REVIEWER_AGENT_ID }}
+          AGGREGATOR_ENV_ID: ${{ secrets.AGGREGATOR_ENV_ID }}
+          GITHUB_REPO_TOKEN: ${{ secrets.AGENT_GITHUB_PAT }}
+          GITHUB_REPO_URL: https://github.com/${{ github.repository }}
+          AGENT_VARIANT: reviewer
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: npx tsx scripts/run-site-agent.mts
