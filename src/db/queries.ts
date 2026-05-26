@@ -218,6 +218,35 @@ export async function getAllActiveSources(
   return results.results.map(mapRowToSource);
 }
 
+export async function getRecentlyScoredArticles(
+  db: D1Database,
+  since: string
+): Promise<ScoredArticle[]> {
+  const results = await db
+    .prepare(
+      'SELECT * FROM articles WHERE scored_at >= ? AND relevance_score > 0'
+    )
+    .bind(since)
+    .all();
+  return results.results.map((row) => ({
+    url: row.url as string,
+    title: row.title as string,
+    sourceType: row.source_type as SourceType,
+    sourceName: row.source_name as string,
+    author: row.author as string | null,
+    publishedAt: row.published_at as string,
+    contentSnippet: row.content_snippet as string | null,
+    imageUrl: row.image_url as string | null,
+    relevanceScore: row.relevance_score as number,
+    qualityScore: (row.quality_score as number) ?? 0,
+    aiSummary: (row.ai_summary as string) ?? '',
+    headline: (row.headline as string) ?? '',
+    tags: JSON.parse((row.tags as string) || '[]'),
+    companyMentions: JSON.parse((row.company_mentions as string) || '[]'),
+    transcript: (row.transcript as string) || undefined,
+  }));
+}
+
 export async function getAllUniqueTags(db: D1Database): Promise<string[]> {
   const results = await db
     .prepare(

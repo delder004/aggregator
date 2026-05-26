@@ -61,36 +61,15 @@ import {
   type CollectBatchResult,
 } from './pipeline/steps/collect-batch';
 import { storeArticlesStep } from './pipeline/steps/store-articles';
+import { scoreArticlesStep } from './pipeline/steps/score-articles';
+import { companyTrackingStep } from './pipeline/steps/company-tracking';
+import { companyEnrichmentStep } from './pipeline/steps/company-enrichment';
 
 const MAX_SCORE_PER_RUN = 200;
 const SOURCES_PER_BATCH = 10;
 
 function generateId(): string {
   return crypto.randomUUID();
-}
-
-async function getRecentlyScoredArticles(db: D1Database, since: string): Promise<ScoredArticle[]> {
-  const results = await db
-    .prepare('SELECT * FROM articles WHERE scored_at >= ? AND relevance_score > 0')
-    .bind(since)
-    .all();
-  return results.results.map((row) => ({
-    url: row.url as string,
-    title: row.title as string,
-    sourceType: row.source_type as SourceType,
-    sourceName: row.source_name as string,
-    author: row.author as string | null,
-    publishedAt: row.published_at as string,
-    contentSnippet: row.content_snippet as string | null,
-    imageUrl: row.image_url as string | null,
-    relevanceScore: row.relevance_score as number,
-    qualityScore: (row.quality_score as number) ?? 0,
-    aiSummary: (row.ai_summary as string) ?? '',
-    headline: (row.headline as string) ?? '',
-    tags: JSON.parse((row.tags as string) || '[]'),
-    companyMentions: JSON.parse((row.company_mentions as string) || '[]'),
-    transcript: (row.transcript as string) || undefined,
-  }));
 }
 
 function nowIso(): string {
@@ -290,342 +269,49 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
     });
 
     try {
-      const scoringStartedAt = nowIso();
-      const scoring = await step.do(
-        'score-articles',
+      const scoring = await runStep(
+        this.env,
+        step,
+        params,
+        'process',
+        stepReports,
         {
+          name: 'score-articles',
           retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
-        },
-        async () => {
-          try {
-            const unscoredFromDb = await getUnscoredArticles(this.env.DB, MAX_SCORE_PER_RUN);
-            if (unscoredFromDb.length === 0) {
-              console.log('No unscored articles to score');
-              return {
-                scored: 0,
-                candidates: 0,
-                websiteHints: {} as Record<string, string>,
-                skipped: true,
-              };
-            }
-
-            console.log(`Scoring ${unscoredFromDb.length} unscored articles`);
-            const scoreInput = unscoredFromDb.map((article) => ({
-              url: article.url,
-              title: article.title,
-              sourceType: article.sourceType,
-              sourceName: article.sourceName,
-              author: article.author,
-              publishedAt: article.publishedAt,
-              contentSnippet: article.contentSnippet,
-              imageUrl: article.imageUrl,
-              transcript: article.transcript ?? undefined,
-            }));
-            const scored = await scoreArticles(scoreInput, this.env);
-            const scoredAt = nowIso();
-            const updateStmts = scored.map((article) =>
-              this.env.DB.prepare(
-                `UPDATE articles SET relevance_score = ?, ai_summary = ?, tags = ?, is_published = ?, scored_at = ?,
-                 quality_score = COALESCE(?, quality_score), company_mentions = COALESCE(?, company_mentions),
-                 headline = COALESCE(?, headline), transcript_summary = COALESCE(?, transcript_summary)
-                 WHERE url = ?`
-              ).bind(
-                article.relevanceScore,
-                article.aiSummary,
-                JSON.stringify(article.tags),
-                (article.relevanceScore >= MIN_PUBLISH_SCORE && (article.qualityScore === null || article.qualityScore >= 30)) ? 1 : 0,
-                scoredAt,
-                article.qualityScore ?? null,
-                article.companyMentions ? JSON.stringify(article.companyMentions) : null,
-                article.headline || null,
-                article.transcriptSummary || null,
-                article.url
-              )
-            );
-            if (updateStmts.length > 0) {
-              await this.env.DB.batch(updateStmts);
-            }
-
-            const websiteHints: Record<string, string> = {};
-            for (const article of scored) {
-              if (article.enrichedCompanyMentions) {
-                for (const mention of article.enrichedCompanyMentions) {
-                  if (mention.website) {
-                    websiteHints[mention.name] = mention.website;
-                  }
-                }
-              }
-            }
-
-            console.log(`Scored ${scored.length} articles`);
-            return {
-              scored: scored.length,
-              candidates: unscoredFromDb.length,
-              websiteHints,
-              skipped: false,
-            };
-          } catch (err) {
-            console.error('Scoring failed:', err);
-            return {
-              scored: 0,
-              candidates: 0,
-              websiteHints: {} as Record<string, string>,
-              skipped: false,
-              error: err instanceof Error ? err.message : String(err),
-            };
-          }
+          fn: () => scoreArticlesStep(this.env, MAX_SCORE_PER_RUN),
         }
       );
-      await recordStep(this.env, params.pipelineRunId, 'process', stepReports, {
-        stepName: 'score-articles',
-        status: scoring.error ? 'error' : scoring.skipped ? 'skipped' : 'ok',
-        startedAt: scoringStartedAt,
-        completedAt: nowIso(),
-        metrics: {
-          candidates: scoring.candidates,
-          scored: scoring.scored,
-        },
-        notes: scoring.skipped ? ['No unscored articles were available.'] : [],
-        errors: scoring.error ? [scoring.error] : [],
-      });
 
-      const companyTrackingStartedAt = nowIso();
-      const companyTracking = await step.do(
-        'company-tracking',
+      const companyTracking = await runStep(
+        this.env,
+        step,
+        params,
+        'process',
+        stepReports,
         {
+          name: 'company-tracking',
           retries: { limit: 1, delay: '5 seconds' },
-        },
-        async () => {
-          try {
-            const companies = await getTrackedCompanies(this.env.DB);
-            if (companies.length === 0) {
-              console.log('No tracked companies found');
-              return { matched: 0, companies: 0, recentlyScored: 0, skippedReason: 'No tracked companies found.' };
-            }
-
-            const recentlyScored = await getRecentlyScoredArticles(this.env.DB, startTimeISO);
-            if (recentlyScored.length === 0) {
-              console.log('No recently scored articles for company tracking');
-              return {
-                matched: 0,
-                companies: companies.length,
-                recentlyScored: 0,
-                skippedReason: 'No recently scored articles were available for matching.',
-              };
-            }
-
-            const urlToMatches = new Map<string, string[]>();
-            for (const article of recentlyScored) {
-              const matched = matchArticleToCompanies(article, companies);
-              if (matched.length > 0) {
-                urlToMatches.set(article.url, matched);
-              }
-            }
-
-            if (urlToMatches.size === 0) {
-              console.log('No company matches found');
-              return {
-                matched: 0,
-                companies: companies.length,
-                recentlyScored: recentlyScored.length,
-                skippedReason: 'No scored articles matched tracked companies.',
-              };
-            }
-
-            const urls = [...urlToMatches.keys()];
-            const urlToId = new Map<string, string>();
-            for (let i = 0; i < urls.length; i += 100) {
-              const batch = urls.slice(i, i + 100);
-              const placeholders = batch.map(() => '?').join(',');
-              const result = await this.env.DB
-                .prepare(`SELECT id, url FROM articles WHERE url IN (${placeholders})`)
-                .bind(...batch)
-                .all();
-              for (const row of result.results) {
-                urlToId.set(row.url as string, row.id as string);
-              }
-            }
-
-            const matchedCompanyIds = new Set<string>();
-            for (const [url, companyIds] of urlToMatches) {
-              const articleId = urlToId.get(url);
-              if (articleId) {
-                await linkArticleToCompanies(this.env.DB, articleId, companyIds);
-                companyIds.forEach((id) => matchedCompanyIds.add(id));
-              }
-            }
-
-            for (const companyId of matchedCompanyIds) {
-              await updateCompanyStats(this.env.DB, companyId);
-            }
-
-            console.log(`Company tracking complete: ${urlToMatches.size} articles matched against ${companies.length} companies`);
-            return {
-              matched: urlToMatches.size,
-              companies: companies.length,
-              recentlyScored: recentlyScored.length,
-            };
-          } catch (err) {
-            console.error('Company tracking failed:', err);
-            return {
-              matched: 0,
-              companies: 0,
-              recentlyScored: 0,
-              error: err instanceof Error ? err.message : String(err),
-            };
-          }
+          fn: () => companyTrackingStep(this.env, startTimeISO),
         }
       );
-      await recordStep(this.env, params.pipelineRunId, 'process', stepReports, {
-        stepName: 'company-tracking',
-        status: companyTracking.error ? 'error' : companyTracking.skippedReason ? 'skipped' : 'ok',
-        startedAt: companyTrackingStartedAt,
-        completedAt: nowIso(),
-        metrics: {
-          trackedCompanies: companyTracking.companies,
-          recentlyScored: companyTracking.recentlyScored,
-          matchedArticles: companyTracking.matched,
-        },
-        notes: companyTracking.skippedReason ? [companyTracking.skippedReason] : [],
-        errors: companyTracking.error ? [companyTracking.error] : [],
-      });
 
-      const enrichmentStartedAt = nowIso();
-      const enrichment = await step.do(
-        'company-enrichment',
+      const enrichment = await runStep(
+        this.env,
+        step,
+        params,
+        'process',
+        stepReports,
         {
+          name: 'company-enrichment',
           retries: { limit: 1, delay: '5 seconds' },
-        },
-        async () => {
-          try {
-            const companies = await getTrackedCompanies(this.env.DB);
-            const recentlyScored = await getRecentlyScoredArticles(this.env.DB, startTimeISO);
-
-            if (recentlyScored.length === 0) {
-              return {
-                discovered: 0,
-                enriched: 0,
-                failed: 0,
-                skippedReason: 'No recently scored articles were available for company discovery.',
-              };
-            }
-
-            const websiteHints = scoring.websiteHints ?? {};
-            const candidates = discoverNewCompanies(
-              recentlyScored,
-              companies,
-              websiteHints,
-              MAX_ENRICHMENTS_PER_RUN
-            );
-
-            if (candidates.length === 0) {
-              console.log('No new companies to discover');
-              return {
-                discovered: 0,
-                enriched: 0,
-                failed: 0,
-                skippedReason: 'No new company candidates were identified.',
-              };
-            }
-
-            console.log(
-              `[Enricher] Discovered ${candidates.length} new company candidates: ${candidates.map((candidate) => candidate.name).join(', ')}`
-            );
-
-            let enrichedCount = 0;
-            const failedCandidates: string[] = [];
-            for (const candidate of candidates) {
-              try {
-                const website = await probeWebsite(candidate.name, candidate.website);
-                const companyId = await createDiscoveredCompany(this.env.DB, candidate.name, website);
-
-                if (website) {
-                  const blog = await discoverBlog(website);
-                  if (blog.type === 'rss' && blog.feedUrl) {
-                    await insertSource(
-                      this.env.DB,
-                      `auto-blog-${companyId}`,
-                      'companyblog',
-                      `${candidate.name} Blog`,
-                      { url: blog.feedUrl, company: candidate.name }
-                    );
-                    console.log(`[Enricher] Auto-created RSS source for ${candidate.name}: ${blog.feedUrl}`);
-                  } else if (blog.type === 'scraper' && blog.blogUrl) {
-                    await insertSource(
-                      this.env.DB,
-                      `auto-scrape-${companyId}`,
-                      'blogscraper',
-                      `${candidate.name} Blog`,
-                      {
-                        url: blog.blogUrl,
-                        articlePathPrefix: '/blog/',
-                        company: candidate.name,
-                      }
-                    );
-                    console.log(`[Enricher] Auto-created blog scraper for ${candidate.name}: ${blog.blogUrl}`);
-                  }
-                }
-
-                const jobBoard = await probeJobBoards(candidate.name);
-                if (jobBoard) {
-                  await this.env.DB
-                    .prepare('UPDATE companies SET jobs_board_type = ?, jobs_board_token = ? WHERE id = ?')
-                    .bind(jobBoard.type, jobBoard.token, companyId)
-                    .run();
-                  console.log(`[Enricher] Found ${jobBoard.type} job board for ${candidate.name} (token: ${jobBoard.token})`);
-                }
-
-                enrichedCount++;
-              } catch (err) {
-                failedCandidates.push(candidate.name);
-                console.error(`[Enricher] Failed to enrich ${candidate.name}:`, err);
-              }
-            }
-
-            console.log(`[Enricher] Complete: ${candidates.length} discovered, ${enrichedCount} enriched`);
-            return {
-              discovered: candidates.length,
-              enriched: enrichedCount,
-              failed: failedCandidates.length,
-              failedCandidates,
-            };
-          } catch (err) {
-            console.error('Company enrichment step failed:', err);
-            return {
-              discovered: 0,
-              enriched: 0,
-              failed: 0,
-              error: err instanceof Error ? err.message : String(err),
-            };
-          }
+          fn: () =>
+            companyEnrichmentStep(
+              this.env,
+              startTimeISO,
+              scoring?.websiteHints ?? {}
+            ),
         }
       );
-      const enrichmentNotes: string[] = [];
-      if (enrichment.skippedReason) {
-        enrichmentNotes.push(enrichment.skippedReason);
-      }
-      if (enrichment.failedCandidates && enrichment.failedCandidates.length > 0) {
-        enrichmentNotes.push(`Failed candidates: ${enrichment.failedCandidates.join(', ')}`);
-      }
-      await recordStep(this.env, params.pipelineRunId, 'process', stepReports, {
-        stepName: 'company-enrichment',
-        status: enrichment.error
-          ? 'error'
-          : enrichment.failed > 0
-            ? 'warning'
-            : enrichment.skippedReason
-              ? 'skipped'
-              : 'ok',
-        startedAt: enrichmentStartedAt,
-        completedAt: nowIso(),
-        metrics: {
-          discovered: enrichment.discovered,
-          enriched: enrichment.enriched,
-          failed: enrichment.failed,
-        },
-        notes: enrichmentNotes,
-        errors: enrichment.error ? [enrichment.error] : [],
-      });
 
       const jobsStartedAt = nowIso();
       const jobCollection = await step.do(
@@ -958,12 +644,12 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
       const elapsed = Date.now() - startTime;
       console.log(
         `Process workflow completed in ${elapsed}ms. ` +
-        `Scored: ${scoring.scored}, ` +
-        `Companies matched: ${companyTracking.matched}, ` +
-        `Enrichment: ${enrichment.discovered} discovered / ${enrichment.enriched} enriched, ` +
-        `Jobs: ${jobCollection.fetched} from ${jobCollection.companies} companies${jobCollection.skipped ? ' (skipped)' : ''}, ` +
-        `Pages: ${rendering.pagesWritten}, ` +
-        `Newsletter: ${newsletter.skipped ? 'skipped (' + (newsletter as { reason?: string }).reason + ')' : newsletter.created ? 'draft created' : 'failed'}`
+          `Scored: ${scoring?.scored ?? 0}, ` +
+          `Companies matched: ${companyTracking?.matched ?? 0}, ` +
+          `Enrichment: ${enrichment?.discovered ?? 0} discovered / ${enrichment?.enriched ?? 0} enriched, ` +
+          `Jobs: ${jobCollection.fetched} from ${jobCollection.companies} companies${jobCollection.skipped ? ' (skipped)' : ''}, ` +
+          `Pages: ${rendering.pagesWritten}, ` +
+          `Newsletter: ${newsletter.skipped ? 'skipped (' + (newsletter as { reason?: string }).reason + ')' : newsletter.created ? 'draft created' : 'failed'}`
       );
 
       await safeTrack('process/finish', async () => {
