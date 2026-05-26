@@ -909,6 +909,21 @@ export default {
         detailBody += `<div class="article-tags">${article.companyMentions.map(c => `<a class="company-tag" href="/companies">${escapeHtml(c)}</a>`).join('')}</div>`;
       }
 
+      // "Continue reading" strip — surfaced BEFORE the external exit link so readers
+      // see internal navigation options while still on our page. Engagement data shows
+      // article pages have ~99% bounce rates; related articles placed after the exit
+      // link are never seen by the majority of visitors who click "Read original →".
+      if (related.length > 0) {
+        detailBody += `<div style="margin:1.25rem 0 1.25rem;padding:0.9rem 1rem;background:var(--card-bg,#f9fafb);border-radius:8px;border-left:3px solid var(--accent,#10b981);">`;
+        detailBody += `<p style="margin:0 0 0.5rem 0;font-size:0.75rem;font-weight:700;color:var(--text-secondary,#6b7280);text-transform:uppercase;letter-spacing:0.06em;">Continue reading</p>`;
+        detailBody += `<ul style="margin:0;padding:0;list-style:none;">`;
+        for (const r of related.slice(0, 3)) {
+          detailBody += `<li style="margin-bottom:0.35rem;line-height:1.4;"><a href="/article/${r.id}" style="color:var(--text,#111827);font-size:0.9rem;">${escapeHtml(r.headline || r.title)}</a></li>`;
+        }
+        detailBody += `</ul>`;
+        detailBody += `</div>`;
+      }
+
       detailBody += `<a class="original-link" href="${escapeHtml(article.url)}" rel="noopener" target="_blank">Read original article &rarr;</a>`;
 
       // Share buttons (no JS — pure URL-based sharing)
@@ -949,7 +964,7 @@ export default {
         detailBody += `</div>`;
       }
 
-      const articleJsonLd: Record<string, unknown> = {
+      const articleNewsLd: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
         'headline': article.headline || article.title,
@@ -971,20 +986,37 @@ export default {
         'inLanguage': 'en',
       };
       if (article.author) {
-        articleJsonLd['author'] = { '@type': 'Person', 'name': article.author };
+        articleNewsLd['author'] = { '@type': 'Person', 'name': article.author };
       }
       if (article.aiSummary) {
-        articleJsonLd['description'] = article.aiSummary;
+        articleNewsLd['description'] = article.aiSummary;
         // Include truncated article body from summary for better snippet generation
-        articleJsonLd['articleBody'] = article.aiSummary;
+        articleNewsLd['articleBody'] = article.aiSummary;
       }
       // Add source organization to give credit and improve context
       if (article.sourceName) {
-        articleJsonLd['sourceOrganization'] = {
+        articleNewsLd['sourceOrganization'] = {
           '@type': 'Organization',
           'name': article.sourceName,
         };
       }
+
+      // BreadcrumbList: Home > [first tag] > Article — enables SERP breadcrumb rich results
+      const firstTag = article.tags[0];
+      const articleBreadcrumb: Record<string, unknown> = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://agenticaiccounting.com/' },
+          ...(firstTag ? [{ '@type': 'ListItem', 'position': 2, 'name': firstTag, 'item': `https://agenticaiccounting.com/tag/${firstTag}` }] : []),
+          { '@type': 'ListItem', 'position': firstTag ? 3 : 2, 'name': article.headline || article.title, 'item': `https://agenticaiccounting.com/article/${articleId}` },
+        ],
+      };
+
+      const articleJsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [articleNewsLd, articleBreadcrumb],
+      };
 
       const html = layout(detailBody, {
         title: article.headline || article.title,
