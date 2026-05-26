@@ -14,6 +14,7 @@ import {
   pagination,
   tagNav,
   timeGroup,
+  timeAgo,
   escapeHtml,
   renderSourceClusters,
   setCompanyLinkMap,
@@ -27,6 +28,7 @@ import { diversifyFeatured, diversifyFeed } from './diversity';
 import { CATEGORIES, getCategoryBySlug } from '../categories';
 import { renderJobPostingsJsonLd } from './jobposting-schema';
 import { getCuratedDescription } from '../company/descriptions';
+import { isAutomatedWorkArticle, AUTOMATED_WORK_TAGS } from './dual-narrative';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -194,6 +196,38 @@ function renderTimeGrouped(articles: Article[]): string {
     html += renderSourceClusters(diversifyFeed(g.articles));
   }
 
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4B: "Work being automated" section
+// ---------------------------------------------------------------------------
+
+function renderAutomatedWorkSection(articles: Article[]): string {
+  let html = `<div class="automated-work-section">\n`;
+  html += `<div class="aw-header">`;
+  html += `<h2 class="section-heading">Work Being Automated</h2>`;
+  html += `<span class="aw-indicator">&#x2193; AI is taking this over</span>`;
+  html += `</div>\n`;
+  html += `<div class="automated-work-list">\n`;
+  for (const a of articles) {
+    const href = `/article/${escapeHtml(a.id)}`;
+    const title = escapeHtml(a.headline || a.title);
+    const source = escapeHtml(a.sourceName);
+    const ago = timeAgo(a.publishedAt);
+    const automatedTag = a.tags.find(t => AUTOMATED_WORK_TAGS.has(t));
+    const tagLabel = automatedTag ? escapeHtml(automatedTag.replace(/-/g, ' ')) : '';
+    html += `<div class="automated-work-item">\n`;
+    if (tagLabel) {
+      html += `<span class="aw-tag-badge">${tagLabel}</span>\n`;
+    }
+    html += `<a href="${href}" class="aw-article-title">${title}</a>\n`;
+    html += `<div class="aw-meta">${source}${ago ? ` &middot; ${ago}` : ''}</div>\n`;
+    html += `</div>\n`;
+  }
+  html += `</div>\n`;
+  html += `<div class="view-all"><a href="/tag/automation">More automation coverage &rarr;</a></div>\n`;
+  html += `</div>\n`;
   return html;
 }
 
@@ -376,6 +410,16 @@ function generateHomepage(
       }
     }
     body += `</div>\n`;
+  }
+
+  // Phase 4B: "Work being automated" — articles tagged with automated-work tags from the last 14 days
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const automatedWorkArticles = [...allArticles]
+    .filter(a => isAutomatedWorkArticle(a) && a.publishedAt >= fourteenDaysAgo)
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .slice(0, 5);
+  if (automatedWorkArticles.length >= 2) {
+    body += renderAutomatedWorkSection(automatedWorkArticles);
   }
 
   // Companies preview section — top tracked companies by article count
