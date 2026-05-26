@@ -71,6 +71,11 @@ function getCSS(): string {
   --score-high: #16a34a;
   --score-med: #ca8a04;
   --score-low: #a1a1aa;
+  --aw-bg: #fff5f5;
+  --aw-border: #fecaca;
+  --aw-indicator: #b91c1c;
+  --aw-tag-bg: #fee2e2;
+  --aw-tag-text: #991b1b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -94,6 +99,11 @@ function getCSS(): string {
     --score-high: #4ade80;
     --score-med: #facc15;
     --score-low: #52525b;
+    --aw-bg: #1f0a0a;
+    --aw-border: #7f1d1d;
+    --aw-indicator: #f87171;
+    --aw-tag-bg: #450a0a;
+    --aw-tag-text: #fca5a5;
   }
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -1087,6 +1097,71 @@ a.source-name:hover{text-decoration:underline;}
   text-align:right;
 }
 .view-all a{font-size:0.82rem;}
+
+/* Phase 4B: "Work being automated" section */
+.automated-work-section{
+  background:var(--aw-bg);
+  border:1px solid var(--aw-border);
+  border-left:3px solid var(--aw-indicator);
+  border-radius:var(--radius-lg);
+  padding:1.5rem;
+  margin:1.5rem 0;
+}
+.aw-header{
+  display:flex;
+  align-items:baseline;
+  gap:0.75rem;
+  margin-bottom:1rem;
+  flex-wrap:wrap;
+}
+.aw-header .section-heading{
+  margin-bottom:0;
+  border-bottom:none;
+  padding-bottom:0;
+}
+.aw-indicator{
+  font-size:0.72rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--aw-indicator);
+  white-space:nowrap;
+}
+.automated-work-list{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.automated-work-item{
+  padding:0.6rem 0;
+  border-bottom:1px solid var(--aw-border);
+}
+.automated-work-item:last-child{border-bottom:none;}
+.aw-tag-badge{
+  display:inline-block;
+  font-size:0.67rem;
+  font-weight:600;
+  text-transform:capitalize;
+  padding:0.1rem 0.45rem;
+  border-radius:100px;
+  background:var(--aw-tag-bg);
+  color:var(--aw-tag-text);
+  margin-bottom:0.2rem;
+}
+.aw-article-title{
+  display:block;
+  font-size:0.88rem;
+  font-weight:500;
+  color:var(--text);
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+.aw-article-title:hover{color:var(--aw-indicator);text-decoration:none;}
+.aw-meta{
+  font-size:0.72rem;
+  color:var(--text-tertiary);
+  margin-top:0.2rem;
+}
 .empty-state{
   color:var(--text-tertiary);
   padding:2rem 0;
