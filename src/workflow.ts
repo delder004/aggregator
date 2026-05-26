@@ -297,6 +297,15 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         fn: () => syncDescriptionsStep(this.env),
       });
 
+      // Quiet-run gate: skip the ~12s render step entirely when nothing
+      // upstream produced new data. Pages get stale by 1-2 hours when the
+      // pipeline is idle; acceptable for an hourly aggregator. Cleanup of
+      // stale article-company links rides inside render-pages and catches
+      // up the next time something does change.
+      const upstreamActivity =
+        (scoring?.scored ?? 0) +
+        (companyTracking?.matched ?? 0) +
+        (enrichment?.discovered ?? 0);
       const rendering = await runStep(
         this.env,
         step,
@@ -306,6 +315,9 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         {
           name: 'render-pages',
           retries: { limit: 2, delay: '5 seconds', backoff: 'linear' },
+          shouldRun: () => upstreamActivity > 0,
+          skipReason:
+            'No scoring/tracking/enrichment activity this run — pages unchanged.',
           fn: () => renderPagesStep(this.env),
         }
       );
