@@ -338,6 +338,17 @@ function extractJsonBlock(text: string): string | null {
   return null;
 }
 
+// Survey-style percentage claims above 100% are nearly always model errors
+// (e.g. "610% of accounting firms..."). We strip the bogus number so the
+// sentence still reads, rather than letting the malformed stat reach the page.
+// Anything >100% in proportion contexts ("of X") becomes "many".
+// Excludes exactly 100% — that's a legitimate (if rare) claim.
+const IMPLAUSIBLE_PCT_RE = /\b(?:10[1-9]|1[1-9]\d|[2-9]\d\d|\d{4,})%\s+of\b/gi;
+
+export function sanitizeImplausiblePercents(text: string): string {
+  return text.replace(IMPLAUSIBLE_PCT_RE, 'many of');
+}
+
 /**
  * Parse the JSON response from Claude and validate all fields.
  * Clamps scores to 0-100, filters unknown tags,
@@ -397,6 +408,7 @@ export function parseAndValidateResponse(rawText: string): ClassifierResponse {
   let summary = '';
   if (typeof obj.summary === 'string' && obj.summary.trim().length > 0) {
     summary = obj.summary.trim();
+    summary = sanitizeImplausiblePercents(summary);
     if (summary.length > 200) {
       summary = summary.slice(0, 197) + '...';
     }

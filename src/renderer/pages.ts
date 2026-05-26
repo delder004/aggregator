@@ -36,6 +36,17 @@ const ARTICLES_PER_PAGE = 20;
 const JOBS_PER_PAGE = 25;
 const SITE_URL = 'https://agenticaiccounting.com';
 
+// An insight whose periodEnd is older than this many days is considered stale
+// for the homepage spotlight; it is hidden there, and the /resources page
+// surfaces it under an "Archive" label rather than "Latest".
+const INSIGHT_STALE_DAYS = 14;
+
+function isInsightStale(insight: InsightSummary, now: number = Date.now()): boolean {
+  const end = Date.parse(insight.periodEnd || insight.periodStart || insight.generatedAt);
+  if (!Number.isFinite(end)) return true;
+  return now - end > INSIGHT_STALE_DAYS * 24 * 60 * 60 * 1000;
+}
+
 // ---------------------------------------------------------------------------
 // OG Image
 // ---------------------------------------------------------------------------
@@ -211,18 +222,21 @@ function generateHomepage(
 
   // Hero section
   const stats = layoutOpts.stats;
+  // Only count jobs attached to active tracked companies — matches the /jobs page,
+  // which iterates `companies` to assemble its list. Counting all rows in
+  // company_jobs includes orphan jobs whose company was soft-deleted, causing
+  // the homepage to over-report.
+  const activeCompanyIds = new Set((companies ?? []).map(c => c.id));
   const totalJobs = companyJobs
-    ? [...companyJobs.values()].reduce((sum, jobs) => sum + jobs.length, 0)
+    ? [...companyJobs.entries()].reduce(
+        (sum, [companyId, jobs]) => sum + (activeCompanyIds.has(companyId) ? jobs.length : 0),
+        0
+      )
     : 0;
   const heroHtml = `<div class="hero">
   <div class="container">
     <h1>AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring.</h1>
     <p>Automatically curated and AI-scored from ${stats ? stats.sources : '50'}+ sources.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><span class="hero-stat-value">${stats ? stats.articles.toLocaleString() : '0'}</span><span class="hero-stat-label">Articles Published</span></div>
-      <div class="hero-stat"><span class="hero-stat-value">${companies ? companies.length : '0'}</span><span class="hero-stat-label">Companies Tracked</span></div>
-      <div class="hero-stat"><span class="hero-stat-value">${totalJobs}</span><span class="hero-stat-label">Open Roles</span></div>
-    </div>
   </div>
 </div>`;
 
@@ -327,13 +341,17 @@ function generateHomepage(
       body += `</div>\n`;
     }
 
-    // Latest insights preview (if available)
-    if (insights && insights.length > 0) {
-      const latestInsight = insights[0];
+    // Latest insights preview (if available and fresh — stale digests would
+    // contradict the hourly-freshness claim, so they fall back to the company
+    // spotlight branch below)
+    const freshLatestInsight = insights && insights.length > 0 && !isInsightStale(insights[0])
+      ? insights[0]
+      : null;
+    if (freshLatestInsight) {
       body += `<div class="spotlight-card">`;
       body += `<h3 class="spotlight-heading">Latest Insight</h3>`;
-      body += insightCard(latestInsight);
-      if (insights.length > 1) {
+      body += insightCard(freshLatestInsight);
+      if (insights && insights.length > 1) {
         body += `<div class="view-all"><a href="/resources">View all digests &rarr;</a></div>`;
       }
       body += `</div>\n`;
@@ -997,10 +1015,14 @@ export function generateAllPages(
 
   const jobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
 
-  // Calculate total job pages for sitemap
+  // Calculate total job pages for sitemap — only count jobs tied to active
+  // tracked companies, matching the /jobs page render.
+  const activeCompanyIdsForSitemap = new Set((companies ?? []).map(c => c.id));
   let totalJobCount = 0;
-  for (const jobs of jobsMap.values()) {
-    totalJobCount += jobs.length;
+  for (const [companyId, jobs] of jobsMap.entries()) {
+    if (activeCompanyIdsForSitemap.has(companyId)) {
+      totalJobCount += jobs.length;
+    }
   }
   const totalJobPages = Math.max(Math.ceil(totalJobCount / JOBS_PER_PAGE), 1);
 
@@ -1668,10 +1690,16 @@ function generateResourcesPage(
   body += `<h2 class="section-heading">Resources</h2>\n`;
   body += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1.5rem;line-height:1.6;">Insights, guides, and essential resources for understanding AI in accounting.</p>\n`;
 
-  // Latest insight brief
+  // Latest insight brief — if the most recent digest is older than the
+  // freshness window, surface it under "Archive" rather than "Latest" so it
+  // doesn't contradict the hourly-freshness claim on the homepage.
   if (insights.length > 0) {
     const latest = insights[0];
-    body += `<h3 class="section-label">Latest Digest</h3>\n`;
+    const stale = isInsightStale(latest);
+    body += `<h3 class="section-label">${stale ? 'Archive' : 'Latest Digest'}</h3>\n`;
+    if (stale) {
+      body += `<p style="color:var(--text-tertiary);font-size:0.82rem;margin-bottom:0.75rem;">Digest generation is paused. Most recent brief shown below.</p>\n`;
+    }
     body += `<div class="insights-grid" style="margin-bottom:1.5rem;">\n`;
     body += insightCard(latest);
     body += `</div>\n`;
@@ -3014,13 +3042,13 @@ function generateJobsPage(
       const pageJobs = jobPages[i];
 
       const body = allJobs.length === 0
-        ? `<h2 class="section-heading">Open Roles in AI Accounting</h2>
+        ? `<h2 class="section-heading">Open Roles at Tracked Companies</h2>
 ${filterNav}
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`
         : `
-<h2 class="section-heading">Open Roles in AI Accounting</h2>
+<h2 class="section-heading">Open Roles at Tracked Companies</h2>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
-  ${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies building the future of AI-powered accounting. ${sortType !== 'posted' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
+  ${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies we track for agentic AI in accounting. Roles span every function — not every listing is an AI/accounting role. ${sortType !== 'posted' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
 </p>
 ${filterNav}
 ${sortLinksHtml}
@@ -3030,7 +3058,7 @@ ${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${
       const jobsJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        'name': 'Open Roles in AI Accounting',
+        'name': 'Open Roles at Tracked Companies',
         'url': `${SITE_URL}/jobs`,
         'description': 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
         'itemListElement': pageJobs.slice(0, 30).map((j, idx) => ({
@@ -3076,7 +3104,7 @@ ${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${
 
       pages[path] = layout(bodyWithSchema, {
         title,
-        description: 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
+        description: 'Open roles at the companies we track for agentic AI in accounting. Not every listing is an AI/accounting role.',
         path,
         activeTab: 'jobs',
         jsonLd: jobsJsonLdGraph,

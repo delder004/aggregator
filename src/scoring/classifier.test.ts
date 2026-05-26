@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildUserMessage,
   parseAndValidateResponse,
+  sanitizeImplausiblePercents,
   ALLOWED_TAGS,
   MIN_PUBLISH_SCORE,
 } from './classifier';
@@ -470,6 +471,28 @@ describe('ALLOWED_TAGS', () => {
 describe('MIN_PUBLISH_SCORE', () => {
   it('should be 50', () => {
     expect(MIN_PUBLISH_SCORE).toBe(50);
+  });
+});
+
+describe('sanitizeImplausiblePercents', () => {
+  it('rewrites >100% "of" claims to "many of"', () => {
+    expect(sanitizeImplausiblePercents('610% of accounting firms use Claude'))
+      .toBe('many of accounting firms use Claude');
+    expect(sanitizeImplausiblePercents('Only 110% of CPAs adopt AI'))
+      .toBe('Only many of CPAs adopt AI');
+    expect(sanitizeImplausiblePercents('1500% of audits passed'))
+      .toBe('many of audits passed');
+  });
+
+  it('leaves legitimate percentages alone', () => {
+    expect(sanitizeImplausiblePercents('Revenue rose 110% year over year'))
+      .toBe('Revenue rose 110% year over year');
+    expect(sanitizeImplausiblePercents('80% of firms use AI'))
+      .toBe('80% of firms use AI');
+    expect(sanitizeImplausiblePercents('100% of audits'))
+      .toBe('100% of audits');
+    expect(sanitizeImplausiblePercents('99% of firms adopted'))
+      .toBe('99% of firms adopted');
   });
 });
 

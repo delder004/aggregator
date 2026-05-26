@@ -134,6 +134,26 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
   align-items:center;
   gap:0.75rem;
 }
+.site-brand{min-width:0;}
+.header-nav{
+  display:flex;
+  align-items:center;
+  gap:0.25rem;
+  margin-left:auto;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+.header-nav a{
+  font-size:0.85rem;
+  font-weight:600;
+  padding:0.4rem 0.8rem;
+  border-radius:8px;
+  color:var(--text-secondary);
+  white-space:nowrap;
+  transition:background 0.15s,color 0.15s;
+}
+.header-nav a:hover{color:var(--text);background:var(--border);text-decoration:none;}
+.header-nav a.active{color:var(--accent);background:var(--tag-bg);}
 a.logo{text-decoration:none;}
 .logo{
   display:flex;
@@ -179,7 +199,7 @@ a.logo{text-decoration:none;}
   .hero h1{font-size:2.8rem;}
 }
 @media(max-width:640px){
-  .hero h1{font-size:2rem;}
+  .hero h1{font-size:1.6rem;}
 }
 .hero p{
   font-size:1.05rem;
@@ -187,25 +207,6 @@ a.logo{text-decoration:none;}
   max-width:600px;
   line-height:1.6;
 }
-.hero-stats{
-  display:flex;
-  gap:2rem;
-  margin-top:1.5rem;
-  flex-wrap:wrap;
-}
-.hero-stat{
-  display:flex;
-  flex-direction:column;
-}
-.hero-stat-value{
-  font-size:1.6rem;
-  font-weight:700;
-}
-.hero-stat-label{
-  font-size:0.78rem;
-  opacity:0.75;
-}
-
 /* Signal strip */
 .signal-strip{
   background:var(--bg-secondary);
@@ -258,30 +259,6 @@ a.logo{text-decoration:none;}
 .tag-nav a:hover{background:var(--border);text-decoration:none;}
 .tag-nav a.active{background:var(--accent);color:#fff;}
 
-/* Tab bar */
-.tab-bar{
-  display:flex;
-  gap:0;
-  border-bottom:2px solid var(--border);
-  margin-top:0.75rem;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-}
-.tab-bar::-webkit-scrollbar{display:none;}
-.tab-bar a{
-  font-size:0.85rem;
-  font-weight:600;
-  padding:0.65rem 1.2rem;
-  color:var(--text-tertiary);
-  border-bottom:2px solid transparent;
-  margin-bottom:-2px;
-  transition:color 0.15s;
-  white-space:nowrap;
-  flex-shrink:0;
-}
-.tab-bar a:hover{color:var(--text);text-decoration:none;}
-.tab-bar a.active{color:var(--accent);border-bottom-color:var(--accent);}
 
 /* Section headers */
 .section-label{
@@ -1198,9 +1175,10 @@ a.source-name:hover{text-decoration:underline;}
   .job-grid{grid-template-columns:1fr;}
   .jobs-preview-grid{grid-template-columns:1fr;}
   .companies-preview-grid{grid-template-columns:1fr;}
-  .hero{padding:2.5rem 0;}
+  .hero{padding:2rem 0;}
   .hero p{font-size:0.95rem;}
   .site-tagline{display:none;}
+  .header-nav a{font-size:0.8rem;padding:0.35rem 0.6rem;}
   .companies-table th,.companies-table td{padding:0.6rem 0.75rem;font-size:0.8rem;}
   .table-date{display:none;}
   .companies-table th:nth-child(5),.companies-table td:nth-child(5){display:none;}
@@ -1231,11 +1209,14 @@ a.source-name:hover{text-decoration:underline;}
   .pagination{gap:0.25rem;flex-wrap:wrap;}
   .pagination a,.pagination span{min-width:2.4rem;height:2.4rem;padding:0 0.4rem;}
   .header-row{gap:0.5rem;}
-  .logo{width:32px;height:32px;border-radius:7px;}
-  .hero{padding:2rem 0;}
-  .hero h1{font-size:1.5rem;}
-  .hero p{font-size:0.92rem;}
-  .hero-stats{gap:1.25rem;}
+  .logo{width:28px;height:28px;border-radius:6px;}
+  .site-brand{display:none;}
+  .header-nav{gap:0.1rem;}
+  .header-nav a{font-size:0.78rem;padding:0.3rem 0.55rem;}
+  .site-header{padding:0.65rem 0;}
+  .hero{padding:1.5rem 0;}
+  .hero h1{font-size:1.25rem;line-height:1.2;margin-bottom:0.5rem;}
+  .hero p{font-size:0.85rem;}
   .signal-strip .container{gap:1rem;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
   .signal-value{font-size:1.5rem;}
   .signal-label{font-size:0.7rem;}
@@ -1927,8 +1908,8 @@ export function layout(body: string, options: LayoutOptions = {}): string {
     { label: 'Jobs', href: '/jobs', key: 'jobs' },
     { label: 'Resources', href: '/resources', key: 'resources' },
   ];
-  const tabBarHtml = `<nav class="tab-bar">${tabs.map(t =>
-    `<a href="${t.href}"${t.key === activeTab ? ' class="active"' : ''}>${t.label}</a>`
+  const headerNavHtml = `<nav class="header-nav" aria-label="Primary">${tabs.map(t =>
+    `<a href="${t.href}"${t.key === activeTab ? ' class="active" aria-current="page"' : ''}>${t.label}</a>`
   ).join('')}</nav>`;
 
   const statsLine = stats
@@ -1972,20 +1953,17 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <header class="site-header">
     <div class="container">
       <div class="header-row">
-        <a href="/" class="logo">${logoSvg()}</a>
-        <div>
+        <a href="/" class="logo" aria-label="Home">${logoSvg()}</a>
+        <div class="site-brand">
           <div class="site-title"><a href="/">${escapeHtml(SITE_TITLE)}</a></div>
           <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>
         </div>
+        ${headerNavHtml}
       </div>
     </div>
   </header>
 
   ${heroHtml}
-
-  <div class="container">
-    ${tabBarHtml}
-  </div>
 
   <main class="${containerClass}">
     ${body}
