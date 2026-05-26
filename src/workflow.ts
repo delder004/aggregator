@@ -54,46 +54,16 @@ import {
   recordTrackedStep,
   startTrackedWorkflow,
 } from './runs/service';
+import { runStep } from './pipeline/step-runner';
+import { loadSourcesStep } from './pipeline/steps/load-sources';
+import {
+  runCollectBatch,
+  type CollectBatchResult,
+} from './pipeline/steps/collect-batch';
+import { storeArticlesStep } from './pipeline/steps/store-articles';
 
 const MAX_SCORE_PER_RUN = 200;
 const SOURCES_PER_BATCH = 10;
-
-interface CollectBatchResult {
-  articles: CollectedArticle[];
-  sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }>;
-  failedSources: string[];
-  sourceCount: number;
-}
-
-function getCollector(
-  sourceType: string,
-  env: Env
-): Collector | null {
-  switch (sourceType) {
-    case 'rss':
-      return rssCollector;
-    case 'hn':
-      return hackerNewsCollector;
-    case 'youtube':
-      return createYouTubeCollector(env);
-    case 'arxiv':
-      return arxivCollector;
-    case 'substack':
-      return substackCollector;
-    case 'producthunt':
-      return productHuntCollector;
-    case 'ycombinator':
-      return ycombinatorCollector;
-    case 'companyblog':
-      return companyBlogCollector;
-    case 'pressrelease':
-      return pressReleaseCollector;
-    case 'blogscraper':
-      return blogScraperCollector;
-    default:
-      return null;
-  }
-}
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -175,280 +145,88 @@ function getRunParams(
  * Does NOT score, generate insights, or render pages.
  */
 export class CollectWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> {
-  async run(event: Readonly<WorkflowEvent<RunWorkflowParams>>, step: WorkflowStep) {
+  async run(
+    event: Readonly<WorkflowEvent<RunWorkflowParams>>,
+    step: WorkflowStep
+  ) {
     const startTime = Date.now();
     const workflowStartedAt = nowIso();
     const params = getRunParams(event, workflowStartedAt);
     const stepReports: RunStepReport[] = [];
-    console.log(`Collect workflow started for pipeline run ${params.pipelineRunId}`);
+    console.log(
+      `Collect workflow started for pipeline run ${params.pipelineRunId}`
+    );
 
     await safeTrack('collect/start', async () => {
-      await startTrackedWorkflow(this.env, params, 'collect', event.instanceId, workflowStartedAt);
+      await startTrackedWorkflow(
+        this.env,
+        params,
+        'collect',
+        event.instanceId,
+        workflowStartedAt
+      );
     });
 
     try {
-      const loadSourcesStartedAt = nowIso();
-      const sources = await step.do(
-        'load-sources',
-        {
+      const sources =
+        (await runStep(this.env, step, params, 'collect', stepReports, {
+          name: 'load-sources',
           retries: { limit: 2, delay: '5 seconds' },
-        },
-        async () => {
-          try {
-            const allSources = await getAllActiveSources(this.env.DB);
-            console.log(`Loaded ${allSources.length} active sources`);
-            return allSources;
-          } catch (err) {
-            console.error('Failed to load sources:', err);
-            return [] as SourceConfig[];
-          }
-        }
-      );
-      await recordStep(this.env, params.pipelineRunId, 'collect', stepReports, {
-        stepName: 'load-sources',
-        status: sources.length > 0 ? 'ok' : 'warning',
-        startedAt: loadSourcesStartedAt,
-        completedAt: nowIso(),
-        metrics: { sources: sources.length },
-        notes: sources.length > 0 ? [] : ['No active sources were loaded.'],
-      });
+          fn: () => loadSourcesStep(this.env),
+        })) ?? [];
 
       const batchResults: CollectBatchResult[] = [];
       const batchCount = Math.ceil(sources.length / SOURCES_PER_BATCH);
       for (let b = 0; b < batchCount; b++) {
         const start = b * SOURCES_PER_BATCH;
         const batchSources = sources.slice(start, start + SOURCES_PER_BATCH);
-        const batchStartedAt = nowIso();
-        const result = await step.do(
-          `collect-batch-${b}`,
+        const result = await runStep(
+          this.env,
+          step,
+          params,
+          'collect',
+          stepReports,
           {
+            name: `collect-batch-${b}`,
             retries: { limit: 1, delay: '5 seconds' },
-          },
-          async () => {
-            const sourceUpdates: Array<{ id: string; lastFetchedAt?: string; errorCount: number }> = [];
-            const failedSources: string[] = [];
-            const collectResults = await Promise.all(
-              batchSources.map(async (source) => {
-                const collector = getCollector(source.sourceType, this.env);
-                if (!collector) {
-                  console.warn(`No collector for source type: ${source.sourceType}`);
-                  failedSources.push(source.name);
-                  return [] as CollectedArticle[];
-                }
-
-                try {
-                  const articles = await collector.collect(source);
-                  console.log(`Collected ${articles.length} articles from ${source.name}`);
-                  sourceUpdates.push({
-                    id: source.id,
-                    lastFetchedAt: nowIso(),
-                    errorCount: 0,
-                  });
-                  return articles;
-                } catch (err) {
-                  console.error(`Collector failed for ${source.name}:`, err);
-                  failedSources.push(source.name);
-                  sourceUpdates.push({
-                    id: source.id,
-                    errorCount: source.errorCount + 1,
-                  });
-                  return [] as CollectedArticle[];
-                }
-              })
-            );
-
-            const articles = collectResults.flat();
-            console.log(`Batch ${b}: collected ${articles.length} articles from ${batchSources.length} sources`);
-
-            return {
-              articles,
-              sourceUpdates,
-              failedSources,
-              sourceCount: batchSources.length,
-            } as CollectBatchResult;
+            fn: () => runCollectBatch(this.env, batchSources, b),
           }
         );
-        batchResults.push(result);
-        await recordStep(this.env, params.pipelineRunId, 'collect', stepReports, {
-          stepName: `collect-batch-${b}`,
-          status: result.failedSources.length > 0 ? 'warning' : 'ok',
-          startedAt: batchStartedAt,
-          completedAt: nowIso(),
-          metrics: {
-            sources: result.sourceCount,
-            failedSources: result.failedSources.length,
-            collectedArticles: result.articles.length,
-          },
-          notes: result.failedSources.length > 0
-            ? [`Failed sources: ${result.failedSources.join(', ')}`]
-            : [],
-        });
+        if (result) batchResults.push(result);
       }
 
-      const allCollected = batchResults.flatMap((result) => result.articles);
-      const allSourceUpdates = batchResults.flatMap((result) => result.sourceUpdates);
-      console.log(`Total collected: ${allCollected.length} articles from ${sources.length} sources`);
-
-      const storeStartedAt = nowIso();
-      const storeResult = await step.do(
-        'store-articles',
-        {
-          retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
-        },
-        async () => {
-          let sourceUpdateFailed = false;
-          let dedupFailed = false;
-          let insertFailures = 0;
-
-          if (allSourceUpdates.length > 0) {
-            try {
-              const stmts = allSourceUpdates.map((sourceUpdate) => {
-                if (sourceUpdate.lastFetchedAt) {
-                  return this.env.DB
-                    .prepare('UPDATE sources SET last_fetched_at = ?, error_count = ? WHERE id = ?')
-                    .bind(sourceUpdate.lastFetchedAt, sourceUpdate.errorCount, sourceUpdate.id);
-                }
-                return this.env.DB
-                  .prepare('UPDATE sources SET error_count = ? WHERE id = ?')
-                  .bind(sourceUpdate.errorCount, sourceUpdate.id);
-              });
-              await this.env.DB.batch(stmts);
-            } catch (err) {
-              sourceUpdateFailed = true;
-              console.error('Batch source update failed:', err);
-            }
-          }
-
-          let newArticles: CollectedArticle[] = allCollected;
-          try {
-            const urls = allCollected.map((article) => article.url);
-            const existingUrls = new Set<string>();
-            for (let i = 0; i < urls.length; i += 100) {
-              const batch = urls.slice(i, i + 100);
-              const placeholders = batch.map(() => '?').join(',');
-              const result = await this.env.DB
-                .prepare(`SELECT url FROM articles WHERE url IN (${placeholders})`)
-                .bind(...batch)
-                .all();
-              for (const row of result.results) {
-                existingUrls.add(row.url as string);
-              }
-            }
-            newArticles = allCollected.filter((article) => !existingUrls.has(article.url));
-          } catch (err) {
-            dedupFailed = true;
-            console.error('Dedup query failed, treating all as new:', err);
-          }
-          console.log(`New articles after dedup: ${newArticles.length}`);
-
-          // Filter out articles with future-dated published_at timestamps
-          const now = new Date();
-          const validArticles = newArticles.filter((article) => {
-            try {
-              const pubDate = new Date(article.publishedAt);
-              if (pubDate > now) {
-                console.warn(`Skipping future-dated article: ${article.url} (published: ${article.publishedAt})`);
-                return false;
-              }
-              return true;
-            } catch {
-              console.warn(`Skipping article with invalid date: ${article.url} (published: ${article.publishedAt})`);
-              return false;
-            }
-          });
-          const skippedFutureCount = newArticles.length - validArticles.length;
-          if (skippedFutureCount > 0) {
-            console.log(`Skipped ${skippedFutureCount} future-dated articles`);
-          }
-
-          let insertedCount = 0;
-          const fetchedAt = nowIso();
-          for (let i = 0; i < validArticles.length; i += 50) {
-            const batch = validArticles.slice(i, i + 50);
-            const stmts = batch.map((article) => this.env.DB
-              .prepare(
-                `INSERT OR IGNORE INTO articles
-                 (id, url, title, source_type, source_name, author, published_at, fetched_at,
-                  content_snippet, image_url, relevance_score, quality_score, social_score,
-                  comment_count, company_mentions, ai_summary, tags, is_published, scored_at,
-                  transcript)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-              )
-              .bind(
-                generateId(),
-                article.url,
-                article.title,
-                article.sourceType,
-                article.sourceName,
-                article.author,
-                article.publishedAt,
-                fetchedAt,
-                article.contentSnippet,
-                article.imageUrl,
-                0,
-                null,
-                article.socialScore ?? null,
-                article.commentCount ?? null,
-                JSON.stringify([]),
-                '',
-                JSON.stringify([]),
-                0,
-                null,
-                article.transcript ?? null
-              ));
-
-            try {
-              await this.env.DB.batch(stmts);
-              insertedCount += batch.length;
-            } catch (err) {
-              insertFailures += batch.length;
-              console.error(`Batch insert failed at offset ${i}:`, err);
-            }
-          }
-          console.log(`Inserted ${insertedCount} articles into D1`);
-
-          return {
-            collected: allCollected.length,
-            fresh: newArticles.length,
-            inserted: insertedCount,
-            sourceCount: sources.length,
-            sourceUpdateFailed,
-            dedupFailed,
-            insertFailures,
-          };
-        }
+      const allCollected = batchResults.flatMap((r) => r.articles);
+      const allSourceUpdates = batchResults.flatMap((r) => r.sourceUpdates);
+      console.log(
+        `Total collected: ${allCollected.length} articles from ${sources.length} sources`
       );
 
-      const storeNotes: string[] = [];
-      if (storeResult.sourceUpdateFailed) {
-        storeNotes.push('Failed to persist one or more source status updates.');
-      }
-      if (storeResult.dedupFailed) {
-        storeNotes.push('Dedup query failed, so all collected articles were treated as new.');
-      }
-      if (storeResult.insertFailures > 0) {
-        storeNotes.push(`Failed to insert ${storeResult.insertFailures} articles.`);
-      }
-      await recordStep(this.env, params.pipelineRunId, 'collect', stepReports, {
-        stepName: 'store-articles',
-        status: storeNotes.length > 0 ? 'warning' : 'ok',
-        startedAt: storeStartedAt,
-        completedAt: nowIso(),
-        metrics: {
-          collected: storeResult.collected,
-          newArticles: storeResult.fresh,
-          inserted: storeResult.inserted,
-          sources: storeResult.sourceCount,
-          insertFailures: storeResult.insertFailures,
-        },
-        notes: storeNotes,
-      });
+      const storeResult = await runStep(
+        this.env,
+        step,
+        params,
+        'collect',
+        stepReports,
+        {
+          name: 'store-articles',
+          retries: { limit: 2, delay: '10 seconds', backoff: 'linear' },
+          fn: () =>
+            storeArticlesStep(
+              this.env,
+              allCollected,
+              allSourceUpdates,
+              sources.length
+            ),
+        }
+      );
 
       const elapsed = Date.now() - startTime;
       console.log(
         `Collect workflow completed in ${elapsed}ms. ` +
-        `Collected: ${storeResult.collected}, New: ${storeResult.fresh}, ` +
-        `Inserted: ${storeResult.inserted}, Sources: ${storeResult.sourceCount}`
+          `Collected: ${storeResult?.collected ?? 0}, ` +
+          `New: ${storeResult?.fresh ?? 0}, ` +
+          `Inserted: ${storeResult?.inserted ?? 0}, ` +
+          `Sources: ${storeResult?.sourceCount ?? 0}`
       );
 
       await safeTrack('collect/finish', async () => {
@@ -477,7 +255,13 @@ export class CollectWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         errors: [err instanceof Error ? err.message : String(err)],
       });
       await safeTrack('collect/fatal-finish', async () => {
-        await finishTrackedWorkflow(this.env, params.pipelineRunId, 'collect', 'error', nowIso());
+        await finishTrackedWorkflow(
+          this.env,
+          params.pipelineRunId,
+          'collect',
+          'error',
+          nowIso()
+        );
       });
       throw err;
     } finally {
