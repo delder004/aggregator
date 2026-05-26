@@ -6,7 +6,7 @@
  * predicate — when on cooldown we never pay the durable-execution cost.
  */
 
-import type { Env } from '../../types';
+import type { Company, Env } from '../../types';
 import {
   collectAllJobs,
   markJobsFetched,
@@ -21,15 +21,21 @@ export interface CollectJobsResult {
   error?: string;
 }
 
+export interface CollectJobsContext {
+  companies?: Company[];
+}
+
 export function shouldRunCollectJobs(env: Env): Promise<boolean> {
   return shouldFetchJobs(env.KV);
 }
 
 export async function collectJobsStep(
-  env: Env
+  env: Env,
+  ctx?: CollectJobsContext
 ): Promise<StepOutcome<CollectJobsResult>> {
   try {
-    const companies = await getTrackedCompanies(env.DB);
+    const companies =
+      ctx?.companies ?? (await getTrackedCompanies(env.DB));
     const result = await collectAllJobs(env.DB, companies);
     await markJobsFetched(env.KV);
     return {

@@ -50,12 +50,14 @@ export interface RenderPagesResult {
   error?: string;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
+export interface RenderPagesContext {
+  /** Tracked companies fetched once by the workflow; saves a D1 read. */
+  companies?: Company[];
 }
 
 export async function renderPagesStep(
-  env: Env
+  env: Env,
+  ctx?: RenderPagesContext
 ): Promise<StepOutcome<RenderPagesResult>> {
   try {
     const deletedLinks = await cleanupStaleArticleCompanyLinks(env.DB);
@@ -84,9 +86,20 @@ export async function renderPagesStep(
       (max, article) => (article.publishedAt > max ? article.publishedAt : max),
       ''
     );
-    const lastUpdated = latestPublished
-      ? `${new Date(latestPublished).toISOString().replace('T', ' ').slice(0, 19)} UTC`
-      : `${nowIso().replace('T', ' ').slice(0, 19)} UTC`;
+    // Round the rendered timestamp down to the top of the hour so the
+    // footer line doesn't invalidate every page hash on every cron.
+    // Without this, a per-second `Updated YYYY-MM-DD HH:MM:SS UTC` string
+    // appears in the layout() footer of ~170 pages and changes every
+    // cron — re-hashing → re-writing → per-colo cache-purging. Hourly
+    // granularity drops that churn to ~once per hour at most.
+    const lastUpdatedDate = latestPublished
+      ? new Date(latestPublished)
+      : new Date();
+    lastUpdatedDate.setUTCMinutes(0, 0, 0);
+    const lastUpdated = `${lastUpdatedDate
+      .toISOString()
+      .replace('T', ' ')
+      .slice(0, 19)} UTC`;
 
     let sourceCount = 0;
     try {
@@ -96,11 +109,13 @@ export async function renderPagesStep(
       sourceCount = 0;
     }
 
-    let companies: Company[] = [];
-    try {
-      companies = await getTrackedCompanies(env.DB);
-    } catch {
-      companies = [];
+    let companies: Company[] = ctx?.companies ?? [];
+    if (!ctx?.companies) {
+      try {
+        companies = await getTrackedCompanies(env.DB);
+      } catch {
+        companies = [];
+      }
     }
 
     let companyArticles = new Map<string, Article[]>();

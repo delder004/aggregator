@@ -7,7 +7,7 @@
  * MAX_ENRICHMENTS_PER_RUN per cron to keep subrequests bounded.
  */
 
-import type { Env } from '../../types';
+import type { Company, Env, ScoredArticle } from '../../types';
 import { getRecentlyScoredArticles } from '../../db/queries';
 import {
   createDiscoveredCompany,
@@ -33,14 +33,23 @@ export interface CompanyEnrichmentResult {
   error?: string;
 }
 
+export interface CompanyEnrichmentContext {
+  companies?: Company[];
+  recentlyScored?: ScoredArticle[];
+}
+
 export async function companyEnrichmentStep(
   env: Env,
   watermark: string,
-  websiteHints: Record<string, string>
+  websiteHints: Record<string, string>,
+  ctx?: CompanyEnrichmentContext
 ): Promise<StepOutcome<CompanyEnrichmentResult>> {
   try {
-    const companies = await getTrackedCompanies(env.DB);
-    const recentlyScored = await getRecentlyScoredArticles(env.DB, watermark);
+    const companies =
+      ctx?.companies ?? (await getTrackedCompanies(env.DB));
+    const recentlyScored =
+      ctx?.recentlyScored ??
+      (await getRecentlyScoredArticles(env.DB, watermark));
 
     if (recentlyScored.length === 0) {
       return {

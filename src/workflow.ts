@@ -1,9 +1,13 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from 'cloudflare:workers';
 import type {
+  Company,
   Env,
   RunStepReport,
   RunWorkflowParams,
+  ScoredArticle,
 } from './types';
+import { getRecentlyScoredArticles } from './db/queries';
+import { getTrackedCompanies } from './company/tracker';
 import {
   deriveWorkflowStatus,
   finishTrackedWorkflow,
@@ -245,6 +249,29 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         }
       );
 
+      // Fetch shared D1 state ONCE after scoring (so newly-scored articles
+      // are visible to tracking). Threaded into the four downstream steps
+      // that would otherwise each issue their own getTrackedCompanies /
+      // getRecentlyScoredArticles. Cuts ~5 D1 round-trips per cron.
+      //
+      // companies may grow during enrichment; refetched downstream only
+      // when enrichment.newCompanyIds is non-empty.
+      let companies: Company[] = [];
+      try {
+        companies = await getTrackedCompanies(this.env.DB);
+      } catch (err) {
+        console.error('process/load-companies failed:', err);
+      }
+      let recentlyScored: ScoredArticle[] = [];
+      try {
+        recentlyScored = await getRecentlyScoredArticles(
+          this.env.DB,
+          startTimeISO
+        );
+      } catch (err) {
+        console.error('process/load-recently-scored failed:', err);
+      }
+
       const companyTracking = await runStep(
         this.env,
         step,
@@ -254,7 +281,11 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
         {
           name: 'company-tracking',
           retries: { limit: 1, delay: '5 seconds' },
-          fn: () => companyTrackingStep(this.env, startTimeISO),
+          fn: () =>
+            companyTrackingStep(this.env, startTimeISO, {
+              companies,
+              recentlyScored,
+            }),
         }
       );
 
@@ -271,10 +302,22 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
             companyEnrichmentStep(
               this.env,
               startTimeISO,
-              scoring?.websiteHints ?? {}
+              scoring?.websiteHints ?? {},
+              { companies, recentlyScored }
             ),
         }
       );
+
+      // Refetch companies only if enrichment created new ones — they need
+      // to be visible to jobs + render. Common case (zero new companies)
+      // reuses the snapshot from before tracking.
+      if ((enrichment?.newCompanyIds.length ?? 0) > 0) {
+        try {
+          companies = await getTrackedCompanies(this.env.DB);
+        } catch (err) {
+          console.error('process/refresh-companies failed:', err);
+        }
+      }
 
       const jobCollection = await runStep(
         this.env,
@@ -287,7 +330,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
           retries: { limit: 1, delay: '5 seconds' },
           shouldRun: () => shouldRunCollectJobs(this.env),
           skipReason: 'Job fetch is on cooldown.',
-          fn: () => collectJobsStep(this.env),
+          fn: () => collectJobsStep(this.env, { companies }),
         }
       );
 
@@ -318,7 +361,7 @@ export class ProcessWorkflow extends WorkflowEntrypoint<Env, RunWorkflowParams> 
           shouldRun: () => upstreamActivity > 0,
           skipReason:
             'No scoring/tracking/enrichment activity this run — pages unchanged.',
-          fn: () => renderPagesStep(this.env),
+          fn: () => renderPagesStep(this.env, { companies }),
         }
       );
 

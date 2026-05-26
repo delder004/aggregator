@@ -9,7 +9,7 @@
  * Returns touchedCompanyIds so downstream rendering can scope its work.
  */
 
-import type { Env } from '../../types';
+import type { Company, Env, ScoredArticle } from '../../types';
 import { getRecentlyScoredArticles } from '../../db/queries';
 import {
   getTrackedCompanies,
@@ -28,12 +28,19 @@ export interface CompanyTrackingResult {
   error?: string;
 }
 
+export interface CompanyTrackingContext {
+  companies?: Company[];
+  recentlyScored?: ScoredArticle[];
+}
+
 export async function companyTrackingStep(
   env: Env,
-  watermark: string
+  watermark: string,
+  ctx?: CompanyTrackingContext
 ): Promise<StepOutcome<CompanyTrackingResult>> {
   try {
-    const companies = await getTrackedCompanies(env.DB);
+    const companies =
+      ctx?.companies ?? (await getTrackedCompanies(env.DB));
     if (companies.length === 0) {
       console.log('No tracked companies found');
       return {
@@ -50,7 +57,9 @@ export async function companyTrackingStep(
       };
     }
 
-    const recentlyScored = await getRecentlyScoredArticles(env.DB, watermark);
+    const recentlyScored =
+      ctx?.recentlyScored ??
+      (await getRecentlyScoredArticles(env.DB, watermark));
     if (recentlyScored.length === 0) {
       console.log('No recently scored articles for company tracking');
       return {
