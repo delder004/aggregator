@@ -328,6 +328,25 @@ export async function getArticleById(
   return row ? mapRowToArticle(row) : null;
 }
 
+export async function getArticleLinkedCompanies(
+  db: D1Database,
+  articleId: string
+): Promise<{ id: string; name: string }[]> {
+  const results = await db
+    .prepare(
+      `SELECT c.id, c.name FROM article_companies ac
+       JOIN companies c ON c.id = ac.company_id
+       WHERE ac.article_id = ?
+       ORDER BY c.name ASC`
+    )
+    .bind(articleId)
+    .all();
+  return results.results.map(row => ({
+    id: row.id as string,
+    name: row.name as string,
+  }));
+}
+
 export async function getRelatedArticles(
   db: D1Database,
   article: Article,
