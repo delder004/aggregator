@@ -1,6 +1,7 @@
 import type { Env, RunTriggerType, RunWorkflowParams } from './types';
 import {
   getArticleById,
+  getArticleLinkedCompanies,
   getPipelineRunById,
   getPipelineRunSteps,
   getRelatedArticles,
@@ -848,7 +849,10 @@ export default {
       // Engagement page-view (separate dataset; runs async via waitUntil).
       recordPageView(request, env, ctx, path);
 
-      const related = await getRelatedArticles(env.DB, article);
+      const [related, linkedCompanies] = await Promise.all([
+        getRelatedArticles(env.DB, article),
+        getArticleLinkedCompanies(env.DB, articleId),
+      ]);
 
       // Build article detail body
       const title = escapeHtml(article.headline || article.title);
@@ -905,7 +909,9 @@ export default {
         detailBody += `<div class="article-tags">${article.tags.map(t => `<a href="/tag/${escapeHtml(t)}">${escapeHtml(t)}</a>`).join('')}</div>`;
       }
 
-      if (article.companyMentions.length > 0) {
+      if (linkedCompanies.length > 0) {
+        detailBody += `<div class="article-tags">${linkedCompanies.map(c => `<a class="company-tag" href="/company/${escapeHtml(c.id)}">${escapeHtml(c.name)}</a>`).join('')}</div>`;
+      } else if (article.companyMentions.length > 0) {
         detailBody += `<div class="article-tags">${article.companyMentions.map(c => `<a class="company-tag" href="/companies">${escapeHtml(c)}</a>`).join('')}</div>`;
       }
 
