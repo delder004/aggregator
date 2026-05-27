@@ -7,7 +7,7 @@
  *     (articles, featured, tags, companies, insights, jobs).
  *  2. generateAllPages() produces a path → HTML map. Each is SHA-256'd
  *     and compared to the previous hash bundle stored in KV at
- *     __page_hashes__. Pages whose hash unchanged are skipped entirely.
+ *     __page_hashes_v2__. Pages whose hash unchanged are skipped entirely.
  *  3. Written pages have their edge-cache entries purged so manual
  *     verification doesn't wait out the s-maxage=3600 on the fetch handler.
  *     Per-colo only (the cron only runs in one colo).
@@ -40,7 +40,13 @@ import { generateRssFeed } from '../../renderer/rss';
 import { MIN_PUBLISH_SCORE } from '../../scoring/classifier';
 import type { StepOutcome } from '../step-runner';
 
-const PAGE_HASHES_KEY = '__page_hashes__';
+// v2: bumped 2026-05-27 to force a one-time full re-render after the
+// __page_hashes__ store drifted out of sync with actual KV content
+// (company soft-deletions and article-count changes were recorded in the
+// hash store but the corresponding KV page writes did not persist, leaving
+// /companies, /map, and company detail pages permanently stale).
+// The first cron run after this deploy writes all ~664 pages fresh.
+const PAGE_HASHES_KEY = '__page_hashes_v2__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
