@@ -318,6 +318,27 @@ a.logo{text-decoration:none;}
   margin-top:0;
   padding-top:0;
 }
+/* Phase 5B — Latest feed compact secondary treatment */
+.latest-feed .article-card{
+  padding:0.6rem 0;
+}
+.latest-feed .article-thumb{
+  width:64px;
+  height:48px;
+}
+.latest-feed .article-title{
+  font-size:0.88rem;
+  font-weight:500;
+}
+.latest-feed .article-meta{
+  font-size:0.7rem;
+  margin-top:0.15rem;
+}
+.latest-feed .article-summary{
+  -webkit-line-clamp:1;
+  font-size:0.78rem;
+  margin-top:0.15rem;
+}
 
 /* Article cards */
 .article-card{
