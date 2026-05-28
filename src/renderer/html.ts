@@ -1371,9 +1371,12 @@ a.source-name:hover{text-decoration:underline;}
 
 /* Article detail */
 .article-detail{padding:1.5rem 0;}
-.article-detail h1{font-family:ui-serif,Georgia,serif;font-size:1.4rem;font-weight:700;line-height:1.3;margin-bottom:0.5rem;}
-.article-detail .article-meta{margin-bottom:1rem;}
-.article-detail .article-summary{font-size:0.95rem;-webkit-line-clamp:unset;margin-bottom:1rem;line-height:1.6;}
+.article-detail h1{font-family:ui-serif,Georgia,serif;font-size:2rem;font-weight:800;line-height:1.2;margin-bottom:0.75rem;letter-spacing:-0.02em;}
+@media(max-width:900px){.article-detail h1{font-size:1.7rem;}}
+@media(max-width:640px){.article-detail h1{font-size:1.4rem;letter-spacing:0;}.article-detail .article-summary::first-letter{float:none;font-size:1.1em;line-height:inherit;padding-right:0;}}
+.article-detail .article-meta{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.article-detail .article-summary{display:flow-root;font-size:0.95rem;-webkit-line-clamp:unset;margin-bottom:1.25rem;line-height:1.7;}
+.article-detail .article-summary::first-letter{font-family:ui-serif,Georgia,serif;font-size:3.2em;font-weight:700;float:left;line-height:0.85;padding-right:0.1em;color:var(--text);}
 .article-detail .article-tags{margin-bottom:1.5rem;}
 .article-detail .original-link{display:inline-block;padding:0.5rem 1.2rem;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:0.85rem;font-weight:500;}
 .article-detail .original-link:hover{background:var(--accent-hover);text-decoration:none;}
@@ -1385,7 +1388,7 @@ a.source-name:hover{text-decoration:underline;}
 .share-btn.x{background:#000;}
 .share-btn.linkedin{background:#0a66c2;}
 .share-btn.email{background:var(--text-secondary);}
-.related-section{margin-top:2rem;border-top:1px solid var(--border);padding-top:1rem;}
+.related-section{margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem;}
 
 /* Most discussed */
 .discussed-list{list-style:none;counter-reset:discussed;padding:0;margin:0.5rem 0;}
