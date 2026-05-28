@@ -86,8 +86,15 @@ export async function renderPagesStep(
     const featuredArticles = await getFeaturedArticles(env.DB, 10);
     const tags = await getAllUniqueTags(env.DB);
 
-    const publishedCount = await getArticleCount(env.DB, MIN_PUBLISH_SCORE);
-    const crawledArticles = await getTotalArticleCount(env.DB);
+    // Coarsen the corpus counts to nearest 100 for the same reason as
+    // lastUpdated below: the exact numbers shift every cron (every
+    // collected article bumps crawled; every scoring promotion bumps
+    // published), so they were re-hashing every stats-bearing page on
+    // every cron. Rendered as "28,000+" in the footer.
+    const rawPublishedCount = await getArticleCount(env.DB, MIN_PUBLISH_SCORE);
+    const rawCrawledArticles = await getTotalArticleCount(env.DB);
+    const publishedCount = Math.floor(rawPublishedCount / 100) * 100;
+    const crawledArticles = Math.floor(rawCrawledArticles / 100) * 100;
     const latestPublished = recentArticles.reduce(
       (max, article) => (article.publishedAt > max ? article.publishedAt : max),
       ''

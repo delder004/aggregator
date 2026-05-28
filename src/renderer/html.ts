@@ -2012,7 +2012,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   ).join('')}</nav>`;
 
   const statsLine = stats
-    ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.crawled.toLocaleString()} articles crawled &middot; ${stats.articles.toLocaleString()} articles published &middot; Updated ${stats.lastUpdated}</div>`
+    ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.crawled.toLocaleString()}+ articles crawled &middot; ${stats.articles.toLocaleString()}+ articles published &middot; Updated ${stats.lastUpdated}</div>`
     : '';
 
   return `<!DOCTYPE html>
