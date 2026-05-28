@@ -268,6 +268,12 @@ export const SEED_SOURCES: SeedSource[] = [
     name: 'Basis Blog',
     config: JSON.stringify({ url: 'https://www.getbasis.ai/blog', articlePathPrefix: '/blogs/', company: 'Basis' }),
   },
+  {
+    id: 'scrape-viewz',
+    source_type: 'blogscraper',
+    name: 'Viewz Blog',
+    config: JSON.stringify({ url: 'https://www.viewz.co/blog', articlePathPrefix: '/blog/', company: 'Viewz' }),
+  },
 
   // --- Y Combinator ---
   {

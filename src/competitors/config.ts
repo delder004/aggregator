@@ -51,6 +51,13 @@ export const COMPETITORS: readonly CompetitorConfig[] = [
     bucket: 'direct',
   },
   {
+    slug: 'viewz',
+    name: 'Viewz',
+    homepageUrl: 'https://www.viewz.co/',
+    rssUrl: null,
+    bucket: 'direct',
+  },
+  {
     slug: 'tldr-ai',
     name: 'TLDR AI',
     homepageUrl: 'https://tldr.tech/ai',
