@@ -210,6 +210,41 @@ describe('matchArticleToCompanies', () => {
     const matched = matchArticleToCompanies(article, companies);
     expect(matched).toContain('sage');
   });
+
+  it('should not match company "Every" from bare word "every" in article text', () => {
+    const everyCompany: Company = {
+      id: 'every',
+      name: 'Every',
+      aliases: ['Every AI', 'Every Finance'],
+      website: 'https://every.io',
+      description: 'AI financial operations',
+      category: null,
+      categorySlug: null,
+      fundingStage: null,
+      logoUrl: null,
+      isActive: true,
+      addedAt: '2026-01-01T00:00:00Z',
+      articleCount: 0,
+      lastMentionedAt: null,
+      jobsBoardType: null,
+      jobsBoardToken: null,
+    };
+
+    // Common English use of "every" — should NOT link to the company
+    const falsePositive = makeArticle({
+      title: 'Five Accounting Tasks You Should Automate to Save Hours Every Week',
+      contentSnippet: 'Every accounting firm should consider automating these tasks.',
+      aiSummary: 'Docyt explores tasks that every accountant can automate.',
+    });
+    expect(matchArticleToCompanies(falsePositive, [everyCompany])).not.toContain('every');
+
+    // Alias match — should still link correctly
+    const truePositive = makeArticle({
+      title: 'Every AI launches new bookkeeping agent for startups',
+      aiSummary: 'Every AI, the SF-based startup, ships its AI CFO product.',
+    });
+    expect(matchArticleToCompanies(truePositive, [everyCompany])).toContain('every');
+  });
 });
 
 describe('discoverNewCompanies', () => {
