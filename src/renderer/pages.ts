@@ -1290,7 +1290,7 @@ function generateGuidePages(
     let body = `<h2 class="section-heading">Big 4 & AI Adoption</h2>\n`;
     body += `<p style="color:var(--text-secondary);margin-bottom:2rem;line-height:1.6;">How Deloitte, PwC, EY, and KPMG are integrating AI agents into their audit, tax, and advisory practices — key partnerships, investments, and timelines.</p>\n`;
 
-    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Deloitte</h3>\n`;
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;"><a href="${SITE_URL}/company/deloitte" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--accent,#10b981);">Deloitte</a></h3>\n`;
     body += `<p><strong>Focus:</strong> Audit automation, intelligent automation, and AI-powered risk assessment.</p>\n`;
     body += `<p>Deloitte has launched AI Ladder, an internal program to scale AI across the firm. Key initiatives include:</p>\n`;
     body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
@@ -1300,7 +1300,7 @@ function generateGuidePages(
 <li>Partnerships with AI vendors like Palantir and others for industry-specific applications</li>
 </ul>\n`;
 
-    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">EY (Ernst &amp; Young)</h3>\n`;
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;"><a href="${SITE_URL}/company/ernst-young-ey" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--accent,#10b981);">EY (Ernst &amp; Young)</a></h3>\n`;
     body += `<p><strong>Focus:</strong> Audit transformation, financial close automation, and risk management.</p>\n`;
     body += `<p>EY acquired Parthenon (management consulting firm) and YipitData to accelerate AI capabilities. Key initiatives include:</p>\n`;
     body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
@@ -1310,7 +1310,7 @@ function generateGuidePages(
 <li>Client advisory on AI regulatory compliance and risk frameworks</li>
 </ul>\n`;
 
-    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">PwC</h3>\n`;
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;"><a href="${SITE_URL}/company/pwc-australia" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--accent,#10b981);">PwC</a></h3>\n`;
     body += `<p><strong>Focus:</strong> Responsible AI, control automation, and intelligent financial operations.</p>\n`;
     body += `<p>PwC launched the PwC AI Institute and has invested heavily in AI governance. Key initiatives include:</p>\n`;
     body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
@@ -1320,7 +1320,7 @@ function generateGuidePages(
 <li>Generative AI for tax research and strategic planning</li>
 </ul>\n`;
 
-    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">KPMG</h3>\n`;
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;"><a href="${SITE_URL}/company/kpmg" style="color:inherit;text-decoration:none;border-bottom:1px solid var(--accent,#10b981);">KPMG</a></h3>\n`;
     body += `<p><strong>Focus:</strong> Audit quality, data analytics, and transformation consulting.</p>\n`;
     body += `<p>KPMG has invested in AI capabilities across advisory and audit. Key initiatives include:</p>\n`;
     body += `<ul style="margin:1rem 0 1.5rem 1.5rem;">
@@ -1338,6 +1338,17 @@ function generateGuidePages(
 <li><strong>Talent Shift:</strong> Partner roles evolving from execution to oversight and strategy</li>
 <li><strong>Client Expectations:</strong> Audit clients expect AI-enhanced procedures; fee compression follows</li>
 </ul>\n`;
+
+    body += `<div style="margin:2.5rem 0 1.5rem;padding:1.25rem 1.5rem;background:var(--card-bg,#f9fafb);border-radius:8px;border-left:3px solid var(--accent,#10b981);">
+<p style="margin:0 0 0.75rem 0;font-size:0.75rem;font-weight:700;color:var(--text-secondary,#6b7280);text-transform:uppercase;letter-spacing:0.06em;">Explore More</p>
+<ul style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:0.5rem;">
+<li><a href="${SITE_URL}/tag/big-4" style="display:inline-block;padding:0.35rem 0.75rem;background:var(--accent,#10b981);color:#fff;border-radius:4px;font-size:0.85rem;font-weight:500;text-decoration:none;">Big 4 News</a></li>
+<li><a href="${SITE_URL}/tag/audit" style="display:inline-block;padding:0.35rem 0.75rem;background:var(--accent,#10b981);color:#fff;border-radius:4px;font-size:0.85rem;font-weight:500;text-decoration:none;">Audit AI</a></li>
+<li><a href="${SITE_URL}/categories/audit-automation" style="display:inline-block;padding:0.35rem 0.75rem;background:var(--accent,#10b981);color:#fff;border-radius:4px;font-size:0.85rem;font-weight:500;text-decoration:none;">Audit Automation Companies</a></li>
+<li><a href="${SITE_URL}/categories/ai-firm" style="display:inline-block;padding:0.35rem 0.75rem;background:var(--accent,#10b981);color:#fff;border-radius:4px;font-size:0.85rem;font-weight:500;text-decoration:none;">AI-Enabled Firms</a></li>
+<li><a href="${SITE_URL}/map" style="display:inline-block;padding:0.35rem 0.75rem;background:var(--accent,#10b981);color:#fff;border-radius:4px;font-size:0.85rem;font-weight:500;text-decoration:none;">Market Map</a></li>
+</ul>
+</div>\n`;
 
     return body;
   };
