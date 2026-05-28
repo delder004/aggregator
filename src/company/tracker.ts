@@ -109,12 +109,26 @@ export function matchArticleToCompanies(
 }
 
 /**
+ * Company names that are also extremely common English words.
+ * Word-boundary matching on these bare names produces massive false positives
+ * in any English-language article (e.g., "every time I..." matching the company
+ * "Every"). These names must only be matched via their aliases.
+ */
+const SKIP_BARE_NAME_MATCH = new Set(['every']);
+
+/**
  * Check if text contains a company name as a word boundary match.
  * Avoids false positives (e.g., "sage" matching "message",
  * "stacks" matching "tech stacks").
  */
 function textContainsCompany(text: string, companyName: string): boolean {
   const name = companyName.toLowerCase();
+  if (SKIP_BARE_NAME_MATCH.has(name)) {
+    // Ultra-common English word — bare-name match would fire on virtually every
+    // article. Returning false here means matchArticleToCompanies will still
+    // check this company's aliases (e.g. "Every AI", "Every Finance").
+    return false;
+  }
   if (name.length < 8) {
     // Short names (e.g., "Sage", "Kick", "Stacks", "Mesh") need word boundary
     // matching to avoid false positives in common English words
