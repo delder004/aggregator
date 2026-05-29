@@ -43,6 +43,54 @@ const SITE_URL = 'https://agenticaiccounting.com';
 // surfaces it under an "Archive" label rather than "Latest".
 const INSIGHT_STALE_DAYS = 14;
 
+// Per-tag SEO content for the 7 primary nav tags.
+// Adds a keyword-rich H1 and intro paragraph to the first page of each tag,
+// and improves the meta title + description for better search CTR.
+const TAG_SEO: Record<string, { h1: string; intro: string; title: string; description: string }> = {
+  'audit': {
+    h1: 'AI in Auditing — News & Analysis',
+    intro: 'The latest on AI agents in audit: continuous monitoring, autonomous testing, PCAOB developments, and how Deloitte, EY, PwC, and KPMG are transforming audit workflows with artificial intelligence.',
+    title: 'AI Audit News & Analysis — Agentic AI Accounting',
+    description: 'Latest news on AI agents in auditing — continuous monitoring, autonomous audit agents, PCAOB, and Big 4 AI adoption. Updated hourly.',
+  },
+  'tax': {
+    h1: 'AI in Tax — News & Tools',
+    intro: 'Coverage of AI-powered tax automation: Making Tax Digital (MTD) compliance, intelligent tax preparation software, agentic tax agents, and the future of tax advisory and planning.',
+    title: 'AI Tax News & Tools — Agentic AI Accounting',
+    description: 'Latest news on AI in tax — MTD compliance, AI tax software, agentic tax preparation, and intelligent tax advisory. Updated hourly.',
+  },
+  'automation': {
+    h1: 'Accounting Automation — AI News',
+    intro: 'Agentic AI workflows for accounting automation: intelligent reconciliation, invoice processing, month-end close, accounts payable/receivable, and financial operations at scale.',
+    title: 'Accounting Automation AI News — Agentic AI Accounting',
+    description: 'Latest news on AI-powered accounting automation — reconciliation, close automation, AP/AR, and intelligent financial workflows. Updated hourly.',
+  },
+  'agentic-ai': {
+    h1: 'Agentic AI in Accounting — News & Research',
+    intro: 'News, research, and analysis on autonomous AI agents transforming accounting, audit, bookkeeping, and financial reporting. Covers the latest agentic AI deployments, research, and product launches.',
+    title: 'Agentic AI in Accounting — News & Research',
+    description: 'Latest news on agentic AI in accounting — autonomous agents, LLMs, and AI-native workflows for audit, tax, bookkeeping, and finance. Updated hourly.',
+  },
+  'startup': {
+    h1: 'AI Accounting Startups — News & Funding',
+    intro: 'Startups building AI-native accounting software: from agentic bookkeeping and autonomous ERP to intelligent financial close, AI-powered audit, and next-generation tax platforms.',
+    title: 'AI Accounting Startups — News & Funding',
+    description: 'Latest news on AI accounting startups — funding rounds, product launches, and emerging companies in AI-native bookkeeping, ERP, and audit automation. Updated hourly.',
+  },
+  'big-4': {
+    h1: 'Big 4 & AI — News & Strategy',
+    intro: 'How Deloitte, PwC, EY, and KPMG are deploying AI across audit, tax, and advisory — staff restructuring, technology investments, AI partnerships, and competitive moves in the profession.',
+    title: 'Big 4 AI Strategy & News — Agentic AI Accounting',
+    description: 'Latest news on Big 4 AI adoption — Deloitte, PwC, EY, KPMG investments, audit automation, and strategic moves. Updated hourly.',
+  },
+  'research': {
+    h1: 'AI Accounting Research — Papers & Analysis',
+    intro: 'Academic papers, industry whitepapers, and research on AI in accounting, audit, and financial reporting — from LLM applications in audit to algorithmic tax compliance and explainable AI in finance.',
+    title: 'AI Accounting Research — Papers & Analysis',
+    description: 'Latest research on AI in accounting — academic papers, industry studies, and analysis on AI agents, LLMs, and automation in audit, tax, and financial reporting. Updated hourly.',
+  },
+};
+
 function isInsightStale(insight: InsightSummary, now: number = Date.now()): boolean {
   const end = Date.parse(insight.periodEnd || insight.periodStart || insight.generatedAt);
   if (!Number.isFinite(end)) return true;
@@ -632,7 +680,18 @@ function generateTagPages(
     }
 
     // Page 1
-    let body = `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+    const tagSeo = TAG_SEO[tag];
+    let body = '';
+
+    // For primary nav tags, prepend a keyword-rich H1 + intro paragraph before
+    // the article list. This gives search engines a clear content signal and
+    // provides landing-page context for users arriving from organic search.
+    if (tagSeo) {
+      body += `<h1 style="font-size:1.6rem;font-weight:800;line-height:1.2;margin:0 0 0.5rem 0;letter-spacing:-0.02em;">${escapeHtml(tagSeo.h1)}</h1>\n`;
+      body += `<p style="color:var(--text-secondary,#6b7280);font-size:0.95rem;line-height:1.6;margin:0 0 1.5rem 0;">${escapeHtml(tagSeo.intro)}</p>\n`;
+    }
+
+    body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
     
     // Add featured companies section for tags with company mentions
     if (topCompaniesForTag.length > 0) {
@@ -652,12 +711,19 @@ function generateTagPages(
     }
     body += pagination(1, totalPages, basePath);
 
+    const pageTitle = tagSeo
+      ? tagSeo.title
+      : `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`;
+    const pageDescription = tagSeo
+      ? tagSeo.description
+      : `Articles about ${tagLabel} in AI-powered accounting.`;
+
     const tagJsonLd = {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      'name': `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`,
+      'name': pageTitle,
       'url': `https://agenticaiccounting.com${basePath}`,
-      'description': `Articles about ${tagLabel} in AI-powered accounting.`,
+      'description': pageDescription,
       'publisher': {
         '@type': 'Organization',
         'name': 'Agentic AI Accounting',
@@ -680,7 +746,7 @@ function generateTagPages(
         {
           '@type': 'ListItem',
           'position': 2,
-          'name': tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1),
+          'name': tagSeo ? tagSeo.h1 : tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1),
           'item': `${SITE_URL}${basePath}`,
         },
       ],
@@ -693,8 +759,8 @@ function generateTagPages(
     };
 
     pages[basePath] = layout(body, {
-      title: `${tagLabel.charAt(0).toUpperCase() + tagLabel.slice(1)} — Articles`,
-      description: `Articles about ${tagLabel} in AI-powered accounting.`,
+      title: pageTitle,
+      description: pageDescription,
       path: basePath,
       activeTag: tag,
       activeTab: 'news',
