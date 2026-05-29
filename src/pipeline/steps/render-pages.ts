@@ -40,13 +40,14 @@ import { generateRssFeed } from '../../renderer/rss';
 import { MIN_PUBLISH_SCORE } from '../../scoring/classifier';
 import type { StepOutcome } from '../step-runner';
 
-// v2: bumped 2026-05-27 to force a one-time full re-render after the
-// __page_hashes__ store drifted out of sync with actual KV content
-// (company soft-deletions and article-count changes were recorded in the
-// hash store but the corresponding KV page writes did not persist, leaving
-// /companies, /map, and company detail pages permanently stale).
-// The first cron run after this deploy writes all ~664 pages fresh.
-const PAGE_HASHES_KEY = '__page_hashes_v2__';
+// v3: bumped 2026-05-29 to force a one-time full re-render after the
+// __page_hashes_v2__ store drifted out of sync with actual KV content again.
+// The v2 bump (2026-05-27) triggered a full write but some KV puts for
+// /companies, /map, and /company/* pages did not persist — the hash store
+// recorded the new (stats-excluded) hashes but KV retained the old (stats-
+// included) HTML from April/May 2026, leaving those pages permanently stale.
+// The first cron run after this deploy writes all ~685 pages fresh.
+const PAGE_HASHES_KEY = '__page_hashes_v3__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
