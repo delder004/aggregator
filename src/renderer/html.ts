@@ -279,7 +279,7 @@ a.logo{text-decoration:none;}
   color:var(--text-tertiary);
   margin:2rem 0 0.75rem;
   padding-bottom:0.4rem;
-  border-bottom:1px solid var(--border);
+  border-bottom:2px solid var(--border);
 }
 .section-label-row{
   display:flex;
@@ -287,7 +287,7 @@ a.logo{text-decoration:none;}
   gap:0.75rem;
   margin:2rem 0 0.75rem;
   padding-bottom:0.4rem;
-  border-bottom:1px solid var(--border);
+  border-bottom:2px solid var(--border);
 }
 .section-label-row .section-label{
   margin:0;
@@ -302,6 +302,15 @@ a.logo{text-decoration:none;}
   color:var(--text);
   margin:2rem 0 1rem;
   letter-spacing:-0.03em;
+}
+.section-heading::before{
+  content:'';
+  display:block;
+  width:2.5rem;
+  height:3px;
+  background:var(--accent);
+  margin-bottom:0.6rem;
+  border-radius:1px;
 }
 @media(max-width:640px){
   .section-heading{font-size:1.4rem;}
