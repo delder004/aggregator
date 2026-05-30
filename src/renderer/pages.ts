@@ -1405,6 +1405,25 @@ function generateGuidePages(
 <li><strong>Client Expectations:</strong> Audit clients expect AI-enhanced procedures; fee compression follows</li>
 </ul>\n`;
 
+    // Recent Big 4 coverage — dynamic articles tagged 'big-4', newest first
+    body += `<h3 style="margin-top:2.5rem;margin-bottom:1rem;">Recent Big 4 Coverage</h3>\n`;
+    const big4Articles = articles
+      .filter(a => a.tags?.includes('big-4'))
+      .slice(0, 5);
+    if (big4Articles.length > 0) {
+      body += `<div style="display:grid;gap:1rem;margin:1.5rem 0;">\n`;
+      for (const article of big4Articles) {
+        body += `<div style="border:1px solid #e5e7eb;border-radius:0.5rem;padding:1rem;">\n`;
+        body += `<h4 style="margin:0 0 0.5rem 0;"><a href="/article/${escapeHtml(article.id)}" style="color:var(--accent);text-decoration:none;">${escapeHtml(article.headline || article.title)}</a></h4>\n`;
+        if (article.aiSummary) {
+          body += `<p style="font-size:0.875rem;color:var(--text-secondary);margin:0.5rem 0 0 0;line-height:1.5;">${escapeHtml(article.aiSummary.substring(0, 150))}...</p>\n`;
+        }
+        body += `<p style="font-size:0.75rem;color:#999;margin:0.75rem 0 0 0;"><a href="/tag/big-4">big-4</a> · <a href="/article/${escapeHtml(article.id)}">read more</a></p>\n`;
+        body += `</div>\n`;
+      }
+      body += `</div>\n`;
+    }
+
     body += `<div style="margin:2.5rem 0 1.5rem;padding:1.25rem 1.5rem;background:var(--card-bg,#f9fafb);border-radius:8px;border-left:3px solid var(--accent,#10b981);">
 <p style="margin:0 0 0.75rem 0;font-size:0.75rem;font-weight:700;color:var(--text-secondary,#6b7280);text-transform:uppercase;letter-spacing:0.06em;">Explore More</p>
 <ul style="margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:0.5rem;">
