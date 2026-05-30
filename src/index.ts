@@ -1126,11 +1126,18 @@ export default {
           //   ancient content)
           // - s-maxage=3600: CDN caches 1 hour, matching the hourly content
           //   cron — fresh content rolls in naturally
-          // - stale-while-revalidate=86400: HTML only — serve stale up to
-          //   24h while revalidating, eliminating cache-miss latency cliffs
+          // NOTE: stale-while-revalidate was removed. When the CDN makes a
+          // background SWR revalidation request, the Worker calls
+          // caches.default.match() and gets the same stale cached entry (still
+          // within the SWR window), returning it as the "fresh" response. CF
+          // refreshes its cache with the same stale content indefinitely. Pages
+          // whose cache purge failed (subrequest-limit overrun) got locked into
+          // this loop for 32+ days (/map, /company/*, /companies). Without SWR,
+          // stale entries expire after s-maxage=3600 and the next request reads
+          // the correct content from KV.
           'Cache-Control': isXml
             ? 'public, max-age=300, s-maxage=3600'
-            : 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
+            : 'public, max-age=300, s-maxage=3600',
         },
       });
 
