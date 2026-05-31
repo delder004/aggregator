@@ -997,14 +997,14 @@ a.source-name:hover{text-decoration:underline;}
 
 /* Footer */
 .site-footer{
-  border-top:1px solid var(--border);
+  border-top:3px solid var(--accent);
   padding:3rem 0 2rem;
   margin-top:2rem;
   background:var(--bg-card);
 }
 .footer-grid{
   display:grid;
-  grid-template-columns:2fr 1fr 1fr 1fr;
+  grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;
   gap:2rem;
   margin-bottom:2rem;
 }
@@ -1054,6 +1054,24 @@ a.source-name:hover{text-decoration:underline;}
   width:100%;
   text-align:center;
   margin-top:0.5rem;
+}
+.footer-rss-link{
+  display:inline-flex !important;
+  align-items:center;
+  gap:0.3rem;
+  background:var(--accent);
+  color:#111 !important;
+  font-size:0.72rem !important;
+  font-weight:700;
+  padding:0.2rem 0.7rem;
+  border-radius:100px;
+  margin-top:0.3rem;
+  letter-spacing:0.02em;
+}
+.footer-rss-link:hover{
+  background:var(--accent-hover);
+  text-decoration:none !important;
+  color:#111 !important;
 }
 
 /* Spotlight / highlights section */
@@ -1272,6 +1290,7 @@ a.source-name:hover{text-decoration:underline;}
   .company-grid{grid-template-columns:repeat(2,1fr);}
   .resource-grid{grid-template-columns:repeat(2,1fr);}
   .footer-grid{grid-template-columns:1fr 1fr;}
+  .footer-col:first-child{grid-column:1 / -1;}
   .hero h1{font-size:1.8rem;}
 }
 @media (max-width:768px){
@@ -2113,10 +2132,19 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           <a href="/tag/research">Research</a>
         </div>
         <div class="footer-col">
+          <h4>Categories</h4>
+          <a href="/categories">All Categories</a>
+          <a href="/categories/audit-automation">AI Audit</a>
+          <a href="/categories/tax-automation">AI Tax</a>
+          <a href="/categories/ai-bookkeeping">Bookkeeping &amp; Close</a>
+          <a href="/categories/ai-native-erp">AI-Native ERP</a>
+          <a href="/categories/compliance">Compliance</a>
+        </div>
+        <div class="footer-col">
           <h4>Connect</h4>
+          <a href="/feed.xml" class="footer-rss-link">RSS Feed</a>
           <a href="/about">About Us</a>
           <a href="/faq">FAQ</a>
-          <a href="/feed.xml">RSS Feed</a>
           <a href="mailto:hello@agenticaiccounting.com">Contact</a>
         </div>
       </div>
