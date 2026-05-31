@@ -930,6 +930,17 @@ export default {
         detailBody += `</div>`;
       }
 
+      // Inline newsletter CTA — placed before the exit link so the ~99% of visitors
+      // who click out see it. The global .newsletter-box in the layout footer is never
+      // reached by bouncers; this compact form captures emails at the decision point.
+      detailBody += `<div style="margin:1rem 0 1.25rem;padding:0.65rem 0.9rem;background:var(--card-bg,#f9fafb);border-radius:8px;border:1px solid var(--border,#e5e7eb);display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">`;
+      detailBody += `<span style="font-size:0.82rem;color:var(--text-secondary,#6b7280);flex:1;min-width:180px;line-height:1.4;">Get daily agentic AI accounting news in your inbox</span>`;
+      detailBody += `<form action="/subscribe" method="POST" style="display:flex;gap:0.4rem;flex-wrap:wrap;margin:0;">`;
+      detailBody += `<input type="email" name="email" placeholder="your@email.com" required style="border:1px solid var(--border,#e5e7eb);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.82rem;width:170px;background:#fff;color:var(--text,#111827);">`;
+      detailBody += `<button type="submit" style="background:var(--accent,#10b981);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.7rem;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;">Subscribe free</button>`;
+      detailBody += `</form>`;
+      detailBody += `</div>`;
+
       detailBody += `<a class="original-link" href="${escapeHtml(article.url)}" rel="noopener" target="_blank">Read original article &rarr;</a>`;
 
       // Share buttons (no JS — pure URL-based sharing)

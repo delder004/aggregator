@@ -352,28 +352,30 @@ export async function getRelatedArticles(
   article: Article,
   limit: number = 5
 ): Promise<Article[]> {
-  // Find articles sharing the same tags
+  // Find articles sharing the same tags, ranked by topical relevance (tag overlap)
+  // then recency. Using up to 5 tags surfaces more specific matches: an article
+  // sharing "tax" + "automation" + "product-launch" ranks above one sharing only
+  // the ubiquitous "agentic-ai" tag, so the "Continue reading" strip stays on-topic.
   if (article.tags.length === 0) return [];
 
-  const tagConditions = article.tags
-    .slice(0, 3)  // Use up to 3 tags
-    .map(() => `tags LIKE ?`)
-    .join(' OR ');
-  const tagBindings = article.tags
-    .slice(0, 3)
-    .map(t => `%"${escapeLike(t)}"%`);
+  const tags = article.tags.slice(0, 5);
+  const tagBindings = tags.map(t => `%"${escapeLike(t)}"%`);
+  const tagConditions = tags.map(() => `tags LIKE ?`).join(' OR ');
+  // COUNT how many of the article's tags each candidate shares
+  const scoreExpr = tags.map(() => `(CASE WHEN tags LIKE ? THEN 1 ELSE 0 END)`).join(' + ');
 
   const results = await db
     .prepare(
-      `SELECT * FROM articles
+      `SELECT *, (${scoreExpr}) as tag_overlap
+       FROM articles
        WHERE is_published = 1 AND relevance_score >= ?
          AND id != ?
          AND (${tagConditions})
          AND datetime(published_at) <= datetime('now')
-       ORDER BY published_at DESC
+       ORDER BY tag_overlap DESC, published_at DESC
        LIMIT ?`
     )
-    .bind(MIN_PUBLISH_SCORE, article.id, ...tagBindings, limit)
+    .bind(...tagBindings, MIN_PUBLISH_SCORE, article.id, ...tagBindings, limit)
     .all();
   return results.results.map(mapRowToArticle);
 }
