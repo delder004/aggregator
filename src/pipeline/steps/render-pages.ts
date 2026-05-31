@@ -40,14 +40,15 @@ import { generateRssFeed } from '../../renderer/rss';
 import { MIN_PUBLISH_SCORE } from '../../scoring/classifier';
 import type { StepOutcome } from '../step-runner';
 
-// v3: bumped 2026-05-29 to force a one-time full re-render after the
-// __page_hashes_v2__ store drifted out of sync with actual KV content again.
-// The v2 bump (2026-05-27) triggered a full write but some KV puts for
-// /companies, /map, and /company/* pages did not persist — the hash store
-// recorded the new (stats-excluded) hashes but KV retained the old (stats-
-// included) HTML from April/May 2026, leaving those pages permanently stale.
-// The first cron run after this deploy writes all ~685 pages fresh.
-const PAGE_HASHES_KEY = '__page_hashes_v3__';
+// v4: bumped 2026-05-31. Root cause fixed: Promise.all was used for KV puts,
+// so any silent KV put failure (promise resolves but write doesn't persist)
+// caused the hash store to record the new hash anyway — permanently skipping
+// that page on all future crons (hash matched, so never re-queued). Fixed by
+// switching to Promise.allSettled per-path: only successful puts advance the
+// stored hash; failed puts preserve the old hash so the next cron retries.
+// The v4 empty store forces a full re-render to recover pages stuck since the
+// v2/v3 failures (notably /map, /companies, /company/* from April-May 2026).
+const PAGE_HASHES_KEY = '__page_hashes_v4__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
@@ -209,11 +210,29 @@ export async function renderPagesStep(
       }
     }
 
+    // Use Promise.allSettled so a failed put doesn't abort the batch and,
+    // crucially, the hash store is only updated for paths whose put succeeded.
+    // Paths whose put failed keep their old hash, ensuring the next cron retries
+    // them rather than treating the stale KV entry as up-to-date.
+    const successfulPaths = new Set<string>();
+    let failedPuts = 0;
     for (let i = 0; i < changed.length; i += 25) {
       const batch = changed.slice(i, i + 25);
-      await Promise.all(
+      const results = await Promise.allSettled(
         batch.map(([path, html]) => env.KV.put(path, html))
       );
+      for (let j = 0; j < batch.length; j++) {
+        const [path] = batch[j];
+        if (results[j].status === 'fulfilled') {
+          successfulPaths.add(path);
+        } else {
+          failedPuts++;
+          console.error(
+            `KV put failed for ${path}:`,
+            (results[j] as PromiseRejectedResult).reason
+          );
+        }
+      }
     }
 
     const staleKeys = Object.keys(oldHashes).filter(
@@ -224,7 +243,23 @@ export async function renderPagesStep(
       await Promise.all(batch.map((key) => env.KV.delete(key)));
     }
 
-    await env.KV.put(PAGE_HASHES_KEY, JSON.stringify(newHashes));
+    // Build the hash store: record new hashes only for pages whose put
+    // succeeded. Failed puts preserve the old hash so the next cron retries.
+    // Unchanged pages (not in changed) carry their new hash (same value anyway).
+    // Stale pages (in oldHashes but absent from newHashes) are excluded.
+    const changedPathSet = new Set(changed.map(([p]) => p));
+    const hashStoreToSave: Record<string, string> = {};
+    for (const [path, hash] of Object.entries(newHashes)) {
+      if (!changedPathSet.has(path)) {
+        hashStoreToSave[path] = hash; // unchanged
+      } else if (successfulPaths.has(path)) {
+        hashStoreToSave[path] = hash; // changed + written
+      } else if (oldHashes[path]) {
+        hashStoreToSave[path] = oldHashes[path]; // changed but put failed — retry next cron
+      }
+      // New page whose put failed: omit so next cron includes it in changed.
+    }
+    await env.KV.put(PAGE_HASHES_KEY, JSON.stringify(hashStoreToSave));
 
     // Per-colo edge-cache purge — global purge would need the CF API.
     const purgePaths = [
@@ -247,18 +282,21 @@ export async function renderPagesStep(
     }
 
     console.log(
-      `KV: ${changed.length}/${entries.length} pages changed, wrote ${changed.length + 1} keys, deleted ${staleKeys.length} stale keys, purged ${purgePaths.length} edge-cache entries (${entries.length - changed.length} skipped)`
+      `KV: ${changed.length}/${entries.length} pages changed, wrote ${successfulPaths.size}` +
+        (failedPuts > 0 ? ` (${failedPuts} puts failed — will retry next cron)` : '') +
+        `, deleted ${staleKeys.length} stale keys, purged ${purgePaths.length} edge-cache entries` +
+        ` (${entries.length - changed.length} skipped unchanged)`
     );
 
     return {
       status: 'ok',
       metrics: {
-        pagesWritten: changed.length,
+        pagesWritten: successfulPaths.size,
         totalPages: entries.length,
         staleKeys: staleKeys.length,
       },
       result: {
-        pagesWritten: changed.length,
+        pagesWritten: successfulPaths.size,
         totalPages: entries.length,
         staleKeys: staleKeys.length,
       },
