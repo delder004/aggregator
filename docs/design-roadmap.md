@@ -16,7 +16,7 @@ The current site is competent and neutral. The target site **leads with structur
 
 ## Reference inspirations
 
-Three references, ordered by relevance.
+Core references, ordered by how directly they should influence future work.
 
 ### Primary: [choppingblock.ai](https://www.choppingblock.ai/)
 
@@ -48,6 +48,35 @@ The classic aggregator-with-editorial-overlay model. Not a raw feed, not a magaz
 
 Don't lift visual specifics — digg has gone through multiple distinct visual eras and the current relaunch is recent. Borrow the *editorial posture* only.
 
+### Additional references: Semafor, Our World in Data, The Pudding
+
+These should guide the next direction without becoming templates:
+
+- **Semafor Signals** — separate the raw fact pattern from context and judgment. The site should make it obvious which rows are evidence, which surfaces are interpretation, and where the reader can inspect the source trail.
+- **Our World in Data** — authority through exposed corpus and careful data surfaces. Counts, categories, tables, and methodology should feel like the product, not decoration.
+- **The Pudding** — data can tell a story visually, but use this sparingly. We do not want playful visual essays; we want static, legible, audit-friendly explanatory graphics.
+
+---
+
+## New design direction: The Signal Ledger
+
+The next design track is **The Signal Ledger**: an editorial ledger for AI's impact on accounting. The metaphor should feel closer to a financial terminal, audit workpaper, and independent briefing than a SaaS dashboard or magazine homepage.
+
+The homepage should answer four questions quickly:
+
+1. **Shipping** — which companies are moving?
+2. **Automating** — which accounting workflows are being taken over?
+3. **Hiring** — where are AI-accounting firms adding headcount?
+4. **Coverage** — which categories and market segments are producing evidence?
+
+Design implications:
+
+- Lead with ledger-like rows, compact evidence, and tabular comparison before cards.
+- Use cards only when they frame repeated editorial items; prefer rows, rules, bands, and tables for data-product surfaces.
+- Keep the current no-JS/static-HTML constraint. "Interactive" states remain pre-rendered sort/filter pages.
+- Keep the current acid-lime accent until a dedicated palette step ships. Coral remains a strong candidate for a future "audit stamp" accent, but it should be evaluated as a separate visual PR.
+- Keep the serif/sans pairing, but make dense data surfaces feel more utilitarian than the hero and feature surfaces.
+
 ---
 
 ## Anti-goals
@@ -60,24 +89,23 @@ Don't lift visual specifics — digg has gone through multiple distinct visual e
 
 ---
 
-## Current snapshot (as of 2026-05-14)
+## Current snapshot (as of 2026-06-01)
 
-What the live site looks like today, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
+What the current renderer is aiming at, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
-- **Palette.** Teal accent (`#0f766e` → `#14b8a6` on elements), Zinc-style neutrals, dark-mode mirror. Seven source-color badges (HN orange, YouTube red, arXiv crimson, RSS, Substack, Product Hunt, YC) competing for attention in article meta rows.
-- **Typography.** System sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, …`). Headline `h1` is 2.2rem, modest weight progression. No serif. No display face.
-- **Hero.** ✅ Flat deep navy background (`#0a1929`, Phase 2A complete, PR #62) with white text. Descriptive tagline ("The latest on AI agents in accounting..."). Small stats on a row below. Editorial surface, not branding-style gradient.
-- **Signal strip.** ✅ Positioned directly under hero (Phase 1A complete, PR #42). Displays 4 key metrics (Sources, Articles, Companies, Open Roles) in a responsive grid (4 columns on desktop, 2 on mobile). Styled with gray background and centered text. Pulls these metrics out of the footer as promised.
-- **Featured Stories section.** ✅ 3-column grid on desktop, responsive to 2 cols (900px) and 1 col (580px), positioned above curated sections (Phase 1C complete). Visual treatment is uniform cards; magazine-style hierarchy (lead story + supporting) deferred to Phase 5A.
-- **What Changed This Week section.** ✅ Cohesive editorial section (Phase 1B complete, PR #53) with 3-4 data-driven panels: Trending on Social (top articles by social score from last 7 days), New Roles Posted (latest jobs from last 7 days), and Latest Insight or Most Covered companies. Responsive grid layout (2 cols desktop, 1 col mobile ≤580px).
-- **Top Companies section.** ✅ Top 8 companies by article count with category and article count badges (Phase 1D complete, PR #57). Responsive auto-fit grid (1 col mobile, multi-col desktop). Positioned between "What Changed This Week" and "Open Roles" sections.
-- **Open Roles section.** ✅ Latest 5 open roles with title, company, location (Phase 1E complete, PR #47). Responsive auto-fit grid (1 col mobile, multi-col desktop). Positioned after curated sections and before Latest feed.
-- **Latest feed.** ✅ Demoted as secondary hierarchy (Phase 1F complete, PR #50): wrapped in `.latest-feed` container with upper border separator, reduced margin, and opacity. Still fully functional with pagination and tag filtering.
-- **Mobile.** Phase 0 baseline remains clean — no regressions observed at iPhone widths. Pagination wraps, signal strip responds, nav doesn't overflow, all grid sections stack to 1 column. ✅ Mobile-clean.
+- **Palette.** Zinc-style neutrals, deep navy hero (`#0a1929`), acid-lime accent (`#a4ff00`), and subdued semantic red for automation/displacement. Source badges are monochrome, so the accent budget is reserved for product signals.
+- **Typography.** System sans for body/UI plus system serif (`ui-serif, Georgia, serif`) for major editorial headings. Headline hierarchy is stronger than the original site, but dense surfaces still use utilitarian sans.
+- **Hero.** Thesis-led: "AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring." The supporting copy now names the source classes rather than leaning on a raw source count.
+- **Signal strip.** Four evidence metrics remain directly under hero: Sources, Articles, Companies, Open Roles.
+- **Signal Ledger.** New top-of-home data-product surface replacing the prior "Market Signals" cards. It groups current evidence into Shipping, Coverage, and Hiring columns using ledger-like rows.
+- **Featured Stories.** Magazine hierarchy is in place: one larger lead story plus supporting stories.
+- **What Changed This Week.** Still renders current-week signals such as new roles, trending articles, latest insights, or most-covered companies.
+- **Work Being Automated.** Standalone subdued-red section renders recent articles tagged with automated-work tags. This is the left half of the eventual dual narrative.
+- **Data surfaces.** Companies and jobs have dense static table views with pre-rendered sort URLs; the homepage has a "By the numbers" band for corpus-level evidence.
+- **Latest feed.** Demoted into compact secondary hierarchy and still supports pagination and tag filtering.
+- **Mobile.** Phase 0 baseline remains the gate: grids collapse, tag/filter rows wrap or scroll intentionally, tables use overflow/hide rules, and no fixed-width surface should exceed iPhone width.
 
-**Phase 1 completion:** Homepage is now argument-first, moving from chronology-first (Latest feed) to editorial judgment. The structure is: Hero → Signal strip → Featured → What Changed → Companies → Jobs → Latest. All 6 Phase 1 steps are complete and mobile-clean.
-
-**Phase 2A–2B status:** Hero has been rewritten with a flat deep navy background (2A, PR #62) and sharpened thesis-style headline (2B, PR #unknown). The voice has shifted from news-focused to impact-focused. Next work: visual language refinement continues with Phase 2C (headline scale & letter-spacing), 2D (brand accent color), 2E (source badge demotion), and 2F (editorial typeface).
+**Current homepage argument:** Hero → Signal strip → Signal Ledger → Featured → What Changed → Work Being Automated → By the Numbers → Latest. The direction is no longer "add more homepage sections"; it is "turn the existing signals into one coherent ledger."
 
 ---
 
@@ -175,6 +203,16 @@ Smaller, character-driving changes. Lower priority but compound the editorial fe
 - **6C — Numbered "table of contents" alt-view of the latest feed** as an option alongside cards.
 - **6D — Dark mode polish.** Currently a mirror; consider a hand-tuned dark variant aligned with the Phase 2 palette.
 
+### Phase 7 — Signal Ledger spine
+
+This phase consolidates the now-many homepage signals into one coherent data-product spine. It should reduce repeated cards, make evidence easier to scan, and make the homepage feel like an accounting/market ledger rather than a stack of sections.
+
+- **7A — Rename and restyle Market Signals as Signal Ledger.** Replace the "Market Signals" section title and card treatment with a ledger-style grouped surface: Shipping, Coverage, Hiring. Keep the existing data inputs; this is a bounded structural/visual change, not a data model change.
+- **7B — Fold automation into the ledger.** Move or visually connect "Work Being Automated" into the Signal Ledger as an "Automating" column/row group. Keep the subdued red semantics and mobile stacking. Do this only after 7A is mobile-clean.
+- **7C — Audit the homepage order after ledger consolidation.** If Signal Ledger carries the top argument, consider moving Featured below What Changed or trimming repeated "Most Covered" company signals that duplicate Coverage.
+- **7D — Rename Latest to The Wire.** Keep the compact feed behavior, but make the label and row rhythm feel like a secondary evidence wire. Do not change pagination or tag-filter behavior.
+- **7E — Palette reconsideration.** Evaluate whether acid lime still fits the Signal Ledger metaphor. Coral (`#ff6f5e` or `#e95d4f`) may work better as an "audit stamp" accent, but it needs its own PR with light/dark contrast checks and no semantic red/green confusion.
+
 ---
 
 ## Completed steps
@@ -206,6 +244,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [date] 
 - [6B] — 2026-05-29 — Section dividers with character: add `::before` accent bar (2.5rem × 3px, `var(--accent)` acid lime, `margin-bottom:0.6rem`, `border-radius:1px`) above every `.section-heading` — creates a short geometric mark before each major editorial section (Featured Stories, What Changed This Week, Work Being Automated, etc.). Strengthen `.section-label` and `.section-label-row` border-bottom from `1px → 2px solid var(--border)` for heavier minor-section rhythm. CSS-only; no HTML changes. Mobile-safe: `2.5rem` width is relative to font-size root, `3px` height is visual only, no layout impact.
 - [6A] — 2026-05-31 — Footer redesign: 5-column dense footer (from 4) — adds "Categories" column linking to /categories overview and 5 key category pages (AI Audit, AI Tax, Bookkeeping & Close, AI-Native ERP, Compliance). RSS promoted to top of Connect column with `.footer-rss-link` badge (acid lime pill, `font-weight:700`). `.site-footer` top border upgraded from `1px var(--border)` to `3px solid var(--accent)` for editorial accent mark. Footer grid expanded from `2fr 1fr 1fr 1fr` to `1.5fr 1fr 1fr 1fr 1fr`. Responsive: at ≤900px brand spans `grid-column: 1 / -1` (full width row) and 4 nav columns fill `1fr 1fr` grid; at ≤580px all single column.
 - [3C] — 2026-06-01 — "By the numbers" homepage band: two-column layout (coverage breakdown bars + publishing stats) positioned between Open Roles section and Latest feed. Left column renders top-6 article-tag counts (Audit, Tax, Automation, Bookkeeping, Agentic AI, Compliance) as horizontal progress bars (3px height, acid lime fill, relative width). Right column shows 3 publishing cadence stats (articles/day 30-day avg, featured %, articles crawled) in serif figure + uppercase label pairs. Uses `.by-numbers-inner` grid (`1.6fr 1fr`, collapses to `1fr` at ≤580px). Bar rows use flex with `min-width:5.5rem` label + `flex:1` track + `min-width:2rem` count — no fixed pixel widths beyond 360px. CSS-only; no client JS.
+- [7A] — 2026-06-01 — Signal Ledger first pass: rename the homepage "Market Signals" surface to "Signal Ledger" and restyle it from three separate cards into one bordered ledger grid with Shipping, Coverage, and Hiring columns. Existing data inputs are unchanged (company momentum, category coverage, hiring counts). Responsive rule collapses the ledger to one column at ≤900px with border separators; no client JS.
 
 ---
 
