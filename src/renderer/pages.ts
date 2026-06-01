@@ -35,13 +35,47 @@ import { isAutomatedWorkArticle, AUTOMATED_WORK_TAGS } from './dual-narrative';
 // ---------------------------------------------------------------------------
 
 const ARTICLES_PER_PAGE = 20;
-const JOBS_PER_PAGE = 25;
+const COMPANIES_PER_PAGE = 40;
+const JOBS_PER_PAGE = 40;
 const SITE_URL = 'https://agenticaiccounting.com';
 
 // An insight whose periodEnd is older than this many days is considered stale
 // for the homepage spotlight; it is hidden there, and the /resources page
 // surfaces it under an "Archive" label rather than "Latest".
 const INSIGHT_STALE_DAYS = 14;
+
+const NON_MARKET_COMPANY_IDS = new Set([
+  // Media outlets / publications / podcasts: useful as sources, not vendors.
+  'reuters',
+  'gartner',
+  'capterra',
+  'cpa-practice-advisor',
+  'earmark-podcast',
+  // Law firms and generic entities that should not appear in the vendor map.
+  'clifford-chance',
+  'baker-mckenzie',
+  'starbucks',
+  // Generic or model-hallucinated company names.
+  'ai-accounting',
+  'bots-for-that',
+  'anthropic-claude',
+  // Duplicate Tally rows; `tally` is the canonical row.
+  'tally-prime',
+  'tallyprime',
+]);
+
+const NON_MARKET_COMPANY_NAMES = new Set([
+  'ai accounting',
+  'bots for that',
+  'anthropic (claude)',
+]);
+
+const MOMENTUM_TAGS = new Set([
+  'product-launch',
+  'funding',
+  'partnership',
+  'integration',
+]);
 
 // Per-tag SEO content for the 7 primary nav tags.
 // Adds a keyword-rich H1 and intro paragraph to the first page of each tag,
@@ -95,6 +129,16 @@ function isInsightStale(insight: InsightSummary, now: number = Date.now()): bool
   const end = Date.parse(insight.periodEnd || insight.periodStart || insight.generatedAt);
   if (!Number.isFinite(end)) return true;
   return now - end > INSIGHT_STALE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function isMarketCompany(company: Company): boolean {
+  const id = company.id.toLowerCase();
+  const name = company.name.trim().toLowerCase();
+  return !NON_MARKET_COMPANY_IDS.has(id) && !NON_MARKET_COMPANY_NAMES.has(name);
+}
+
+function getMarketCompanies(companies: Company[] | undefined): Company[] {
+  return (companies ?? []).filter(isMarketCompany);
 }
 
 // ---------------------------------------------------------------------------
@@ -344,6 +388,167 @@ function renderByNumbers(
   return html;
 }
 
+interface CompanyMomentum {
+  company: Company;
+  recentArticles: Article[];
+  sourceCount: number;
+  taggedSignalCount: number;
+  jobCount: number;
+  score: number;
+}
+
+function getCompanyJobs(
+  companyJobs: Map<string, CompanyJob[]> | undefined,
+  companyId: string
+): CompanyJob[] {
+  return companyJobs?.get(companyId) ?? [];
+}
+
+function getCompanyMomentum(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  companyJobs: Map<string, CompanyJob[]> | undefined
+): CompanyMomentum[] {
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+  return companies
+    .map((company) => {
+      const articles = companyArticles.get(company.id) ?? [];
+      const recentArticles = articles
+        .filter((article) => new Date(article.publishedAt).getTime() >= thirtyDaysAgo)
+        .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+      const sourceCount = new Set(recentArticles.map((article) => article.sourceName)).size;
+      const taggedSignalCount = recentArticles.filter((article) =>
+        article.tags.some((tag) => MOMENTUM_TAGS.has(tag))
+      ).length;
+      const jobCount = getCompanyJobs(companyJobs, company.id).length;
+      const score =
+        recentArticles.length * 4 +
+        Math.min(sourceCount, 5) * 2 +
+        taggedSignalCount * 3 +
+        Math.min(jobCount, 20) * 0.5;
+
+      return {
+        company,
+        recentArticles,
+        sourceCount,
+        taggedSignalCount,
+        jobCount,
+        score,
+      };
+    })
+    .filter((item) => item.recentArticles.length > 0 || item.jobCount >= 5)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const aLatest = a.recentArticles[0]?.publishedAt ?? '';
+      const bLatest = b.recentArticles[0]?.publishedAt ?? '';
+      return bLatest.localeCompare(aLatest);
+    });
+}
+
+function renderMarketSignals(
+  companies: Company[],
+  companyArticles: Map<string, Article[]>,
+  companyJobs: Map<string, CompanyJob[]> | undefined
+): string {
+  if (companies.length === 0) return '';
+
+  const momentum = getCompanyMomentum(companies, companyArticles, companyJobs).slice(0, 5);
+  const hiring = [...companies]
+    .map((company) => ({
+      company,
+      jobs: getCompanyJobs(companyJobs, company.id).length,
+    }))
+    .filter((item) => item.jobs > 0)
+    .sort((a, b) => b.jobs - a.jobs)
+    .slice(0, 5);
+
+  const categoryStats = CATEGORIES
+    .filter((category) => category.slug !== 'other')
+    .map((category) => {
+      const categoryCompanies = companies.filter(
+        (company) => enrichCategorySlug(company) === category.slug
+      );
+      const recentArticles = categoryCompanies.reduce((sum, company) => {
+        const articles = companyArticles.get(company.id) ?? [];
+        const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        return sum + articles.filter((article) => new Date(article.publishedAt).getTime() >= cutoff).length;
+      }, 0);
+      return {
+        category,
+        companies: categoryCompanies.length,
+        recentArticles,
+      };
+    })
+    .filter((item) => item.companies > 0)
+    .sort((a, b) => {
+      if (b.recentArticles !== a.recentArticles) return b.recentArticles - a.recentArticles;
+      return b.companies - a.companies;
+    })
+    .slice(0, 6);
+
+  if (momentum.length === 0 && hiring.length === 0 && categoryStats.length === 0) {
+    return '';
+  }
+
+  let html = `<h2 class="section-heading">Market Signals</h2>\n`;
+  html += `<div class="market-signals-grid">\n`;
+
+  if (momentum.length > 0) {
+    html += `<div class="market-signal-card">\n`;
+    html += `<h3>Companies gaining coverage</h3>\n`;
+    html += `<div class="market-signal-list">\n`;
+    for (const item of momentum) {
+      const latest = item.recentArticles[0];
+      const latestText = latest
+        ? `<span>${escapeHtml(latest.headline || latest.title)}</span>`
+        : `<span>${item.jobCount} open roles</span>`;
+      html += `<a class="market-signal-row" href="/company/${escapeHtml(item.company.id)}">
+  <strong>${escapeHtml(item.company.name)}</strong>
+  <span>${item.recentArticles.length} recent article${item.recentArticles.length !== 1 ? 's' : ''}${item.sourceCount > 0 ? ` &middot; ${item.sourceCount} source${item.sourceCount !== 1 ? 's' : ''}` : ''}${item.taggedSignalCount > 0 ? ` &middot; ${item.taggedSignalCount} shipping signal${item.taggedSignalCount !== 1 ? 's' : ''}` : ''}</span>
+  ${latestText}
+</a>\n`;
+    }
+    html += `</div>\n`;
+    html += `<div class="view-all"><a href="/companies/by-articles">More company activity &rarr;</a></div>\n`;
+    html += `</div>\n`;
+  }
+
+  if (categoryStats.length > 0) {
+    html += `<div class="market-signal-card">\n`;
+    html += `<h3>Market map</h3>\n`;
+    html += `<div class="market-category-list">\n`;
+    for (const item of categoryStats) {
+      html += `<a href="/categories/${item.category.slug}" class="market-category-row">
+  <strong>${escapeHtml(item.category.shortLabel)}</strong>
+  <span>${item.companies} compan${item.companies === 1 ? 'y' : 'ies'}${item.recentArticles > 0 ? ` &middot; ${item.recentArticles} recent article${item.recentArticles !== 1 ? 's' : ''}` : ''}</span>
+</a>\n`;
+    }
+    html += `</div>\n`;
+    html += `<div class="view-all"><a href="/map">Open market map &rarr;</a></div>\n`;
+    html += `</div>\n`;
+  }
+
+  if (hiring.length > 0) {
+    html += `<div class="market-signal-card">\n`;
+    html += `<h3>Hiring signals</h3>\n`;
+    html += `<div class="market-signal-list">\n`;
+    for (const item of hiring) {
+      const category = getCategoryBySlug(item.company.categorySlug).shortLabel;
+      html += `<a class="market-signal-row" href="/company/${escapeHtml(item.company.id)}">
+  <strong>${escapeHtml(item.company.name)}</strong>
+  <span>${escapeHtml(category)} &middot; ${item.jobs} open role${item.jobs !== 1 ? 's' : ''}</span>
+</a>\n`;
+    }
+    html += `</div>\n`;
+    html += `<div class="view-all"><a href="/jobs">Browse jobs at AI accounting companies &rarr;</a></div>\n`;
+    html += `</div>\n`;
+  }
+
+  html += `</div>\n`;
+  return html;
+}
+
 // ---------------------------------------------------------------------------
 // Homepage
 // ---------------------------------------------------------------------------
@@ -354,10 +559,14 @@ function generateHomepage(
   allArticles: Article[],
   layoutOpts: Partial<LayoutOptions>,
   companies?: Company[],
+  companyArticles?: Map<string, Article[]>,
   companyJobs?: Map<string, CompanyJob[]>,
   insights?: InsightSummary[]
 ): Record<string, string> {
   const pages: Record<string, string> = {};
+  const marketCompanies = getMarketCompanies(companies);
+  const companyArticleMap = companyArticles ?? new Map<string, Article[]>();
+  const companyJobsMap = companyJobs ?? new Map<string, CompanyJob[]>();
 
   const tagsWithArticles = new Set<string>();
   for (const a of allArticles) {
@@ -373,9 +582,9 @@ function generateHomepage(
   // which iterates `companies` to assemble its list. Counting all rows in
   // company_jobs includes orphan jobs whose company was soft-deleted, causing
   // the homepage to over-report.
-  const activeCompanyIds = new Set((companies ?? []).map(c => c.id));
-  const totalJobs = companyJobs
-    ? [...companyJobs.entries()].reduce(
+  const activeCompanyIds = new Set(marketCompanies.map(c => c.id));
+  const totalJobs = companyJobsMap
+    ? [...companyJobsMap.entries()].reduce(
         (sum, [companyId, jobs]) => sum + (activeCompanyIds.has(companyId) ? jobs.length : 0),
         0
       )
@@ -383,7 +592,7 @@ function generateHomepage(
   const heroHtml = `<div class="hero">
   <div class="container">
     <h1>AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring.</h1>
-    <p>Automatically curated and AI-scored from ${stats ? stats.sources : '50'}+ sources.</p>
+    <p>Automatically curated and AI-scored from news, company, research, and career sources.</p>
   </div>
 </div>`;
 
@@ -394,9 +603,11 @@ function generateHomepage(
   body += signalStrip({
     sources: stats ? stats.sources : 0,
     articles: stats ? stats.articles : 0,
-    companies: companies ? companies.length : 0,
+    companies: marketCompanies.length,
     jobs: totalJobs,
   });
+
+  body += renderMarketSignals(marketCompanies, companyArticleMap, companyJobsMap);
 
   // Featured section — 3-column grid on desktop
   const topFeatured = sortedFeatured.length > 0
@@ -426,14 +637,14 @@ function generateHomepage(
 
   // Panel 2: New roles posted this week
   const newRolesThisWeek: Array<CompanyJob & { companyName: string }> = [];
-  if (companyJobs && companyJobs.size > 0) {
-    for (const [companyId, jobs] of companyJobs.entries()) {
-      const company = companies?.find(c => c.id === companyId);
-      const companyName = company?.name ?? 'Unknown Company';
+  if (companyJobsMap.size > 0) {
+    for (const [companyId, jobs] of companyJobsMap.entries()) {
+      const company = marketCompanies.find(c => c.id === companyId);
+      if (!company) continue;
       for (const job of jobs) {
         const jobDate = job.postedAt || job.lastSeenAt;
         if (jobDate >= sevenDaysAgo) {
-          newRolesThisWeek.push({ ...job, companyName });
+          newRolesThisWeek.push({ ...job, companyName: company.name });
         }
       }
     }
@@ -504,8 +715,8 @@ function generateHomepage(
       body += `</div>\n`;
     } else {
       // Company spotlight instead (most covered overall)
-      if (companies && companies.length > 0) {
-        const topCompanies = [...companies]
+      if (marketCompanies.length > 0) {
+        const topCompanies = [...marketCompanies]
           .sort((a, b) => b.articleCount - a.articleCount)
           .slice(0, 4);
         if (topCompanies.length > 0) {
@@ -533,102 +744,6 @@ function generateHomepage(
     .slice(0, 5);
   if (automatedWorkArticles.length >= 2) {
     body += renderAutomatedWorkSection(automatedWorkArticles);
-  }
-
-  // Companies preview section — top tracked companies by article count
-  if (companies && companies.length > 0) {
-    const topCompanies = [...companies]
-      .filter(c => c.articleCount > 0)
-      .sort((a, b) => b.articleCount - a.articleCount)
-      .slice(0, 8);
-    
-    if (topCompanies.length > 0) {
-      body += `<div class="section-label"><a href="/companies" style="color:inherit;text-decoration:none;">Top Companies</a></div>\n`;
-      body += `<div class="companies-preview-grid">\n`;
-      for (const company of topCompanies) {
-        const href = `/company/${escapeHtml(company.id)}`;
-        const name = escapeHtml(company.name);
-        const category = company.category ? escapeHtml(company.category) : '';
-        const count = company.articleCount;
-        body += `<div class="company-preview-card">
-  <h3><a href="${href}">${name}</a></h3>
-  ${category ? `<div class="company-category">${category}</div>` : ''}
-  <div class="company-articles">${count} article${count !== 1 ? 's' : ''}</div>
-</div>\n`;
-      }
-      body += `</div>\n`;
-      body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>\n`;
-    }
-
-    // Emerging Companies section — recently added companies with few or no articles
-    const emergingCompanies = [...companies]
-      .filter(c => c.articleCount <= 2)
-      .sort((a, b) => {
-        // Sort by: first, companies with some coverage; second, by added date (newest first)
-        if (a.articleCount !== b.articleCount) {
-          return b.articleCount - a.articleCount;
-        }
-        const aDate = a.addedAt ? new Date(a.addedAt).getTime() : 0;
-        const bDate = b.addedAt ? new Date(b.addedAt).getTime() : 0;
-        return bDate - aDate;
-      })
-      .slice(0, 6);
-
-    if (emergingCompanies.length > 0) {
-      body += `<div class="section-label"><a href="/companies" style="color:inherit;text-decoration:none;">Emerging Companies</a></div>\n`;
-      body += `<div class="companies-preview-grid">\n`;
-      for (const company of emergingCompanies) {
-        const href = `/company/${escapeHtml(company.id)}`;
-        const name = escapeHtml(company.name);
-        const category = company.category ? escapeHtml(company.category) : '';
-        const count = company.articleCount;
-        const badgeLabel = count === 0 ? 'New' : `${count} article${count !== 1 ? 's' : ''}`;
-        body += `<div class="company-preview-card">
-  <h3><a href="${href}">${name}</a></h3>
-  ${category ? `<div class="company-category">${category}</div>` : ''}
-  <div class="company-articles">${badgeLabel}</div>
-</div>\n`;
-      }
-      body += `</div>\n`;
-      body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>\n`;
-    }
-  }
-
-  // Jobs preview section — latest open roles
-  if (companyJobs && companyJobs.size > 0) {
-    // Collect all jobs and sort by postedAt (most recent first)
-    const allJobs: Array<CompanyJob & { companyName: string }> = [];
-    for (const [companyId, jobs] of companyJobs.entries()) {
-      const company = companies?.find(c => c.id === companyId);
-      const companyName = company?.name ?? 'Unknown Company';
-      for (const job of jobs) {
-        allJobs.push({ ...job, companyName });
-      }
-    }
-    
-    // Sort by postedAt descending (most recent first), fallback to lastSeenAt
-    allJobs.sort((a, b) => {
-      const aDate = a.postedAt ? new Date(a.postedAt).getTime() : new Date(a.lastSeenAt).getTime();
-      const bDate = b.postedAt ? new Date(b.postedAt).getTime() : new Date(b.lastSeenAt).getTime();
-      return bDate - aDate;
-    });
-    
-    const previewJobs = allJobs.slice(0, 5);
-    if (previewJobs.length > 0) {
-      body += `<div class="section-label"><a href="/jobs" style="color:inherit;text-decoration:none;">Open Roles</a></div>\n`;
-      body += `<div class="jobs-preview-grid">\n`;
-      for (const job of previewJobs) {
-        const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
-        const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
-        body += `<div class="job-preview-card">
-  <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
-  <div class="job-company">${escapeHtml(job.companyName)}</div>
-  <div class="job-tags">${remoteBadge}${locationBadge}</div>
-</div>\n`;
-      }
-      body += `</div>\n`;
-      body += `<div class="view-all"><a href="/jobs">View all jobs &rarr;</a></div>\n`;
-    }
   }
 
   // 3C: By the numbers band — coverage breakdown + publishing cadence
@@ -1199,11 +1314,14 @@ export function generateAllPages(
   );
 
   const layoutOpts: Partial<LayoutOptions> = stats ? { stats } : {};
+  const displayCompanies = companies ? getMarketCompanies(companies) : undefined;
+  const articleMap = companyArticles ?? new Map<string, Article[]>();
+  const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
 
   // Set company name → id lookup for linking company tags in article cards
-  if (companies) {
+  if (displayCompanies) {
     const nameToId = new Map<string, string>();
-    for (const c of companies) {
+    for (const c of displayCompanies) {
       nameToId.set(c.name, c.id);
       for (const alias of c.aliases) {
         nameToId.set(alias, c.id);
@@ -1216,7 +1334,7 @@ export function generateAllPages(
 
   // Calculate total job pages for sitemap — only count jobs tied to active
   // tracked companies, matching the /jobs page render.
-  const activeCompanyIdsForSitemap = new Set((companies ?? []).map(c => c.id));
+  const activeCompanyIdsForSitemap = new Set((displayCompanies ?? []).map(c => c.id));
   let totalJobCount = 0;
   for (const [companyId, jobs] of jobsMap.entries()) {
     if (activeCompanyIdsForSitemap.has(companyId)) {
@@ -1226,37 +1344,36 @@ export function generateAllPages(
   const totalJobPages = Math.max(Math.ceil(totalJobCount / JOBS_PER_PAGE), 1);
 
   const pages: Record<string, string> = {
-    ...generateHomepage(featured, latest, articles, layoutOpts, companies, jobsMap, insights),
-    ...generateTagPages(articles, layoutOpts, companies),
+    ...generateHomepage(featured, latest, articles, layoutOpts, displayCompanies, articleMap, jobsMap, insights),
+    ...generateTagPages(articles, layoutOpts, displayCompanies),
     ...generateAboutPage(layoutOpts),
     ...generateFaqPage(layoutOpts),
     ...generateGuidePages(articles, layoutOpts),
     ...generateResourcesPage(insights ?? [], layoutOpts),
   };
 
-  if (companies && companies.length > 0) {
-    const articleMap = companyArticles ?? new Map<string, Article[]>();
-    const insightMap = companyInsights ?? new Map<string, CompanyInsight>();
-    Object.assign(pages, generateCompaniesPage(companies, articleMap, jobsMap, layoutOpts));
-    Object.assign(pages, generateCompanyDetailPages(companies, articleMap, insightMap, jobsMap, layoutOpts));
-    Object.assign(pages, generateCategoriesPage(companies, articleMap, layoutOpts));
-    Object.assign(pages, generateCategoryDetailPages(companies, articleMap, jobsMap, articles, layoutOpts));
-    Object.assign(pages, generateMapPage(companies, articleMap, layoutOpts));
-    Object.assign(pages, generateGuidesPages(companies, articleMap, layoutOpts));
+  if (displayCompanies && displayCompanies.length > 0) {
+    Object.assign(pages, generateCompaniesPage(displayCompanies, articleMap, jobsMap, layoutOpts));
+    Object.assign(pages, generateCompanyDetailPages(displayCompanies, articleMap, insightMap, jobsMap, layoutOpts));
+    Object.assign(pages, generateCategoriesPage(displayCompanies, articleMap, layoutOpts));
+    Object.assign(pages, generateCategoryDetailPages(displayCompanies, articleMap, jobsMap, articles, layoutOpts));
+    Object.assign(pages, generateMapPage(displayCompanies, articleMap, layoutOpts));
+    Object.assign(pages, generateGuidesPages(displayCompanies, articleMap, layoutOpts));
   }
-  Object.assign(pages, generateJobsPage(companies ?? [], jobsMap, layoutOpts));
+  Object.assign(pages, generateJobsPage(displayCompanies ?? [], jobsMap, layoutOpts));
 
   pages['/og.png'] = generateOgImagePng();
 
-  // Calculate total company pages (30 per page)
-  const totalCompanyPages = companies ? Math.ceil(companies.length / 30) : 1;
+  const totalCompanyPages = displayCompanies
+    ? Math.max(Math.ceil(displayCompanies.length / COMPANIES_PER_PAGE), 1)
+    : 1;
 
   pages['/sitemap.xml'] = generateSitemap(
     articles,
     effectiveTags,
     totalLatestPages,
     totalJobPages,
-    companies,
+    displayCompanies,
     totalCompanyPages
   );
 
@@ -2151,9 +2268,8 @@ function generateCompaniesPage(
       }
     });
 
-    // Paginate: 40 per page for tables to stay under 50KB
-    const companiesPerPage = 40;
-    const companyPages = paginate(sorted, companiesPerPage);
+    // Paginate for tables to stay under 50KB
+    const companyPages = paginate(sorted, COMPANIES_PER_PAGE);
     const totalPages = companyPages.length;
 
     const subNav = categoriesSubNav('companies');
@@ -3082,8 +3198,8 @@ function jobFilterNav(
 ): string {
   let html = `<nav class="job-filters">\n`;
 
-  // All Jobs / Remote buttons
-  html += `  <a href="/jobs" class="job-filter-btn${activeFilter === '' ? ' active' : ''}">All Jobs</a>\n`;
+  // All roles / Remote buttons
+  html += `  <a href="/jobs" class="job-filter-btn${activeFilter === '' ? ' active' : ''}">All Roles</a>\n`;
   if (hasRemote) {
     html += `  <a href="/jobs/remote" class="job-filter-btn${activeFilter === 'remote' ? ' active' : ''}">Remote</a>\n`;
   }
@@ -3110,6 +3226,28 @@ function jobFilterNav(
   return html;
 }
 
+function classifyJobFocus(job: Pick<CompanyJob, 'title' | 'department'>): string {
+  const text = `${job.title} ${job.department ?? ''}`.toLowerCase();
+
+  if (/\b(accounting|accountant|controller|revenue accounting|billing|ledger|treasury|tax|audit|fp&a|financial analyst|finance ops|payroll)\b/.test(text)) {
+    return 'Accounting/finance';
+  }
+  if (/\b(implementation|onboarding|customer success|solutions?|consultant|support|professional services)\b/.test(text)) {
+    return 'Implementation/customer';
+  }
+  if (/\b(ai|machine learning|ml\b|data|analytics|automation|business intelligence|bi\b)\b/.test(text)) {
+    return 'AI/data';
+  }
+  if (/\b(engineer|engineering|product|platform|infrastructure|integration|developer|software)\b/.test(text)) {
+    return 'Product/engineering';
+  }
+  if (/\b(sales|account executive|marketing|growth|partnership|business development|revenue operations)\b/.test(text)) {
+    return 'Go-to-market';
+  }
+
+  return 'Company role';
+}
+
 /** Render job cards as a flat chronological list (most recent first). */
 function renderJobCards(jobs: EnrichedJob[]): string {
   if (jobs.length === 0) {
@@ -3121,11 +3259,12 @@ function renderJobCards(jobs: EnrichedJob[]): string {
     const remoteBadge = job.isRemote ? `<span class="job-tag remote">Remote</span>` : '';
     const locationBadge = job.location ? `<span class="job-tag">${escapeHtml(job.location)}</span>` : '';
     const deptBadge = job.department ? `<span class="job-tag">${escapeHtml(job.department)}</span>` : '';
+    const focusBadge = `<span class="job-tag focus">${escapeHtml(classifyJobFocus(job))}</span>`;
 
     body += `<div class="job-card">
   <h3><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></h3>
   <div class="job-company"><a href="/company/${escapeHtml(job.companyId)}">${escapeHtml(job.companyName)}</a></div>
-  <div class="job-tags">${remoteBadge}${locationBadge}${deptBadge}</div>
+  <div class="job-tags">${focusBadge}${remoteBadge}${locationBadge}${deptBadge}</div>
 </div>\n`;
   }
   body += `</div>\n`;
@@ -3142,12 +3281,12 @@ function renderJobsTable(jobs: EnrichedJob[]): string {
   for (const job of jobs) {
     const postedDate = job.postedAt ? new Date(job.postedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
     const location = job.location ? escapeHtml(job.location) : (job.isRemote ? 'Remote' : 'N/A');
-    const dept = job.department ? escapeHtml(job.department) : 'Other';
+    const focus = classifyJobFocus(job);
 
     tableBody += `<tr>
     <td class="table-title"><a href="${escapeHtml(job.url)}" target="_blank" rel="noopener">${escapeHtml(job.title)}</a></td>
     <td class="table-company"><a href="/company/${escapeHtml(job.companyId)}">${escapeHtml(job.companyName)}</a></td>
-    <td class="table-dept">${dept}</td>
+    <td class="table-dept">${escapeHtml(focus)}</td>
     <td class="table-location">${location}</td>
     <td class="table-date">${postedDate}</td>
   </tr>\n`;
@@ -3159,7 +3298,7 @@ function renderJobsTable(jobs: EnrichedJob[]): string {
       <tr>
         <th>Job Title</th>
         <th>Company</th>
-        <th>Department</th>
+        <th>Focus</th>
         <th>Location</th>
         <th>Posted</th>
       </tr>
@@ -3247,9 +3386,8 @@ function generateJobsPage(
       }
     });
 
-    // Paginate: 40 per page for tables to stay under 50KB
-    const jobsPerPage = 40;
-    const jobPages = paginate(sorted, jobsPerPage);
+    // Paginate for tables to stay under 50KB
+    const jobPages = paginate(sorted, JOBS_PER_PAGE);
     const totalPages = jobPages.length;
 
     // Sort link headers
@@ -3271,13 +3409,13 @@ function generateJobsPage(
       const pageJobs = jobPages[i];
 
       const body = allJobs.length === 0
-        ? `<h2 class="section-heading">Open Roles at Tracked Companies</h2>
+        ? `<h2 class="section-heading">Jobs at AI Accounting Companies</h2>
 ${filterNav}
 <p style="color:var(--text-tertiary);padding:2rem 0;text-align:center;">No job listings yet. Check back soon.</p>`
         : `
-<h2 class="section-heading">Open Roles at Tracked Companies</h2>
+<h2 class="section-heading">Jobs at AI Accounting Companies</h2>
 <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:0.5rem;line-height:1.6;">
-  ${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} companies we track for agentic AI in accounting. Roles span every function — not every listing is an AI/accounting role. ${sortType !== 'posted' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
+  ${allJobs.length} open role${allJobs.length !== 1 ? 's' : ''} across ${companiesWithJobs.length} AI-accounting companies. The focus column separates accounting, implementation, AI/data, product, and general company roles. ${sortType !== 'posted' ? `Sorted by <strong>${sortLinks.find(l => l.type === sortType)?.label}</strong>.` : ''}
 </p>
 ${filterNav}
 ${sortLinksHtml}
@@ -3287,7 +3425,7 @@ ${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${
       const jobsJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        'name': 'Open Roles at Tracked Companies',
+        'name': 'Jobs at AI Accounting Companies',
         'url': `${SITE_URL}/jobs`,
         'description': 'Open roles at companies building agentic AI for accounting, audit, tax, and bookkeeping.',
         'itemListElement': pageJobs.slice(0, 30).map((j, idx) => ({
@@ -3329,11 +3467,11 @@ ${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${
 
       const pathSuffix = sortType === 'posted' ? '' : `/by-${sortType}`;
       const path = pageNum === 1 ? `/jobs${pathSuffix}` : `/jobs${pathSuffix}/page/${pageNum}`;
-      const title = pageNum === 1 ? 'Jobs' : `Jobs — Page ${pageNum}`;
+      const title = pageNum === 1 ? 'Jobs at AI Accounting Companies' : `Jobs at AI Accounting Companies — Page ${pageNum}`;
 
       pages[path] = layout(bodyWithSchema, {
         title,
-        description: 'Open roles at the companies we track for agentic AI in accounting. Not every listing is an AI/accounting role.',
+        description: 'Open roles at companies building agentic AI for accounting, with role-focus labels for accounting, implementation, AI/data, product, and general company roles.',
         path,
         activeTab: 'jobs',
         jsonLd: jobsJsonLdGraph,
@@ -3345,15 +3483,15 @@ ${pagination(pageNum, totalPages, sortType === 'posted' ? '/jobs' : `/jobs/by-${
   // Remote filter page (card view)
   if (hasRemote) {
     const remoteJobs = allJobs.filter(j => j.isRemote);
-    let remoteBody = `<h2 class="section-heading">Remote Roles in AI Accounting</h2>\n`;
-    remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} available.</p>\n`;
+    let remoteBody = `<h2 class="section-heading">Remote Jobs at AI Accounting Companies</h2>\n`;
+    remoteBody += `<p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;line-height:1.6;">${remoteJobs.length} remote role${remoteJobs.length !== 1 ? 's' : ''} at companies building AI-powered accounting products and services.</p>\n`;
     remoteBody += jobFilterNav(departments, locations, companyFilterList, 'remote', hasRemote);
     remoteBody += renderJobCards(remoteJobs);
     // Add JobPosting schema for remote jobs
     remoteBody += renderJobPostingsJsonLd(remoteJobs, companyMap);
 
     pages['/jobs/remote'] = layout(remoteBody, {
-      title: 'Remote Jobs',
+      title: 'Remote Jobs at AI Accounting Companies',
       description: 'Remote roles at AI accounting companies.',
       path: '/jobs/remote',
       activeTab: 'jobs',
