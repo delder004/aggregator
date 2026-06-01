@@ -40,15 +40,15 @@ import { generateRssFeed } from '../../renderer/rss';
 import { MIN_PUBLISH_SCORE } from '../../scoring/classifier';
 import type { StepOutcome } from '../step-runner';
 
-// v4: bumped 2026-05-31. Root cause fixed: Promise.all was used for KV puts,
-// so any silent KV put failure (promise resolves but write doesn't persist)
-// caused the hash store to record the new hash anyway — permanently skipping
-// that page on all future crons (hash matched, so never re-queued). Fixed by
-// switching to Promise.allSettled per-path: only successful puts advance the
-// stored hash; failed puts preserve the old hash so the next cron retries.
-// The v4 empty store forces a full re-render to recover pages stuck since the
-// v2/v3 failures (notably /map, /companies, /company/* from April-May 2026).
-const PAGE_HASHES_KEY = '__page_hashes_v4__';
+// v5: bumped 2026-06-01. Bug in v4: Promise.allSettled only catches *rejected*
+// puts, not "silent" failures where KV.put() resolves but the write doesn't
+// persist. Silent failures still record the new hash, permanently locking stale
+// pages. Fix: on recovery runs (empty hash store), read back every written page
+// and compare its SHA-256 hash to the expected hash. Any mismatch is a silent
+// failure — removed from successfulPaths so the old hash is preserved and the
+// next cron retries. The v5 empty store forces a full re-render to recover pages
+// still stuck from v4 failures (/map, /companies, /company/*).
+const PAGE_HASHES_KEY = '__page_hashes_v5__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
@@ -232,6 +232,53 @@ export async function renderPagesStep(
             (results[j] as PromiseRejectedResult).reason
           );
         }
+      }
+    }
+
+    // On recovery runs (empty hash store — triggered by a PAGE_HASHES_KEY bump),
+    // verify that all puts actually persisted. KV.put() can "silently fail":
+    // the promise resolves but the write doesn't persist. Without this check,
+    // the hash store records the new hash and permanently skips the stale page.
+    // Verification: read back each written page and compare its SHA-256 to the
+    // expected hash. Mismatches are removed from successfulPaths so the OLD hash
+    // is preserved in the store — the next cron will retry those pages.
+    const isRecoveryRun = Object.keys(oldHashes).length === 0;
+    if (isRecoveryRun && successfulPaths.size > 0) {
+      let silentFails = 0;
+      const pathsToVerify = [...successfulPaths];
+      for (let i = 0; i < pathsToVerify.length; i += 10) {
+        const verifyBatch = pathsToVerify.slice(i, i + 10);
+        const verifyResults = await Promise.allSettled(
+          verifyBatch.map(async (path) => {
+            const content = await env.KV.get(path, 'text');
+            if (!content) return { path, ok: false };
+            const buf = await crypto.subtle.digest(
+              'SHA-256',
+              new TextEncoder().encode(content)
+            );
+            const hash = [...new Uint8Array(buf)]
+              .map((b) => b.toString(16).padStart(2, '0'))
+              .join('');
+            return { path, ok: hash === newHashes[path] };
+          })
+        );
+        for (const r of verifyResults) {
+          if (r.status === 'fulfilled' && !r.value.ok) {
+            successfulPaths.delete(r.value.path);
+            silentFails++;
+          }
+        }
+      }
+      if (silentFails > 0) {
+        console.warn(
+          `[render-pages] ${silentFails}/${pathsToVerify.length} silent KV write` +
+            ` failures on recovery run; affected pages will retry next cron.`
+        );
+      } else {
+        console.log(
+          `[render-pages] Recovery verification: all ${pathsToVerify.length}` +
+            ` pages confirmed written to KV.`
+        );
       }
     }
 
