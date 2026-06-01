@@ -1,4 +1,4 @@
--- Migration 042: Fix wrong jobs_board_token for Lovable and Parallel
+-- Migration 043: Fix wrong jobs_board_token for Lovable and Parallel
 --
 -- Two auto-discovered companies were assigned jobs_board_token values that
 -- accidentally match an unrelated company's Greenhouse account:
