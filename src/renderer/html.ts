@@ -249,6 +249,87 @@ a.logo{text-decoration:none;}
   letter-spacing:0.05em;
 }
 
+/* 3C: By the numbers band */
+.by-numbers{
+  background:var(--bg-secondary);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:1.5rem 0;
+  margin:2.5rem 0 0;
+}
+.by-numbers-inner{
+  display:grid;
+  grid-template-columns:1.6fr 1fr;
+  gap:1rem 2.5rem;
+  align-items:start;
+}
+.bn-col-title{
+  font-size:0.68rem;
+  font-weight:700;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+  margin-bottom:0.75rem;
+}
+.bn-bar-row{
+  display:flex;
+  gap:0.5rem;
+  align-items:center;
+  margin-bottom:0.4rem;
+}
+.bn-bar-label{
+  font-size:0.76rem;
+  color:var(--text-secondary);
+  min-width:5.5rem;
+  max-width:5.5rem;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex-shrink:0;
+}
+.bn-bar-track{
+  flex:1;
+  height:3px;
+  background:var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  min-width:0;
+}
+.bn-bar-fill{
+  height:100%;
+  background:var(--accent);
+  border-radius:2px;
+  opacity:0.85;
+}
+.bn-bar-count{
+  font-size:0.7rem;
+  color:var(--text-tertiary);
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  min-width:2rem;
+  flex-shrink:0;
+}
+.bn-stats{
+  display:flex;
+  flex-direction:column;
+  gap:1rem;
+}
+.bn-stat-value{
+  font-size:1.3rem;
+  font-weight:700;
+  color:var(--text);
+  font-variant-numeric:tabular-nums;
+  font-family:ui-serif,Georgia,serif;
+  line-height:1;
+  margin-bottom:0.1rem;
+}
+.bn-stat-label{
+  font-size:0.68rem;
+  color:var(--text-tertiary);
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+}
+
 /* Nav tags */
 .tag-nav{
   display:flex;
@@ -1344,6 +1425,7 @@ a.source-name:hover{text-decoration:underline;}
   .signal-strip .container{gap:1rem;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
   .signal-value{font-size:1.5rem;}
   .signal-label{font-size:0.7rem;}
+  .by-numbers-inner{grid-template-columns:1fr;}
   .footer-bottom{flex-direction:column;text-align:center;}
   .job-dropdown .dropdown-menu{min-width:9rem;max-width:calc(100vw - 2rem);}
 }

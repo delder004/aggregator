@@ -280,6 +280,71 @@ function renderAutomatedWorkSection(articles: Article[]): string {
 }
 
 // ---------------------------------------------------------------------------
+// 3C: By the numbers band
+// ---------------------------------------------------------------------------
+
+function renderByNumbers(
+  allArticles: Article[],
+  featured: Article[],
+  stats?: { sources: number; crawled: number; articles: number; lastUpdated: string }
+): string {
+  const TAG_LABELS: Array<{ tag: string; label: string }> = [
+    { tag: 'audit', label: 'Audit' },
+    { tag: 'tax', label: 'Tax' },
+    { tag: 'automation', label: 'Automation' },
+    { tag: 'bookkeeping', label: 'Bookkeeping' },
+    { tag: 'agentic-ai', label: 'Agentic AI' },
+    { tag: 'compliance', label: 'Compliance' },
+    { tag: 'research', label: 'Research' },
+    { tag: 'startup', label: 'Startups' },
+  ];
+
+  const tagCounts = TAG_LABELS
+    .map(({ tag, label }) => ({
+      label,
+      count: allArticles.filter(a => a.tags.includes(tag)).length,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  const maxCount = Math.max(...tagCounts.map(t => t.count), 1);
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const recentCount = allArticles.filter(a => a.publishedAt >= thirtyDaysAgo).length;
+  const avgPerDay = (recentCount / 30).toFixed(1);
+
+  const featuredPct = allArticles.length > 0
+    ? Math.round((featured.length / allArticles.length) * 100)
+    : 0;
+
+  let html = `<div class="by-numbers">\n<div class="container"><div class="by-numbers-inner">\n`;
+
+  // Left column: coverage bars
+  html += `<div>\n<div class="bn-col-title">Coverage breakdown</div>\n`;
+  for (const { label, count } of tagCounts) {
+    const pct = Math.round((count / maxCount) * 100);
+    html += `<div class="bn-bar-row">\n`;
+    html += `  <span class="bn-bar-label">${escapeHtml(label)}</span>\n`;
+    html += `  <div class="bn-bar-track"><div class="bn-bar-fill" style="width:${pct}%"></div></div>\n`;
+    html += `  <span class="bn-bar-count">${count}</span>\n`;
+    html += `</div>\n`;
+  }
+  html += `</div>\n`;
+
+  // Right column: publishing cadence stats
+  html += `<div class="bn-stats">\n<div class="bn-col-title">Publishing stats</div>\n`;
+  html += `<div><div class="bn-stat-value">${escapeHtml(avgPerDay)}</div><div class="bn-stat-label">Articles / day (30-day avg)</div></div>\n`;
+  html += `<div><div class="bn-stat-value">${featuredPct}%</div><div class="bn-stat-label">Featured (score 70+)</div></div>\n`;
+  if (stats) {
+    html += `<div><div class="bn-stat-value">${stats.crawled.toLocaleString()}+</div><div class="bn-stat-label">Articles crawled</div></div>\n`;
+  }
+  html += `</div>\n`;
+
+  html += `</div></div>\n</div>\n`;
+  return html;
+}
+
+// ---------------------------------------------------------------------------
 // Homepage
 // ---------------------------------------------------------------------------
 
@@ -565,6 +630,9 @@ function generateHomepage(
       body += `<div class="view-all"><a href="/jobs">View all jobs &rarr;</a></div>\n`;
     }
   }
+
+  // 3C: By the numbers band — coverage breakdown + publishing cadence
+  body += renderByNumbers(allArticles, featured, stats);
 
   // Latest section — time-grouped with inline tag filter (demoted visual hierarchy)
   body += `<div class="latest-feed">\n`;
