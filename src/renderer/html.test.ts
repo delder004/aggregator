@@ -1,5 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { cleanMalformedTitle, escapeHtml } from './html';
+import { cleanMalformedTitle, escapeHtml, layout } from './html';
+
+describe('header search', () => {
+  it('renders a JS-free GET form targeting /search', () => {
+    const html = layout('<p>hi</p>');
+    expect(html).toContain('class="header-search"');
+    expect(html).toContain('method="GET"');
+    expect(html).toContain('action="/search"');
+    expect(html).toContain('name="q"');
+  });
+
+  it('pre-fills and escapes the current query', () => {
+    const html = layout('<p>hi</p>', { searchQuery: '"tax" & <ai>' });
+    expect(html).toContain('value="&quot;tax&quot; &amp; &lt;ai&gt;"');
+    expect(html).not.toContain('value=""tax"');
+  });
+
+  it('leaves the search box empty when no query is given', () => {
+    const html = layout('<p>hi</p>');
+    expect(html).toContain('name="q" value=""');
+  });
+});
 
 describe('cleanMalformedTitle', () => {
   it('should remove "ARTICLE N-MINUTE READ" prefix', () => {

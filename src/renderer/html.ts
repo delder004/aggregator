@@ -164,6 +164,51 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 }
 .header-nav a:hover{color:var(--text);background:var(--border);text-decoration:none;}
 .header-nav a.active{color:var(--accent);background:var(--tag-bg);}
+.header-search{
+  display:flex;
+  align-items:center;
+  gap:0;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--card-bg,#fff);
+  overflow:hidden;
+}
+.header-search input{
+  border:none;
+  background:transparent;
+  padding:0.4rem 0.6rem;
+  font-size:0.85rem;
+  color:var(--text);
+  width:9rem;
+  min-width:0;
+  outline:none;
+}
+.header-search input::placeholder{color:var(--text-secondary);}
+.header-search button{
+  border:none;
+  background:transparent;
+  color:var(--text-secondary);
+  padding:0.4rem 0.55rem;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+}
+.header-search button:hover{color:var(--accent);}
+.header-search:focus-within{border-color:var(--accent);}
+.search-page-form{display:flex;gap:0.5rem;margin:0 0 1.5rem;}
+.search-page-form input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-size:1rem;background:var(--card-bg,#fff);color:var(--text);}
+.search-page-form input:focus{outline:none;border-color:var(--accent);}
+.search-page-form button{border:none;border-radius:8px;padding:0.6rem 1.2rem;font-size:0.95rem;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;}
+.search-summary{color:var(--text-secondary);font-size:0.9rem;margin:0 0 1rem;}
+.search-empty{color:var(--text-secondary);padding:1rem 0;}
+.search-company-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.6rem;margin-bottom:1rem;}
+.search-company{display:block;padding:0.7rem 0.9rem;border:1px solid var(--border);border-radius:8px;text-decoration:none;}
+.search-company:hover{border-color:var(--accent);text-decoration:none;}
+.search-company-name{font-weight:600;color:var(--accent);}
+.search-company-cat{font-size:0.8rem;color:var(--text-secondary);margin-top:0.2rem;}
+.search-job-list{list-style:none;padding:0;margin:0 0 1rem;}
+.search-job{padding:0.55rem 0;border-bottom:1px solid var(--border);font-size:0.92rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;}
+.search-job-company{color:var(--text-secondary);font-size:0.85rem;}
 a.logo{text-decoration:none;}
 .logo{
   display:flex;
@@ -1413,11 +1458,13 @@ a.source-name:hover{text-decoration:underline;}
   .footer-col a{padding:0.45rem 0;}
   .pagination{gap:0.25rem;flex-wrap:wrap;}
   .pagination a,.pagination span{min-width:2.4rem;height:2.4rem;padding:0 0.4rem;}
-  .header-row{gap:0.5rem;}
+  .header-row{gap:0.5rem;flex-wrap:wrap;}
   .logo{width:28px;height:28px;border-radius:6px;}
   .site-brand{display:none;}
-  .header-nav{gap:0.1rem;}
+  .header-nav{gap:0.1rem;margin-left:auto;}
   .header-nav a{font-size:0.78rem;padding:0.3rem 0.55rem;}
+  .header-search{flex-basis:100%;order:3;}
+  .header-search input{width:100%;flex:1;}
   .site-header{padding:0.65rem 0;}
   .hero{padding:1.5rem 0;}
   .hero h1{font-size:1.25rem;line-height:1.2;margin-bottom:0.5rem;}
@@ -1707,6 +1754,11 @@ function logoSvg(): string {
   <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
   <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
 </svg>`;
+}
+
+/** Magnifying-glass icon for the header search button. */
+function searchIconSvg(): string {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 }
 
 /** Favicon SVG — 32x32 with blue background and white "A" logo. */
@@ -2087,6 +2139,8 @@ export interface LayoutOptions {
   narrowContainer?: boolean;
   noindex?: boolean;
   jsonLd?: Record<string, unknown>;
+  /** Current search term — pre-fills the header search box on /search. */
+  searchQuery?: string;
 }
 
 /**
@@ -2120,6 +2174,12 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const headerNavHtml = `<nav class="header-nav" aria-label="Primary">${tabs.map(t =>
     `<a href="${t.href}"${t.key === activeTab ? ' class="active" aria-current="page"' : ''}>${t.label}</a>`
   ).join('')}</nav>`;
+
+  // Pure-HTML GET form — submitting navigates to /search?q=... with no JS.
+  const headerSearchHtml = `<form class="header-search" method="GET" action="/search" role="search">
+    <input type="search" name="q" value="${escapeHtml(options.searchQuery ?? '')}" placeholder="Search…" aria-label="Search articles, companies, and jobs" maxlength="120" />
+    <button type="submit" aria-label="Search">${searchIconSvg()}</button>
+  </form>`;
 
   const statsLine = stats
     ? `<div class="footer-stats">Tracking ${stats.sources} sources &middot; ${stats.crawled.toLocaleString()}+ articles crawled &middot; ${stats.articles.toLocaleString()}+ articles published &middot; Updated ${stats.lastUpdated}</div>`
@@ -2168,6 +2228,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
           <p class="site-tagline">${escapeHtml(SITE_DESCRIPTION)}</p>
         </div>
         ${headerNavHtml}
+        ${headerSearchHtml}
       </div>
     </div>
   </header>

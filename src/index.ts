@@ -6,6 +6,7 @@ import {
   getPipelineRunSteps,
   getRelatedArticles,
   listPipelineRuns,
+  searchSite,
 } from './db/queries';
 import { layout, articleCard, escapeHtml, readTime } from './renderer/html';
 import { addSubscriberToButtondown } from './newsletter/buttondown';
@@ -823,6 +824,85 @@ export default {
       } catch {
         return Response.redirect(`${url.origin}/?subscribed=error`, 303);
       }
+    }
+
+    // Site search — dynamic, rendered at request time (the query is unknown at
+    // cron time). Pure-HTML GET form in the header drives this; no client JS.
+    // noindex'd to keep thin search-results pages out of Google's index.
+    if (path === '/search') {
+      const rawQuery = (url.searchParams.get('q') || '').slice(0, 120).trim();
+
+      // Engagement page view (async, never blocks) — tells us if search is used.
+      recordPageView(request, env, ctx, path);
+
+      let body = `<div class="search-page">`;
+      body += `<h1 class="section-heading">Search</h1>`;
+      body += `<form class="search-page-form" method="GET" action="/search" role="search">
+        <input type="search" name="q" value="${escapeHtml(rawQuery)}" placeholder="Search articles, companies, and jobs…" aria-label="Search" maxlength="120" autofocus />
+        <button type="submit">Search</button>
+      </form>`;
+
+      if (!rawQuery) {
+        body += `<p class="search-empty">Enter a keyword to search articles, companies, and jobs.</p>`;
+      } else {
+        const results = await searchSite(env.DB, rawQuery);
+        const total =
+          results.articles.length +
+          results.companies.length +
+          results.jobs.length;
+
+        if (total === 0) {
+          body += `<p class="search-empty">No results for &ldquo;${escapeHtml(rawQuery)}&rdquo;. Try a different keyword.</p>`;
+        } else {
+          body += `<p class="search-summary">${total} result${total === 1 ? '' : 's'} for &ldquo;${escapeHtml(rawQuery)}&rdquo;</p>`;
+
+          if (results.companies.length > 0) {
+            body += `<h2 class="section-heading">Companies</h2>`;
+            body += `<div class="search-company-list">`;
+            for (const c of results.companies) {
+              const cat = c.category
+                ? `<div class="search-company-cat">${escapeHtml(c.category)}</div>`
+                : '';
+              body += `<a class="search-company" href="/company/${escapeHtml(c.id)}"><div class="search-company-name">${escapeHtml(c.name)}</div>${cat}</a>`;
+            }
+            body += `</div>`;
+          }
+
+          if (results.jobs.length > 0) {
+            body += `<h2 class="section-heading">Jobs</h2>`;
+            body += `<ul class="search-job-list">`;
+            for (const j of results.jobs) {
+              const badges = [
+                j.isRemote ? `<span class="job-tag remote">Remote</span>` : '',
+                j.location ? `<span class="job-tag">${escapeHtml(j.location)}</span>` : '',
+              ].join('');
+              body += `<li class="search-job"><a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a> <span class="search-job-company"><a href="/company/${escapeHtml(j.companyId)}">${escapeHtml(j.companyName)}</a></span> ${badges}</li>`;
+            }
+            body += `</ul>`;
+          }
+
+          if (results.articles.length > 0) {
+            body += `<h2 class="section-heading">Articles</h2>`;
+            body += results.articles.map((a) => articleCard(a)).join('\n');
+          }
+        }
+      }
+      body += `</div>`;
+
+      const html = layout(body, {
+        title: rawQuery ? `Search: ${rawQuery}` : 'Search',
+        description: 'Search articles, companies, and jobs across agentic AI in accounting.',
+        path: '/search',
+        noindex: true,
+        searchQuery: rawQuery,
+      });
+
+      return new Response(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
+      });
     }
 
     // Dynamic article detail page

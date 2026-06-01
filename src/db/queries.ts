@@ -59,6 +59,127 @@ export async function getPublishedArticles(
   return results.results.map(mapRowToArticle);
 }
 
+/** A company hit from site search — only the fields the results page renders. */
+export interface CompanySearchHit {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+}
+
+/** A job hit from site search, with its owning company's name resolved. */
+export interface JobSearchHit {
+  title: string;
+  companyId: string;
+  companyName: string;
+  location: string | null;
+  isRemote: boolean;
+  url: string;
+}
+
+export interface SiteSearchResults {
+  articles: Article[];
+  companies: CompanySearchHit[];
+  jobs: JobSearchHit[];
+}
+
+/**
+ * Full-corpus keyword search over published articles, tracked companies, and
+ * open jobs. Substring (`LIKE`) match — see docs/search-feature-exploration.md
+ * for why this (Option A) over FTS5 for now. Each result set is independently
+ * limited so one busy corpus can't crowd out the others.
+ */
+export async function searchSite(
+  db: D1Database,
+  term: string,
+  options: { articleLimit?: number; companyLimit?: number; jobLimit?: number } = {}
+): Promise<SiteSearchResults> {
+  const trimmed = term.trim();
+  if (!trimmed) return { articles: [], companies: [], jobs: [] };
+
+  const { articleLimit = 40, companyLimit = 20, jobLimit = 20 } = options;
+  const like = `%${escapeLike(trimmed)}%`;
+
+  // Articles: rank exact-ish title hits first, then by relevance/recency.
+  const articlesP = db
+    .prepare(
+      `SELECT * FROM articles
+       WHERE is_published = 1
+         AND relevance_score >= ?
+         AND datetime(published_at) <= datetime('now')
+         AND (title LIKE ?2 ESCAPE '\\'
+              OR headline LIKE ?2 ESCAPE '\\'
+              OR ai_summary LIKE ?2 ESCAPE '\\'
+              OR content_snippet LIKE ?2 ESCAPE '\\'
+              OR company_mentions LIKE ?2 ESCAPE '\\'
+              OR author LIKE ?2 ESCAPE '\\')
+       ORDER BY
+         (CASE WHEN title LIKE ?2 ESCAPE '\\'
+                 OR headline LIKE ?2 ESCAPE '\\' THEN 1 ELSE 0 END) DESC,
+         relevance_score DESC,
+         published_at DESC
+       LIMIT ?3`
+    )
+    .bind(MIN_PUBLISH_SCORE, like, articleLimit)
+    .all();
+
+  // Companies: only active, tracked companies.
+  const companiesP = db
+    .prepare(
+      `SELECT id, name, description, category FROM companies
+       WHERE is_active = 1
+         AND (name LIKE ?1 ESCAPE '\\'
+              OR aliases LIKE ?1 ESCAPE '\\'
+              OR description LIKE ?1 ESCAPE '\\'
+              OR category LIKE ?1 ESCAPE '\\')
+       ORDER BY article_count DESC, name ASC
+       LIMIT ?2`
+    )
+    .bind(like, companyLimit)
+    .all();
+
+  // Jobs: join the company so we can show & link the employer.
+  const jobsP = db
+    .prepare(
+      `SELECT j.title AS title, j.location AS location, j.is_remote AS is_remote,
+              j.url AS url, c.id AS company_id, c.name AS company_name
+       FROM company_jobs j
+       JOIN companies c ON c.id = j.company_id AND c.is_active = 1
+       WHERE j.title LIKE ?1 ESCAPE '\\'
+          OR j.location LIKE ?1 ESCAPE '\\'
+          OR j.department LIKE ?1 ESCAPE '\\'
+          OR c.name LIKE ?1 ESCAPE '\\'
+       ORDER BY j.last_seen_at DESC
+       LIMIT ?2`
+    )
+    .bind(like, jobLimit)
+    .all();
+
+  const [articlesRes, companiesRes, jobsRes] = await Promise.all([
+    articlesP,
+    companiesP,
+    jobsP,
+  ]);
+
+  return {
+    articles: articlesRes.results.map(mapRowToArticle),
+    companies: companiesRes.results.map((row) => ({
+      id: row.id as string,
+      name: row.name as string,
+      description: (row.description as string) || null,
+      category: (row.category as string) || null,
+    })),
+    jobs: jobsRes.results.map((row) => ({
+      title: row.title as string,
+      companyId: row.company_id as string,
+      companyName: row.company_name as string,
+      location: (row.location as string) || null,
+      isRemote: row.is_remote === 1,
+      url: row.url as string,
+    })),
+  };
+}
+
 export async function getArticlesByTag(
   db: D1Database,
   tag: string,
