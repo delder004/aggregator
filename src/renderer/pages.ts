@@ -752,10 +752,31 @@ function generateTagPages(
       ],
     };
 
-    // Combine CollectionPage and BreadcrumbList into a graph
+    // ItemList schema: enables Google article carousel rich results.
+    // Each ListItem points to an article URL that already carries NewsArticle markup,
+    // satisfying Google's prerequisite for carousel eligibility.
+    const topArticles = filtered.slice(0, 10);
+    const tagItemList = topArticles.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          'name': pageTitle,
+          'url': `${SITE_URL}${basePath}`,
+          'itemListElement': topArticles.map((a, idx) => ({
+            '@type': 'ListItem',
+            'position': idx + 1,
+            'url': `${SITE_URL}/article/${a.id}`,
+            'name': a.headline || a.title,
+          })),
+        }
+      : null;
+
+    // Combine CollectionPage, BreadcrumbList, and ItemList into a graph
     const tagJsonLdGraph = {
       '@context': 'https://schema.org',
-      '@graph': [tagJsonLd, tagBreadcrumbList],
+      '@graph': tagItemList
+        ? [tagJsonLd, tagBreadcrumbList, tagItemList]
+        : [tagJsonLd, tagBreadcrumbList],
     };
 
     pages[basePath] = layout(body, {
