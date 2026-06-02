@@ -1615,6 +1615,16 @@ a.source-name:hover{text-decoration:underline;}
   .status-dot{animation:none;}
   *,.featured-card,.company-card,.resource-card,.job-card{transition:none !important;}
 }
+
+/* Dark mode element overrides — surfaces with hardcoded colors that don't inherit :root vars */
+@media (prefers-color-scheme: dark) {
+  .hero {
+    background: #060e1a;
+  }
+  .newsletter-box {
+    background: linear-gradient(135deg, #09090b 0%, #1a0a07 60%, #4a1d12 100%);
+  }
+}
 `;
 }
 
