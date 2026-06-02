@@ -108,15 +108,27 @@ describe('generateAllPages market positioning', () => {
       ])
     );
 
-    expect(pages['/']).toContain('Signal Ledger');
-    expect(pages['/']).toContain('Shipping');
-    expect(pages['/']).toContain('Automating');
-    expect(pages['/']).toContain('Coverage');
-    expect(pages['/']).toContain('Hiring');
-    expect(pages['/']).toContain('Basis automates month-end close');
-    expect(pages['/']).not.toContain('Work Being Automated');
-    expect(pages['/']).toContain('/company/basis');
-    expect(pages['/']).not.toContain('/company/reuters');
+    const homepage = pages['/'];
+
+    expect(homepage).toContain('Signal Ledger');
+    expect(homepage).toContain('Shipping');
+    expect(homepage).toContain('Automating');
+    expect(homepage).toContain('Coverage');
+    expect(homepage).toContain('Hiring');
+    expect(homepage).toContain('Basis automates month-end close');
+    expect(homepage).not.toContain('Work Being Automated');
+    expect(homepage).not.toContain('Most Covered');
+    expect(homepage).toContain('/company/basis');
+    expect(homepage).not.toContain('/company/reuters');
+
+    const ledgerIndex = homepage.indexOf('Signal Ledger');
+    const whatChangedIndex = homepage.indexOf('What Changed This Week');
+    const featuredIndex = homepage.indexOf('Featured Stories');
+    const byNumbersIndex = homepage.indexOf('Coverage breakdown');
+    expect(ledgerIndex).toBeGreaterThanOrEqual(0);
+    expect(whatChangedIndex).toBeGreaterThan(ledgerIndex);
+    expect(featuredIndex).toBeGreaterThan(whatChangedIndex);
+    expect(byNumbersIndex).toBeGreaterThan(featuredIndex);
 
     expect(pages['/companies']).toContain('Basis');
     expect(pages['/companies']).not.toContain('Reuters');

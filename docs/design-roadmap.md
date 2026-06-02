@@ -98,14 +98,14 @@ What the current renderer is aiming at, derived from `src/renderer/html.ts` and 
 - **Hero.** Thesis-led: "AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring." The supporting copy now names the source classes rather than leaning on a raw source count.
 - **Signal strip.** Four evidence metrics remain directly under hero: Sources, Articles, Companies, Open Roles.
 - **Signal Ledger.** New top-of-home data-product surface replacing the prior "Market Signals" cards and standalone "Work Being Automated" section. It groups current evidence into Shipping, Automating, Coverage, and Hiring columns using ledger-like rows.
-- **Featured Stories.** Magazine hierarchy is in place: one larger lead story plus supporting stories.
-- **What Changed This Week.** Still renders current-week signals such as new roles, trending articles, latest insights, or most-covered companies.
+- **What Changed This Week.** Still renders current-week signals such as new roles, trending articles, or latest insights.
+- **Featured Stories.** Magazine hierarchy is in place: one larger lead story plus supporting stories, now positioned after the weekly signal surface so editorial features do not interrupt the data-product argument.
 - **Automating.** The Signal Ledger includes a subdued-red Automating group for recent articles tagged with automated-work tags. This is the left half of the eventual dual narrative, now connected to the rest of the evidence surface.
 - **Data surfaces.** Companies and jobs have dense static table views with pre-rendered sort URLs; the homepage has a "By the numbers" band for corpus-level evidence.
 - **Latest feed.** Demoted into compact secondary hierarchy and still supports pagination and tag filtering.
 - **Mobile.** Phase 0 baseline remains the gate: grids collapse, tag/filter rows wrap or scroll intentionally, tables use overflow/hide rules, and no fixed-width surface should exceed iPhone width.
 
-**Current homepage argument:** Hero → Signal strip → Signal Ledger → Featured → What Changed → By the Numbers → Latest. The direction is no longer "add more homepage sections"; it is "turn the existing signals into one coherent ledger."
+**Current homepage argument:** Hero → Signal strip → Signal Ledger → What Changed → Featured → By the Numbers → Latest. The direction is no longer "add more homepage sections"; it is "turn the existing signals into one coherent ledger."
 
 ---
 
@@ -246,6 +246,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [date] 
 - [3C] — 2026-06-01 — "By the numbers" homepage band: two-column layout (coverage breakdown bars + publishing stats) positioned between Open Roles section and Latest feed. Left column renders top-6 article-tag counts (Audit, Tax, Automation, Bookkeeping, Agentic AI, Compliance) as horizontal progress bars (3px height, acid lime fill, relative width). Right column shows 3 publishing cadence stats (articles/day 30-day avg, featured %, articles crawled) in serif figure + uppercase label pairs. Uses `.by-numbers-inner` grid (`1.6fr 1fr`, collapses to `1fr` at ≤580px). Bar rows use flex with `min-width:5.5rem` label + `flex:1` track + `min-width:2rem` count — no fixed pixel widths beyond 360px. CSS-only; no client JS.
 - [7A] — 2026-06-01 — Signal Ledger first pass: rename the homepage "Market Signals" surface to "Signal Ledger" and restyle it from three separate cards into one bordered ledger grid with Shipping, Coverage, and Hiring columns. Existing data inputs are unchanged (company momentum, category coverage, hiring counts). Responsive rule collapses the ledger to one column at ≤900px with border separators; no client JS.
 - [7B] — 2026-06-01 — Fold automation into the Signal Ledger: move recent automated-work articles out of the standalone "Work Being Automated" homepage section and render them as an Automating ledger group when at least two matching articles exist. Keeps subdued red semantics via `--aw-*` variables, adds `.signal-ledger-card.automating`, and leaves the existing `/tag/automation` path as the view-all destination. Mobile behavior inherits the 7A one-column ledger collapse.
+- [7C] — 2026-06-01 — Homepage order audit after ledger consolidation: keep Signal Ledger as the first argument surface, move "What Changed This Week" ahead of Featured Stories, and remove the duplicated "Most Covered" company fallback from the weekly signal section so company/category evidence stays concentrated in the ledger. No CSS changes; mobile-clean behavior is inherited from existing responsive grids.
 
 ---
 

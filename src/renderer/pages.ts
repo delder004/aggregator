@@ -606,18 +606,11 @@ function generateHomepage(
 
   body += renderSignalLedger(marketCompanies, companyArticleMap, companyJobsMap, automatedWorkArticles);
 
-  // Featured section — 3-column grid on desktop
+  // Prepare featured early so the chronological feed can exclude those IDs,
+  // but render it after the weekly signals now that the ledger carries the top argument.
   const topFeatured = sortedFeatured.length > 0
     ? diversifyFeatured(sortedFeatured, 1, 6)
     : [];
-  if (topFeatured.length > 0) {
-    body += `<h2 class="section-heading">Featured Stories</h2>\n`;
-    body += `<div class="featured-grid">\n`;
-    body += topFeatured.map((a) => featuredCard(a)).join('\n');
-    body += `\n</div>\n`;
-  }
-
-  // Exclude featured articles from the chronological feed
   const featuredIds = new Set(topFeatured.map((a) => a.id));
   const filteredLatest = sortedLatest.filter((a) => !featuredIds.has(a.id));
   const latestPages = paginate(filteredLatest, ARTICLES_PER_PAGE);
@@ -652,8 +645,14 @@ function generateHomepage(
     });
   }
 
+  // Latest insights preview (if available and fresh — stale digests would
+  // contradict the hourly-freshness claim).
+  const freshLatestInsight = insights && insights.length > 0 && !isInsightStale(insights[0])
+    ? insights[0]
+    : null;
+
   // Show "What changed this week" section if we have any signals
-  const hasWhatChangedSignals = discussed.length > 0 || newRolesThisWeek.length > 0;
+  const hasWhatChangedSignals = discussed.length > 0 || newRolesThisWeek.length > 0 || Boolean(freshLatestInsight);
   if (hasWhatChangedSignals) {
     body += `<h2 class="section-heading">What Changed This Week</h2>\n`;
     body += `<div class="spotlight-grid">\n`;
@@ -696,12 +695,6 @@ function generateHomepage(
       body += `</div>\n`;
     }
 
-    // Latest insights preview (if available and fresh — stale digests would
-    // contradict the hourly-freshness claim, so they fall back to the company
-    // spotlight branch below)
-    const freshLatestInsight = insights && insights.length > 0 && !isInsightStale(insights[0])
-      ? insights[0]
-      : null;
     if (freshLatestInsight) {
       body += `<div class="spotlight-card">`;
       body += `<h3 class="spotlight-heading">Latest Insight</h3>`;
@@ -710,27 +703,16 @@ function generateHomepage(
         body += `<div class="view-all"><a href="/resources">View all digests &rarr;</a></div>`;
       }
       body += `</div>\n`;
-    } else {
-      // Company spotlight instead (most covered overall)
-      if (marketCompanies.length > 0) {
-        const topCompanies = [...marketCompanies]
-          .sort((a, b) => b.articleCount - a.articleCount)
-          .slice(0, 4);
-        if (topCompanies.length > 0) {
-          body += `<div class="spotlight-card">`;
-          body += `<h3 class="spotlight-heading">Most Covered</h3>`;
-          for (const c of topCompanies) {
-            body += `<div class="spotlight-item">
-  <a href="/company/${escapeHtml(c.id)}" class="spotlight-item-link">${escapeHtml(c.name)}</a>
-  <span class="spotlight-item-count">${c.articleCount} articles</span>
-</div>\n`;
-          }
-          body += `<div class="view-all"><a href="/companies">View all companies &rarr;</a></div>`;
-          body += `</div>\n`;
-        }
-      }
     }
     body += `</div>\n`;
+  }
+
+  // Featured section — editorial hierarchy follows the current-signal surfaces.
+  if (topFeatured.length > 0) {
+    body += `<h2 class="section-heading">Featured Stories</h2>\n`;
+    body += `<div class="featured-grid">\n`;
+    body += topFeatured.map((a) => featuredCard(a)).join('\n');
+    body += `\n</div>\n`;
   }
 
   // 3C: By the numbers band — coverage breakdown + publishing cadence
