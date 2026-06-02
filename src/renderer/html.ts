@@ -442,7 +442,7 @@ a.logo{text-decoration:none;}
   .section-heading{font-size:1.4rem;}
 }
 
-/* Latest feed — demoted secondary hierarchy (Phase 1F) */
+/* The Wire — demoted secondary evidence feed */
 .latest-feed{
   opacity:0.9;
   margin-top:3rem;
@@ -453,9 +453,20 @@ a.logo{text-decoration:none;}
   margin-top:0;
   padding-top:0;
 }
-/* Phase 5B — Latest feed compact secondary treatment */
+/* Phase 5B/7D — compact secondary wire treatment */
 .latest-feed .article-card{
   padding:0.6rem 0;
+}
+.latest-feed .article-card::before{
+  content:'';
+  flex:0 0 2px;
+  align-self:stretch;
+  background:var(--border);
+  border-radius:1px;
+  margin:0.1rem 0;
+}
+.latest-feed .article-card:hover::before{
+  background:var(--accent);
 }
 .latest-feed .article-thumb{
   width:64px;
