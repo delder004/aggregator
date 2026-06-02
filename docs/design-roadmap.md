@@ -74,7 +74,7 @@ Design implications:
 - Lead with ledger-like rows, compact evidence, and tabular comparison before cards.
 - Use cards only when they frame repeated editorial items; prefer rows, rules, bands, and tables for data-product surfaces.
 - Keep the current no-JS/static-HTML constraint. "Interactive" states remain pre-rendered sort/filter pages.
-- Keep the current acid-lime accent until a dedicated palette step ships. Coral remains a strong candidate for a future "audit stamp" accent, but it should be evaluated as a separate visual PR.
+- Coral is now the active "audit stamp" brand accent. Use it for product/editorial emphasis only; semantic red remains reserved for automation/displacement and semantic green/yellow remains reserved for score/status signals.
 - Keep the serif/sans pairing, but make dense data surfaces feel more utilitarian than the hero and feature surfaces.
 
 ---
@@ -93,7 +93,7 @@ Design implications:
 
 What the current renderer is aiming at, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
-- **Palette.** Zinc-style neutrals, deep navy hero (`#0a1929`), acid-lime accent (`#a4ff00`), and subdued semantic red for automation/displacement. Source badges are monochrome, so the accent budget is reserved for product signals.
+- **Palette.** Zinc-style neutrals, deep navy hero (`#0a1929`), copper-coral accent (`#ad4934` light, `#ff9a7a` dark), and subdued semantic red for automation/displacement. Source badges are monochrome, so the accent budget is reserved for product signals.
 - **Typography.** System sans for body/UI plus system serif (`ui-serif, Georgia, serif`) for major editorial headings. Headline hierarchy is stronger than the original site, but dense surfaces still use utilitarian sans.
 - **Hero.** Thesis-led: "AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring." The supporting copy now names the source classes rather than leaning on a raw source count.
 - **Signal strip.** Four evidence metrics remain directly under hero: Sources, Articles, Companies, Open Roles.
@@ -248,6 +248,7 @@ The agent appends here every time a step ships. Format: `- [step ID] — [date] 
 - [7B] — 2026-06-01 — Fold automation into the Signal Ledger: move recent automated-work articles out of the standalone "Work Being Automated" homepage section and render them as an Automating ledger group when at least two matching articles exist. Keeps subdued red semantics via `--aw-*` variables, adds `.signal-ledger-card.automating`, and leaves the existing `/tag/automation` path as the view-all destination. Mobile behavior inherits the 7A one-column ledger collapse.
 - [7C] — 2026-06-01 — Homepage order audit after ledger consolidation: keep Signal Ledger as the first argument surface, move "What Changed This Week" ahead of Featured Stories, and remove the duplicated "Most Covered" company fallback from the weekly signal section so company/category evidence stays concentrated in the ledger. No CSS changes; mobile-clean behavior is inherited from existing responsive grids.
 - [7D] — 2026-06-01 — Rename the secondary article feed from "Latest" to "The Wire" on the homepage, archive pagination pages, and tag article lists while preserving the existing `tagNav()` and `pagination()` calls. Adds a scoped `.latest-feed .article-card::before` rule for a thin row cue so the compact feed reads more like an evidence wire without changing layout structure.
+- [7E] — 2026-06-01 — Palette reconsideration: replace acid lime with a copper-coral "audit stamp" accent (`#ad4934` light, `#ff9a7a` dark) plus `--accent-ink` (`#fff` light, `#111` dark) for accent-backed controls. Contrast checks: `#ad4934` on white / white on `#ad4934` = 5.56:1; `#ad4934` on `#f0f0f2` = 4.88:1; `#ff9a7a` on `#09090b` = 9.62:1; `#111` on `#ff9a7a` = 9.13:1. Semantic automation red stays in `--aw-*` variables, and score/status green/yellow stays in `--score-*`.
 
 ---
 
