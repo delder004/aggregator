@@ -66,7 +66,7 @@ function job(overrides: Partial<CompanyJob> = {}): CompanyJob {
 }
 
 describe('generateAllPages market positioning', () => {
-  it('promotes market signals, filters non-market entities, and labels job focus', () => {
+  it('promotes the signal ledger, filters non-market entities, and labels job focus', () => {
     const basis = company({});
     const reuters = company({
       id: 'reuters',
@@ -76,7 +76,14 @@ describe('generateAllPages market positioning', () => {
       categorySlug: 'other',
       articleCount: 10,
     });
-    const basisArticle = article();
+    const basisArticle = article({ tags: ['audit', 'product-launch'] });
+    const automationArticle = article({
+      id: 'basis-close-automation',
+      url: 'https://example.com/basis-close-automation',
+      title: 'Basis automates month-end close',
+      headline: 'Basis automates month-end close',
+      tags: ['bookkeeping'],
+    });
     const reutersArticle = article({
       id: 'reuters-roundup',
       title: 'Reuters market roundup',
@@ -85,13 +92,13 @@ describe('generateAllPages market positioning', () => {
     });
 
     const pages = generateAllPages(
+      [basisArticle, automationArticle],
       [basisArticle],
-      [basisArticle],
-      ['automation', 'product-launch'],
-      { sources: 100, crawled: 500, articles: 1, lastUpdated: new Date().toISOString() },
+      ['audit', 'product-launch', 'bookkeeping'],
+      { sources: 100, crawled: 500, articles: 2, lastUpdated: new Date().toISOString() },
       [basis, reuters],
       new Map([
-        ['basis', [basisArticle]],
+        ['basis', [basisArticle, automationArticle]],
         ['reuters', [reutersArticle]],
       ]),
       undefined,
@@ -103,8 +110,11 @@ describe('generateAllPages market positioning', () => {
 
     expect(pages['/']).toContain('Signal Ledger');
     expect(pages['/']).toContain('Shipping');
+    expect(pages['/']).toContain('Automating');
     expect(pages['/']).toContain('Coverage');
     expect(pages['/']).toContain('Hiring');
+    expect(pages['/']).toContain('Basis automates month-end close');
+    expect(pages['/']).not.toContain('Work Being Automated');
     expect(pages['/']).toContain('/company/basis');
     expect(pages['/']).not.toContain('/company/reuters');
 

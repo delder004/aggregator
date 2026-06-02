@@ -292,38 +292,6 @@ function renderTimeGrouped(articles: Article[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Phase 4B: "Work being automated" section
-// ---------------------------------------------------------------------------
-
-function renderAutomatedWorkSection(articles: Article[]): string {
-  let html = `<div class="automated-work-section">\n`;
-  html += `<div class="aw-header">`;
-  html += `<h2 class="section-heading">Work Being Automated</h2>`;
-  html += `<span class="aw-indicator">&#x2193; AI is taking this over</span>`;
-  html += `</div>\n`;
-  html += `<div class="automated-work-list">\n`;
-  for (const a of articles) {
-    const href = `/article/${escapeHtml(a.id)}`;
-    const title = escapeHtml(a.headline || a.title);
-    const source = escapeHtml(a.sourceName);
-    const ago = timeAgo(a.publishedAt);
-    const automatedTag = a.tags.find(t => AUTOMATED_WORK_TAGS.has(t));
-    const tagLabel = automatedTag ? escapeHtml(automatedTag.replace(/-/g, ' ')) : '';
-    html += `<div class="automated-work-item">\n`;
-    if (tagLabel) {
-      html += `<span class="aw-tag-badge">${tagLabel}</span>\n`;
-    }
-    html += `<a href="${href}" class="aw-article-title">${title}</a>\n`;
-    html += `<div class="aw-meta">${source}${ago ? ` &middot; ${ago}` : ''}</div>\n`;
-    html += `</div>\n`;
-  }
-  html += `</div>\n`;
-  html += `<div class="view-all"><a href="/tag/automation">More automation coverage &rarr;</a></div>\n`;
-  html += `</div>\n`;
-  return html;
-}
-
-// ---------------------------------------------------------------------------
 // 3C: By the numbers band
 // ---------------------------------------------------------------------------
 
@@ -449,10 +417,9 @@ function getCompanyMomentum(
 function renderSignalLedger(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
-  companyJobs: Map<string, CompanyJob[]> | undefined
+  companyJobs: Map<string, CompanyJob[]> | undefined,
+  automatedWorkArticles: Article[] = []
 ): string {
-  if (companies.length === 0) return '';
-
   const momentum = getCompanyMomentum(companies, companyArticles, companyJobs).slice(0, 5);
   const hiring = [...companies]
     .map((company) => ({
@@ -486,8 +453,9 @@ function renderSignalLedger(
       return b.companies - a.companies;
     })
     .slice(0, 6);
+  const hasAutomating = automatedWorkArticles.length >= 2;
 
-  if (momentum.length === 0 && hiring.length === 0 && categoryStats.length === 0) {
+  if (momentum.length === 0 && !hasAutomating && hiring.length === 0 && categoryStats.length === 0) {
     return '';
   }
 
@@ -511,6 +479,30 @@ function renderSignalLedger(
     }
     html += `</div>\n`;
     html += `<div class="view-all"><a href="/companies/by-articles">More company activity &rarr;</a></div>\n`;
+    html += `</div>\n`;
+  }
+
+  if (hasAutomating) {
+    html += `<div class="signal-ledger-card automating">\n`;
+    html += `<h3>Automating</h3>\n`;
+    html += `<div class="signal-ledger-list">\n`;
+    for (const a of automatedWorkArticles) {
+      const href = `/article/${escapeHtml(a.id)}`;
+      const title = escapeHtml(a.headline || a.title);
+      const source = escapeHtml(a.sourceName);
+      const ago = timeAgo(a.publishedAt);
+      const automatedTag = a.tags.find(t => AUTOMATED_WORK_TAGS.has(t));
+      const tagLabel = automatedTag ? escapeHtml(automatedTag.replace(/-/g, ' ')) : '';
+      html += `<a class="signal-ledger-row" href="${href}">\n`;
+      if (tagLabel) {
+        html += `  <span class="aw-tag-badge">${tagLabel}</span>\n`;
+      }
+      html += `  <strong>${title}</strong>\n`;
+      html += `  <span>${source}${ago ? ` &middot; ${ago}` : ''}</span>\n`;
+      html += `</a>\n`;
+    }
+    html += `</div>\n`;
+    html += `<div class="view-all"><a href="/tag/automation">More automation coverage &rarr;</a></div>\n`;
     html += `</div>\n`;
   }
 
@@ -575,6 +567,11 @@ function generateHomepage(
 
   const sortedFeatured = sortByDate(featured);
   const sortedLatest = sortByDate(latest);
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const automatedWorkArticles = [...allArticles]
+    .filter(a => isAutomatedWorkArticle(a) && a.publishedAt >= fourteenDaysAgo)
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+    .slice(0, 5);
 
   // Hero section
   const stats = layoutOpts.stats;
@@ -607,7 +604,7 @@ function generateHomepage(
     jobs: totalJobs,
   });
 
-  body += renderSignalLedger(marketCompanies, companyArticleMap, companyJobsMap);
+  body += renderSignalLedger(marketCompanies, companyArticleMap, companyJobsMap, automatedWorkArticles);
 
   // Featured section — 3-column grid on desktop
   const topFeatured = sortedFeatured.length > 0
@@ -734,16 +731,6 @@ function generateHomepage(
       }
     }
     body += `</div>\n`;
-  }
-
-  // Phase 4B: "Work being automated" — articles tagged with automated-work tags from the last 14 days
-  const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-  const automatedWorkArticles = [...allArticles]
-    .filter(a => isAutomatedWorkArticle(a) && a.publishedAt >= fourteenDaysAgo)
-    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
-    .slice(0, 5);
-  if (automatedWorkArticles.length >= 2) {
-    body += renderAutomatedWorkSection(automatedWorkArticles);
   }
 
   // 3C: By the numbers band — coverage breakdown + publishing cadence
