@@ -1061,18 +1061,15 @@ export default {
         detailBody += `</div>`;
       }
 
+      // Use the article's own thumbnail if available; fall back to site OG image.
+      const articleImageUrl = article.imageUrl ?? 'https://agenticaiccounting.com/og.png';
       const articleNewsLd: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
         'headline': article.headline || article.title,
         'datePublished': article.publishedAt,
         'url': `https://agenticaiccounting.com/article/${articleId}`,
-        'image': {
-          '@type': 'ImageObject',
-          'url': 'https://agenticaiccounting.com/og.png',
-          'width': 1200,
-          'height': 630,
-        },
+        'image': { '@type': 'ImageObject', 'url': articleImageUrl },
         'publisher': {
           '@type': 'Organization',
           'name': 'Agentic AI Accounting',
@@ -1120,6 +1117,8 @@ export default {
         description: article.aiSummary || `Article about ${article.title}`,
         path: `/article/${articleId}`,
         jsonLd: articleJsonLd,
+        ogType: 'article',
+        ogImage: article.imageUrl ?? undefined,
       });
 
       return new Response(html, {

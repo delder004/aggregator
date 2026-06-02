@@ -2193,6 +2193,10 @@ export interface LayoutOptions {
   jsonLd?: Record<string, unknown>;
   /** Current search term — pre-fills the header search box on /search. */
   searchQuery?: string;
+  /** og:type override — defaults to "website". Use "article" for article detail pages. */
+  ogType?: string;
+  /** OG/Twitter image URL override — defaults to the site og.png. */
+  ogImage?: string;
 }
 
 /**
@@ -2216,6 +2220,8 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   const jsonLd = options.jsonLd;
   const heroHtml = options.heroHtml ?? '';
   const containerClass = options.narrowContainer ? 'container-narrow' : 'container';
+  const ogType = options.ogType ?? 'website';
+  const ogImageUrl = options.ogImage ? escapeHtml(options.ogImage) : `${SITE_URL}/og.png`;
 
   const tabs = [
     { label: 'News', href: '/', key: 'news' },
@@ -2249,7 +2255,7 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(faviconSvg())}" />
 
   <!-- Open Graph -->
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content="${ogType}" />
   <meta property="og:title" content="${pageTitle}" />
   <meta property="og:description" content="${description}" />
   <meta property="og:url" content="${canonical}" />
@@ -2259,13 +2265,10 @@ export function layout(body: string, options: LayoutOptions = {}): string {
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${pageTitle}" />
   <meta name="twitter:description" content="${description}" />
-  <meta name="twitter:image" content="${SITE_URL}/og.png" />
+  <meta name="twitter:image" content="${ogImageUrl}" />
 
   <!-- OG Image -->
-  <meta property="og:image" content="${SITE_URL}/og.png" />
-  <meta property="og:image:type" content="image/png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
+  <meta property="og:image" content="${ogImageUrl}" />
 
   ${jsonLd ? `<!-- Structured Data -->\n  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n` : ''}
   <style>${getCSS()}</style>
