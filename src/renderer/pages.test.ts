@@ -118,6 +118,8 @@ describe('generateAllPages market positioning', () => {
     expect(homepage).toContain('Basis automates month-end close');
     expect(homepage).not.toContain('Work Being Automated');
     expect(homepage).not.toContain('Most Covered');
+    expect(homepage).toContain('<div class="section-label">The Wire</div>');
+    expect(homepage).not.toContain('<div class="section-label">Latest</div>');
     expect(homepage).toContain('/company/basis');
     expect(homepage).not.toContain('/company/reuters');
 
@@ -129,6 +131,8 @@ describe('generateAllPages market positioning', () => {
     expect(whatChangedIndex).toBeGreaterThan(ledgerIndex);
     expect(featuredIndex).toBeGreaterThan(whatChangedIndex);
     expect(byNumbersIndex).toBeGreaterThan(featuredIndex);
+
+    expect(pages['/tag/bookkeeping']).toContain('<div class="section-label">The Wire</div>');
 
     expect(pages['/companies']).toContain('Basis');
     expect(pages['/companies']).not.toContain('Reuters');

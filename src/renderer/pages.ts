@@ -718,9 +718,9 @@ function generateHomepage(
   // 3C: By the numbers band — coverage breakdown + publishing cadence
   body += renderByNumbers(allArticles, featured, stats);
 
-  // Latest section — time-grouped with inline tag filter (demoted visual hierarchy)
+  // The Wire — time-grouped with inline tag filter (demoted visual hierarchy)
   body += `<div class="latest-feed">\n`;
-  body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav('', tagsWithArticles)}</div>\n`;
+  body += `<div class="section-label-row"><div class="section-label">The Wire</div>${tagNav('', tagsWithArticles)}</div>\n`;
   if (latestPages.length > 0) {
     body += renderTimeGrouped(latestPages[0]);
   } else {
@@ -753,7 +753,7 @@ function generateHomepage(
   // Subsequent pages: /page/2, /page/3 ...
   for (let i = 1; i < latestPages.length; i++) {
     const pageNum = i + 1;
-    let pageBody = `<div class="section-label-row"><div class="section-label">Latest &mdash; Page ${pageNum}</div>${tagNav('', tagsWithArticles)}</div>\n`;
+    let pageBody = `<div class="section-label-row"><div class="section-label">The Wire &mdash; Page ${pageNum}</div>${tagNav('', tagsWithArticles)}</div>\n`;
     pageBody += renderTimeGrouped(latestPages[i]);
     pageBody += pagination(pageNum, totalPages);
 
@@ -843,7 +843,7 @@ function generateTagPages(
       body += `<p style="color:var(--text-secondary,#6b7280);font-size:0.95rem;line-height:1.6;margin:0 0 1.5rem 0;">${escapeHtml(tagSeo.intro)}</p>\n`;
     }
 
-    body += `<div class="section-label-row"><div class="section-label">Latest</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+    body += `<div class="section-label-row"><div class="section-label">The Wire</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
     
     // Add featured companies section for tags with company mentions
     if (topCompaniesForTag.length > 0) {
@@ -946,7 +946,7 @@ function generateTagPages(
     for (let i = 1; i < tagPages.length; i++) {
       const pageNum = i + 1;
       const path = `${basePath}/page/${pageNum}`;
-      let pageBody = `<div class="section-label-row"><div class="section-label">Latest &mdash; Page ${pageNum}</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
+      let pageBody = `<div class="section-label-row"><div class="section-label">The Wire &mdash; Page ${pageNum}</div>${tagNav(tag, tagsWithArticles)}</div>\n`;
       pageBody += renderTimeGrouped(tagPages[i]);
       pageBody += pagination(pageNum, totalPages, basePath);
 
