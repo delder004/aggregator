@@ -1026,6 +1026,7 @@ a.source-name:hover{text-decoration:underline;}
 .job-card .job-tags{display:flex;flex-wrap:wrap;gap:0.3rem;align-items:center;}
 .job-card .job-tag{display:inline-block;font-size:0.68rem;padding:0.12rem 0.45rem;border-radius:100px;background:var(--tag-bg);color:var(--tag-text);}
 .job-card .job-tag.remote{background:#0d948815;color:#0d9488;}
+.job-card .job-tag.focus{background:var(--accent-subtle);color:var(--accent);font-weight:600;}
 
 /* Jobs preview (homepage) */
 .jobs-preview-grid{
@@ -1272,6 +1273,63 @@ a.source-name:hover{text-decoration:underline;}
 }
 .view-all a{font-size:0.82rem;}
 
+/* Market signals */
+.market-signals-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1rem;
+  margin:1rem 0 1.5rem;
+}
+.market-signal-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:1.25rem;
+  box-shadow:var(--shadow);
+}
+.market-signal-card h3{
+  font-size:0.78rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--text-tertiary);
+  margin-bottom:0.75rem;
+}
+.market-signal-list,
+.market-category-list{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.market-signal-row,
+.market-category-row{
+  display:block;
+  padding:0.55rem 0;
+  border-bottom:1px solid var(--border);
+  color:inherit;
+}
+.market-signal-row:last-child,
+.market-category-row:last-child{border-bottom:none;}
+.market-signal-row:hover,
+.market-category-row:hover{text-decoration:none;}
+.market-signal-row strong,
+.market-category-row strong{
+  display:block;
+  color:var(--text);
+  font-size:0.9rem;
+  line-height:1.3;
+  margin-bottom:0.1rem;
+}
+.market-signal-row:hover strong,
+.market-category-row:hover strong{color:var(--accent);}
+.market-signal-row span,
+.market-category-row span{
+  display:block;
+  color:var(--text-tertiary);
+  font-size:0.74rem;
+  line-height:1.35;
+}
+
 /* Phase 4B: "Work being automated" section */
 .automated-work-section{
   background:var(--aw-bg);
@@ -1415,6 +1473,7 @@ a.source-name:hover{text-decoration:underline;}
   .featured-card:nth-child(1) .article-title{font-size:1.2rem;}
   .company-grid{grid-template-columns:repeat(2,1fr);}
   .resource-grid{grid-template-columns:repeat(2,1fr);}
+  .market-signals-grid{grid-template-columns:1fr;}
   .footer-grid{grid-template-columns:1fr 1fr;}
   .footer-col:first-child{grid-column:1 / -1;}
   .hero h1{font-size:1.8rem;}
