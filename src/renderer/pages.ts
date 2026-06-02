@@ -446,7 +446,7 @@ function getCompanyMomentum(
     });
 }
 
-function renderMarketSignals(
+function renderSignalLedger(
   companies: Company[],
   companyArticles: Map<string, Article[]>,
   companyJobs: Map<string, CompanyJob[]> | undefined
@@ -491,19 +491,19 @@ function renderMarketSignals(
     return '';
   }
 
-  let html = `<h2 class="section-heading">Market Signals</h2>\n`;
-  html += `<div class="market-signals-grid">\n`;
+  let html = `<h2 class="section-heading">Signal Ledger</h2>\n`;
+  html += `<div class="signal-ledger-grid">\n`;
 
   if (momentum.length > 0) {
-    html += `<div class="market-signal-card">\n`;
-    html += `<h3>Companies gaining coverage</h3>\n`;
-    html += `<div class="market-signal-list">\n`;
+    html += `<div class="signal-ledger-card">\n`;
+    html += `<h3>Shipping</h3>\n`;
+    html += `<div class="signal-ledger-list">\n`;
     for (const item of momentum) {
       const latest = item.recentArticles[0];
       const latestText = latest
         ? `<span>${escapeHtml(latest.headline || latest.title)}</span>`
         : `<span>${item.jobCount} open roles</span>`;
-      html += `<a class="market-signal-row" href="/company/${escapeHtml(item.company.id)}">
+      html += `<a class="signal-ledger-row" href="/company/${escapeHtml(item.company.id)}">
   <strong>${escapeHtml(item.company.name)}</strong>
   <span>${item.recentArticles.length} recent article${item.recentArticles.length !== 1 ? 's' : ''}${item.sourceCount > 0 ? ` &middot; ${item.sourceCount} source${item.sourceCount !== 1 ? 's' : ''}` : ''}${item.taggedSignalCount > 0 ? ` &middot; ${item.taggedSignalCount} shipping signal${item.taggedSignalCount !== 1 ? 's' : ''}` : ''}</span>
   ${latestText}
@@ -515,11 +515,11 @@ function renderMarketSignals(
   }
 
   if (categoryStats.length > 0) {
-    html += `<div class="market-signal-card">\n`;
-    html += `<h3>Market map</h3>\n`;
-    html += `<div class="market-category-list">\n`;
+    html += `<div class="signal-ledger-card">\n`;
+    html += `<h3>Coverage</h3>\n`;
+    html += `<div class="signal-ledger-list">\n`;
     for (const item of categoryStats) {
-      html += `<a href="/categories/${item.category.slug}" class="market-category-row">
+      html += `<a href="/categories/${item.category.slug}" class="signal-ledger-row">
   <strong>${escapeHtml(item.category.shortLabel)}</strong>
   <span>${item.companies} compan${item.companies === 1 ? 'y' : 'ies'}${item.recentArticles > 0 ? ` &middot; ${item.recentArticles} recent article${item.recentArticles !== 1 ? 's' : ''}` : ''}</span>
 </a>\n`;
@@ -530,12 +530,12 @@ function renderMarketSignals(
   }
 
   if (hiring.length > 0) {
-    html += `<div class="market-signal-card">\n`;
-    html += `<h3>Hiring signals</h3>\n`;
-    html += `<div class="market-signal-list">\n`;
+    html += `<div class="signal-ledger-card">\n`;
+    html += `<h3>Hiring</h3>\n`;
+    html += `<div class="signal-ledger-list">\n`;
     for (const item of hiring) {
       const category = getCategoryBySlug(item.company.categorySlug).shortLabel;
-      html += `<a class="market-signal-row" href="/company/${escapeHtml(item.company.id)}">
+      html += `<a class="signal-ledger-row" href="/company/${escapeHtml(item.company.id)}">
   <strong>${escapeHtml(item.company.name)}</strong>
   <span>${escapeHtml(category)} &middot; ${item.jobs} open role${item.jobs !== 1 ? 's' : ''}</span>
 </a>\n`;
@@ -607,7 +607,7 @@ function generateHomepage(
     jobs: totalJobs,
   });
 
-  body += renderMarketSignals(marketCompanies, companyArticleMap, companyJobsMap);
+  body += renderSignalLedger(marketCompanies, companyArticleMap, companyJobsMap);
 
   // Featured section — 3-column grid on desktop
   const topFeatured = sortedFeatured.length > 0

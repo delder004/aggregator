@@ -101,8 +101,10 @@ describe('generateAllPages market positioning', () => {
       ])
     );
 
-    expect(pages['/']).toContain('Market Signals');
-    expect(pages['/']).toContain('Companies gaining coverage');
+    expect(pages['/']).toContain('Signal Ledger');
+    expect(pages['/']).toContain('Shipping');
+    expect(pages['/']).toContain('Coverage');
+    expect(pages['/']).toContain('Hiring');
     expect(pages['/']).toContain('/company/basis');
     expect(pages['/']).not.toContain('/company/reuters');
 
