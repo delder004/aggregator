@@ -1,9 +1,8 @@
 name: agent-reviewer
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [main]
+  # Temporarily disabled for automatic PR reviews. Keep manual dispatch so the
+  # reviewer can still be run ad hoc while the workflow is paused.
   workflow_dispatch:
     inputs:
       pr_number:
