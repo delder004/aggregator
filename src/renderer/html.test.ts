@@ -22,6 +22,18 @@ describe('header search', () => {
   });
 });
 
+describe('palette tokens', () => {
+  it('uses the coral accent with an explicit accent foreground token', () => {
+    const html = layout('<p>hi</p>');
+    expect(html).toContain('--accent: #ad4934;');
+    expect(html).toContain('--accent: #ff9a7a;');
+    expect(html).toContain('--accent-ink: #ffffff;');
+    expect(html).toContain('--accent-ink: #111111;');
+    expect(html).toContain('fill="currentColor"');
+    expect(html).not.toContain('--accent: #a4ff00;');
+  });
+});
+
 describe('cleanMalformedTitle', () => {
   it('should remove "ARTICLE N-MINUTE READ" prefix', () => {
     const malformed = 'ARTICLE 5 MINUTE READHow to Catch the AI Wave: A Guide for Accounting Firms';

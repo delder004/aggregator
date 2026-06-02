@@ -56,12 +56,13 @@ function getCSS(): string {
   --text-secondary: #52525b;
   --text-tertiary: #a1a1aa;
   --border: #e4e4e7;
-  --accent: #a4ff00;
-  --accent-hover: #bcff33;
-  --accent-subtle: #a4ff0012;
-  --featured-bg: #f0ffeb;
-  --featured-border: #d4ff66;
-  --featured-accent: #a4ff00;
+  --accent: #ad4934;
+  --accent-hover: #a1442f;
+  --accent-subtle: #ad493414;
+  --accent-ink: #ffffff;
+  --featured-bg: #fff4f1;
+  --featured-border: #efb0a4;
+  --featured-accent: #ad4934;
   --tag-bg: #f0f0f2;
   --tag-text: #52525b;
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
@@ -86,12 +87,13 @@ function getCSS(): string {
     --text-secondary: #a1a1aa;
     --text-tertiary: #52525b;
     --border: #27272a;
-    --accent: #a4ff00;
-    --accent-hover: #bcff33;
-    --accent-subtle: #a4ff0020;
-    --featured-bg: #1a2600;
-    --featured-border: #5cb800;
-    --featured-accent: #a4ff00;
+    --accent: #ff9a7a;
+    --accent-hover: #ffb08f;
+    --accent-subtle: #ff9a7a24;
+    --accent-ink: #111111;
+    --featured-bg: #2a130f;
+    --featured-border: #8a3b2d;
+    --featured-accent: #ff9a7a;
     --tag-bg: #27272a;
     --tag-text: #a1a1aa;
     --shadow: 0 1px 3px rgba(0,0,0,0.4);
@@ -198,7 +200,7 @@ a:hover{color:var(--accent-hover);text-decoration:underline;}
 .search-page-form{display:flex;gap:0.5rem;margin:0 0 1.5rem;}
 .search-page-form input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;font-size:1rem;background:var(--card-bg,#fff);color:var(--text);}
 .search-page-form input:focus{outline:none;border-color:var(--accent);}
-.search-page-form button{border:none;border-radius:8px;padding:0.6rem 1.2rem;font-size:0.95rem;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;}
+.search-page-form button{border:none;border-radius:8px;padding:0.6rem 1.2rem;font-size:0.95rem;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;}
 .search-summary{color:var(--text-secondary);font-size:0.9rem;margin:0 0 1rem;}
 .search-empty{color:var(--text-secondary);padding:1rem 0;}
 .search-company-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.6rem;margin-bottom:1rem;}
@@ -217,6 +219,7 @@ a.logo{text-decoration:none;}
   width:40px;
   height:40px;
   background:var(--accent);
+  color:var(--accent-ink);
   border-radius:10px;
   flex-shrink:0;
 }
@@ -393,7 +396,7 @@ a.logo{text-decoration:none;}
   font-weight:500;
 }
 .tag-nav a:hover{background:var(--border);text-decoration:none;}
-.tag-nav a.active{background:var(--accent);color:#fff;}
+.tag-nav a.active{background:var(--accent);color:var(--accent-ink);}
 
 
 /* Section headers */
@@ -565,7 +568,7 @@ a.source-name:hover{text-decoration:underline;}
   color:var(--accent);
   font-weight:500;
 }
-.company-tag:hover{background:var(--accent);color:#fff;text-decoration:none;}
+.company-tag:hover{background:var(--accent);color:var(--accent-ink);text-decoration:none;}
 .meta-dot{color:var(--text-tertiary);}
 .article-summary{
   font-size:0.84rem;
@@ -932,12 +935,12 @@ a.source-name:hover{text-decoration:underline;}
   padding:0.5rem 1rem;
   background:var(--accent);
   border-color:var(--accent);
-  color:#fff;
+  color:var(--accent-ink);
 }
 .market-map-chip.xl:hover{
   background:var(--accent-hover);
   border-color:var(--accent-hover);
-  color:#fff;
+  color:var(--accent-ink);
 }
 @media (max-width:640px){
   .market-map-row{grid-template-columns:1fr;gap:0.4rem;}
@@ -964,7 +967,7 @@ a.source-name:hover{text-decoration:underline;}
   display:inline-block;
 }
 .job-filters .job-filter-btn:hover{background:var(--border);text-decoration:none;}
-.job-filters .job-filter-btn.active{background:var(--accent);color:#fff;}
+.job-filters .job-filter-btn.active{background:var(--accent);color:var(--accent-ink);}
 .job-dropdown{position:relative;}
 .job-dropdown summary{
   font-size:0.78rem;
@@ -983,9 +986,9 @@ a.source-name:hover{text-decoration:underline;}
 }
 .job-dropdown summary::-webkit-details-marker{display:none;}
 .job-dropdown summary:hover{background:var(--border);}
-.job-dropdown summary.has-active{background:var(--accent);color:#fff;}
+.job-dropdown summary.has-active{background:var(--accent);color:var(--accent-ink);}
 .job-dropdown[open] summary{background:var(--border);}
-.job-dropdown[open] summary.has-active{background:var(--accent);color:#fff;}
+.job-dropdown[open] summary.has-active{background:var(--accent);color:var(--accent-ink);}
 .job-dropdown .dropdown-menu{
   position:absolute;
   top:calc(100% + 0.35rem);
@@ -1036,7 +1039,7 @@ a.source-name:hover{text-decoration:underline;}
 .job-card .job-company a{color:var(--accent);font-weight:500;}
 .job-card .job-tags{display:flex;flex-wrap:wrap;gap:0.3rem;align-items:center;}
 .job-card .job-tag{display:inline-block;font-size:0.68rem;padding:0.12rem 0.45rem;border-radius:100px;background:var(--tag-bg);color:var(--tag-text);}
-.job-card .job-tag.remote{background:#0d948815;color:#0d9488;}
+.job-card .job-tag.remote{background:var(--accent-subtle);color:var(--accent);}
 .job-card .job-tag.focus{background:var(--accent-subtle);color:var(--accent);font-weight:600;}
 
 /* Jobs preview (homepage) */
@@ -1104,14 +1107,14 @@ a.source-name:hover{text-decoration:underline;}
 .pagination a:hover{background:var(--bg-secondary);text-decoration:none;}
 .pagination .current{
   background:var(--accent);
-  color:#fff;
+  color:var(--accent-ink);
   border-color:var(--accent);
   font-weight:600;
 }
 
 /* Newsletter signup */
 .newsletter-box{
-  background:linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+  background:linear-gradient(135deg, #0a1929 0%, #4a241c 55%, #ad4934 100%);
   border-radius:var(--radius-lg);
   padding:2rem;
   color:#fff;
@@ -1123,7 +1126,7 @@ a.source-name:hover{text-decoration:underline;}
 .newsletter-box .cta-btn{
   display:inline-block;
   background:#fff;
-  color:#0f766e;
+  color:#ad4934;
   font-weight:600;
   font-size:0.88rem;
   padding:0.6rem 1.5rem;
@@ -1131,7 +1134,7 @@ a.source-name:hover{text-decoration:underline;}
   text-decoration:none;
   transition:background 0.15s,transform 0.15s;
 }
-.newsletter-box .cta-btn:hover{background:#f0fdfa;transform:translateY(-1px);text-decoration:none;}
+.newsletter-box .cta-btn:hover{background:#fff4f1;transform:translateY(-1px);text-decoration:none;}
 
 /* Footer */
 .site-footer{
@@ -1198,7 +1201,7 @@ a.source-name:hover{text-decoration:underline;}
   align-items:center;
   gap:0.3rem;
   background:var(--accent);
-  color:#111 !important;
+  color:var(--accent-ink) !important;
   font-size:0.72rem !important;
   font-weight:700;
   padding:0.2rem 0.7rem;
@@ -1209,7 +1212,7 @@ a.source-name:hover{text-decoration:underline;}
 .footer-rss-link:hover{
   background:var(--accent-hover);
   text-decoration:none !important;
-  color:#111 !important;
+  color:var(--accent-ink) !important;
 }
 
 /* Spotlight / highlights section */
@@ -1536,7 +1539,7 @@ a.source-name:hover{text-decoration:underline;}
 .insight-card h3 a:hover{color:var(--accent);}
 .insight-meta{font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem;}
 .insight-badge{display:inline-block;font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;padding:0.15rem 0.5rem;border-radius:100px;}
-.insight-badge.hourly{background:#0f766e15;color:var(--accent);}
+.insight-badge.hourly{background:var(--accent-subtle);color:var(--accent);}
 .insight-badge.daily{background:#3b82f615;color:#3b82f6;}
 .insight-badge.weekly{background:#8b5cf615;color:#8b5cf6;}
 .insight-badge.monthly{background:#f59e0b15;color:#f59e0b;}
@@ -1554,7 +1557,7 @@ a.source-name:hover{text-decoration:underline;}
 .insight-nav{display:flex;gap:0.75rem;flex-wrap:wrap;margin:1rem 0;}
 .insight-nav a{font-size:0.82rem;padding:0.3rem 0.8rem;border-radius:100px;border:1px solid var(--border);color:var(--text-secondary);font-weight:500;}
 .insight-nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
-.insight-nav a.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.insight-nav a.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
 
 /* Last updated indicator */
 .last-updated{
@@ -1574,7 +1577,7 @@ a.source-name:hover{text-decoration:underline;}
 .article-detail .article-summary{display:flow-root;font-size:0.95rem;-webkit-line-clamp:unset;margin-bottom:1.25rem;line-height:1.7;}
 .article-detail .article-summary::first-letter{font-family:ui-serif,Georgia,serif;font-size:3.2em;font-weight:700;float:left;line-height:0.85;padding-right:0.1em;color:var(--text);}
 .article-detail .article-tags{margin-bottom:1.5rem;}
-.article-detail .original-link{display:inline-block;padding:0.5rem 1.2rem;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:0.85rem;font-weight:500;}
+.article-detail .original-link{display:inline-block;padding:0.5rem 1.2rem;background:var(--accent);color:var(--accent-ink);border-radius:var(--radius);font-size:0.85rem;font-weight:500;}
 .article-detail .original-link:hover{background:var(--accent-hover);text-decoration:none;}
 .share-bar{display:flex;align-items:center;gap:0.5rem;margin-top:1rem;}
 .share-bar span{font-size:0.8rem;color:var(--text-secondary);font-weight:500;}
@@ -1789,9 +1792,9 @@ function sourceBadge(type: string): { label: string; cls: string } {
 /** SVG logo — stylized "A" with circuit trace motif. */
 function logoSvg(): string {
   return `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
-  <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
-  <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
+  <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="currentColor"/>
+  <circle cx="15" cy="6" r="1.5" fill="currentColor" opacity="0.5"/>
+  <line x1="13.5" y1="6" x2="11" y2="8" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
 </svg>`;
 }
 
@@ -1800,10 +1803,10 @@ function searchIconSvg(): string {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 }
 
-/** Favicon SVG — 32x32 with blue background and white "A" logo. */
+/** Favicon SVG — 32x32 with coral background and white "A" logo. */
 function faviconSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20">
-  <rect width="20" height="20" rx="4" fill="#0f766e"/>
+  <rect width="20" height="20" rx="4" fill="#ad4934"/>
   <path d="M10 2L3 17h3l1.5-3.5h5L14 17h3L10 2zm-1.5 9L10 6.5 11.5 11h-3z" fill="#fff"/>
   <circle cx="15" cy="6" r="1.5" fill="#fff" opacity="0.5"/>
   <line x1="13.5" y1="6" x2="11" y2="8" stroke="#fff" stroke-width="0.75" opacity="0.4"/>
