@@ -117,7 +117,7 @@ export const CURATED_DESCRIPTIONS: Record<string, string> = {
   'orderwise': 'Accounting and business management software with AI-enhanced features for SMB accounting workflows.',
   'reframe': 'AI-powered financial analysis and insights platform helping accounting teams make data-driven decisions.',
   'j-p-morgan': 'Global investment bank and financial services giant advancing AI and automation across treasury, accounting, and compliance operations.',
-  'lovable': 'AI-powered platform for rapid application development, used by accounting firms to build custom accounting automation solutions.',
+  'lovable': 'AI-powered platform for building software applications through natural language prompts.',
 
   // Other Notable Companies
   'openai': 'AI research company behind GPT models, increasingly used by accounting firms for document analysis and content generation.',
