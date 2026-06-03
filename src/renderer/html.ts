@@ -489,6 +489,63 @@ a.logo{text-decoration:none;}
   margin-top:0.15rem;
 }
 
+/* 6C: Wire view toggle (Cards ↔ List) */
+.wire-view-row{
+  display:flex;
+  justify-content:flex-end;
+  gap:0.25rem;
+  margin:-0.4rem 0 0.85rem;
+}
+.wire-view-btn{
+  font-size:0.7rem;
+  font-weight:600;
+  color:var(--text-tertiary);
+  padding:0.15rem 0.45rem;
+  border:1px solid var(--border);
+  border-radius:3px;
+  white-space:nowrap;
+  text-decoration:none;
+}
+.wire-view-btn:hover{color:var(--accent);border-color:var(--accent);text-decoration:none;}
+.wire-view-btn.active{color:var(--accent-ink);background:var(--accent);border-color:var(--accent);}
+
+/* 6C: Wire list view — numbered TOC alt-view */
+.wire-list{
+  list-style:decimal;
+  padding-left:2.4rem;
+  margin:0;
+}
+.wire-list-item{
+  padding:0.5rem 0 0.5rem 0.5rem;
+  border-bottom:1px solid var(--border);
+}
+.wire-list-item:last-child{border-bottom:none;}
+.wire-list-body{
+  display:flex;
+  align-items:baseline;
+  gap:0.75rem;
+  flex-wrap:wrap;
+}
+.wire-list-link{
+  font-size:0.88rem;
+  font-weight:500;
+  color:var(--text);
+  flex:1;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.wire-list-link:hover{color:var(--accent);text-decoration:none;}
+.wire-list-meta{
+  font-size:0.7rem;
+  color:var(--text-tertiary);
+  white-space:nowrap;
+  flex-shrink:0;
+}
+@media(max-width:580px){
+  .wire-list{padding-left:1.8rem;}
+  .wire-list-meta{font-size:0.65rem;}
+}
+
 /* Article cards */
 .article-card{
   display:flex;
@@ -1873,6 +1930,24 @@ export function articleCard(article: Article): string {
     ${summary ? `<p class="article-summary">${summary}</p>` : ''}
   </div>
 </article>`;
+}
+
+/**
+ * Render a single numbered list item for the Wire list view (step 6C).
+ * Designed for use inside <ol class="wire-list" start="N">.
+ */
+export function wireListRow(article: Article): string {
+  const title = escapeHtml(article.headline || cleanMalformedTitle(article.title));
+  const ago = timeAgo(article.publishedAt);
+  const source = escapeHtml(article.sourceName);
+  const id = escapeHtml(article.id);
+  const meta = [source, ago].filter(Boolean).join(' · ');
+  return `<li class="wire-list-item">
+  <div class="wire-list-body">
+    <a href="/article/${id}" class="wire-list-link">${title}</a>
+    <span class="wire-list-meta">${meta}</span>
+  </div>
+</li>`;
 }
 
 /** Render a featured article card (larger, with background). */

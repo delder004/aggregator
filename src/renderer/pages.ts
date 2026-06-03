@@ -22,6 +22,7 @@ import {
   insightCard,
   companySizeLabel,
   signalStrip,
+  wireListRow,
   type LayoutOptions,
 } from './html';
 import { diversifyFeatured, diversifyFeed } from './diversity';
@@ -37,6 +38,7 @@ import { isAutomatedWorkArticle, AUTOMATED_WORK_TAGS } from './dual-narrative';
 const ARTICLES_PER_PAGE = 20;
 const COMPANIES_PER_PAGE = 40;
 const JOBS_PER_PAGE = 40;
+const WIRE_LIST_PER_PAGE = 40;
 const SITE_URL = 'https://agenticaiccounting.com';
 
 // An insight whose periodEnd is older than this many days is considered stale
@@ -721,6 +723,7 @@ function generateHomepage(
   // The Wire — time-grouped with inline tag filter (demoted visual hierarchy)
   body += `<div class="latest-feed">\n`;
   body += `<div class="section-label-row"><div class="section-label">The Wire</div>${tagNav('', tagsWithArticles)}</div>\n`;
+  body += `<div class="wire-view-row"><a href="/" class="wire-view-btn active">Cards</a><a href="/list" class="wire-view-btn">List</a></div>\n`;
   if (latestPages.length > 0) {
     body += renderTimeGrouped(latestPages[0]);
   } else {
@@ -754,6 +757,7 @@ function generateHomepage(
   for (let i = 1; i < latestPages.length; i++) {
     const pageNum = i + 1;
     let pageBody = `<div class="section-label-row"><div class="section-label">The Wire &mdash; Page ${pageNum}</div>${tagNav('', tagsWithArticles)}</div>\n`;
+    pageBody += `<div class="wire-view-row"><a href="/" class="wire-view-btn active">Cards</a><a href="/list" class="wire-view-btn">List</a></div>\n`;
     pageBody += renderTimeGrouped(latestPages[i]);
     pageBody += pagination(pageNum, totalPages);
 
@@ -959,6 +963,49 @@ function generateTagPages(
         ...layoutOpts,
       });
     }
+  }
+
+  return pages;
+}
+
+// ---------------------------------------------------------------------------
+// Wire list view (step 6C) — numbered TOC alt-view at /list and /list/page/N
+// ---------------------------------------------------------------------------
+
+function generateWireListPages(
+  articles: Article[],
+  layoutOpts: Partial<LayoutOptions>
+): Record<string, string> {
+  const pages: Record<string, string> = {};
+  const sorted = sortByDate(articles);
+  const chunks = paginate(sorted, WIRE_LIST_PER_PAGE);
+  const totalPages = Math.max(chunks.length, 1);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const pageNum = i + 1;
+    const startNum = i * WIRE_LIST_PER_PAGE + 1;
+    const path = i === 0 ? '/list' : `/list/page/${pageNum}`;
+
+    let body = `<div class="latest-feed">\n`;
+    body += `<div class="section-label-row"><div class="section-label">The Wire &mdash; List View</div></div>\n`;
+    body += `<div class="wire-view-row"><a href="/" class="wire-view-btn">Cards</a><a href="/list" class="wire-view-btn active">List</a></div>\n`;
+    body += `<ol class="wire-list" start="${startNum}">\n`;
+    for (const article of chunks[i]) {
+      body += wireListRow(article);
+    }
+    body += `</ol>\n`;
+    body += pagination(pageNum, totalPages, '/list');
+    body += `</div>\n`;
+
+    const titleSuffix = pageNum === 1 ? '' : ` — Page ${pageNum}`;
+    pages[path] = layout(body, {
+      title: `The Wire — List View${titleSuffix}`,
+      description: 'Full numbered index of agentic AI accounting articles, most recent first.',
+      path,
+      activeTag: '',
+      activeTab: 'news',
+      ...layoutOpts,
+    });
   }
 
   return pages;
@@ -1330,6 +1377,7 @@ export function generateAllPages(
     Object.assign(pages, generateGuidesPages(displayCompanies, articleMap, layoutOpts));
   }
   Object.assign(pages, generateJobsPage(displayCompanies ?? [], jobsMap, layoutOpts));
+  Object.assign(pages, generateWireListPages(articles, layoutOpts));
 
   pages['/og.png'] = generateOgImagePng();
 
