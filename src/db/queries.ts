@@ -1105,8 +1105,9 @@ export async function cleanupStaleArticleCompanyLinks(
 
 /**
  * Sync curated company descriptions into the database.
- * Updates company records with descriptions from the curated list,
- * only if the company exists and currently has no description.
+ * Updates company records with descriptions from the curated list.
+ * descriptions.ts is the source of truth: always overwrites the DB value
+ * when it differs, so edits to the curated list propagate on the next cron.
  */
 export async function syncCuratedCompanyDescriptions(
   db: D1Database,
@@ -1123,7 +1124,7 @@ export async function syncCuratedCompanyDescriptions(
       description: string;
     }> = [];
 
-    // For each company in this batch, check if it exists and has no description
+    // For each company in this batch, check if it exists
     const placeholders = batch.map(() => '?').join(',');
     const result = await db
       .prepare(`SELECT id, description FROM companies WHERE id IN (${placeholders})`)
@@ -1132,12 +1133,12 @@ export async function syncCuratedCompanyDescriptions(
 
     for (const row of result.results) {
       const companyId = row.id as string;
-      // Only update if description is NULL or empty
-      if (!row.description || row.description === '') {
-        const curatedDesc = curatedDescriptions[companyId];
-        if (curatedDesc) {
-          updates.push({ id: companyId, description: curatedDesc });
-        }
+      const curatedDesc = curatedDescriptions[companyId];
+      // Always apply the curated description when it differs from the DB value.
+      // descriptions.ts is the canonical source; this ensures edits (including
+      // corrections that remove false accounting-focus signals) propagate to DB.
+      if (curatedDesc && row.description !== curatedDesc) {
+        updates.push({ id: companyId, description: curatedDesc });
       }
     }
 

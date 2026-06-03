@@ -74,6 +74,19 @@ describe('isAccountingFocusedCompany', () => {
     ).toBe(false);
   });
 
+  it('rejects general-purpose dev tools that do not serve the accounting domain', () => {
+    // Lovable is an AI coding tool; the corrected description must not
+    // contain accounting keywords that would cause all Greenhouse jobs
+    // (including off-topic Italian retail jobs) to bypass the relevance filter.
+    expect(
+      isAccountingFocusedCompany({
+        name: 'Lovable',
+        description:
+          'AI-powered platform for building software applications through natural language prompts.',
+      })
+    ).toBe(false);
+  });
+
   it('matches on the company name alone', () => {
     expect(
       isAccountingFocusedCompany({
