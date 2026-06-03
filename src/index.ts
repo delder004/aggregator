@@ -1094,6 +1094,23 @@ export default {
           'name': article.sourceName,
         };
       }
+      // dateModified: Google recommends this for NewsArticle rich results eligibility.
+      // Articles are scraped-and-published; use publishedAt as the modification date.
+      articleNewsLd['dateModified'] = article.publishedAt;
+      // keywords: expose article tags so Google can assess topical relevance for
+      // agentic-AI-accounting queries (e.g. "agentic-ai", "tax", "automation").
+      if (article.tags.length > 0) {
+        articleNewsLd['keywords'] = article.tags.join(', ');
+      }
+      // mentions: link to tracked companies as Organization entities so Google can
+      // build entity associations between articles and company-specific queries.
+      if (linkedCompanies.length > 0) {
+        articleNewsLd['mentions'] = linkedCompanies.map((c) => ({
+          '@type': 'Organization',
+          'name': c.name,
+          'url': `https://agenticaiccounting.com/company/${c.id}`,
+        }));
+      }
 
       // BreadcrumbList: Home > [first tag] > Article — enables SERP breadcrumb rich results
       const firstTag = article.tags[0];
