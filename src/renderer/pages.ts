@@ -1520,16 +1520,25 @@ function generateGuidePages(
 
   const guideJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
+    '@type': 'Article',
+    'headline': 'What is Agentic AI?',
     'name': 'What is Agentic AI?',
     'url': `${SITE_URL}/guide/what-is-agentic-ai`,
     'description': 'A comprehensive guide to autonomous AI agents in accounting, tax, audit, and bookkeeping.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
-    'datePublished': new Date().toISOString().split('T')[0],
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const guideBreadcrumb = {
@@ -1663,15 +1672,25 @@ function generateGuidePages(
 
   const big4JsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
+    '@type': 'Article',
+    'headline': 'Big 4 & AI Adoption',
     'name': 'Big 4 & AI Adoption',
     'url': `${SITE_URL}/guide/big-4-and-ai-adoption`,
     'description': 'How Deloitte, PwC, EY, and KPMG are integrating agentic AI into audit, tax, and advisory practices.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const big4Breadcrumb = {
@@ -1756,15 +1775,25 @@ function generateGuidePages(
 
   const toolsJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
+    '@type': 'Article',
+    'headline': 'AI Tools for Accountants',
     'name': 'AI Tools for Accountants',
     'url': `${SITE_URL}/guide/ai-tools-for-accountants`,
     'description': 'A curated directory of AI-powered tools for bookkeeping, tax, audit, and financial reporting.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const toolsBreadcrumb = {
@@ -1835,15 +1864,25 @@ function generateGuidePages(
 
   const researchJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
+    '@type': 'Article',
+    'headline': 'Academic Research on AI in Accounting',
     'name': 'Academic Research on AI in Accounting',
     'url': `${SITE_URL}/guide/academic-research`,
     'description': 'Key research papers and studies on AI applications in accounting, audit, and financial analysis.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const researchBreadcrumb = {
@@ -1922,15 +1961,25 @@ function generateGuidePages(
 
   const regulationJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
-    'name': 'AI Regulation &amp; Compliance for Accountants',
+    '@type': 'Article',
+    'headline': 'AI Regulation & Compliance for Accountants',
+    'name': 'AI Regulation & Compliance for Accountants',
     'url': `${SITE_URL}/guide/ai-regulation-and-compliance`,
     'description': 'Evolving AI regulations and standards from AICPA, PCAOB, FASB, and international bodies affecting accountants and auditors.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const regulationBreadcrumb = {
@@ -2007,15 +2056,25 @@ function generateGuidePages(
 
   const skillsJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Guide',
+    '@type': 'Article',
+    'headline': 'AI Skills for CPAs',
     'name': 'AI Skills for CPAs',
     'url': `${SITE_URL}/guide/ai-skills-for-cpas`,
     'description': 'Essential AI skills for accounting professionals — from AI literacy to prompt engineering and auditing AI systems.',
+    'image': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
     'author': {
       '@type': 'Organization',
       'name': 'Agentic AI Accounting',
       'url': SITE_URL,
     },
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Agentic AI Accounting',
+      'url': SITE_URL,
+      'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    },
+    'datePublished': '2025-01-01',
+    'dateModified': new Date().toISOString().split('T')[0],
   };
 
   const skillsBreadcrumb = {
