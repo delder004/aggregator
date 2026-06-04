@@ -89,7 +89,7 @@ Design implications:
 
 ---
 
-## Current snapshot (as of 2026-06-01)
+## Current snapshot (as of 2026-06-04)
 
 What the current renderer is aiming at, derived from `src/renderer/html.ts` and `src/renderer/pages.ts`:
 
@@ -97,15 +97,18 @@ What the current renderer is aiming at, derived from `src/renderer/html.ts` and 
 - **Typography.** System sans for body/UI plus system serif (`ui-serif, Georgia, serif`) for major editorial headings. Headline hierarchy is stronger than the original site, but dense surfaces still use utilitarian sans.
 - **Hero.** Thesis-led: "AI is rewriting accounting. Track who's shipping, what's being automated, and where firms are hiring." The supporting copy now names the source classes rather than leaning on a raw source count.
 - **Signal strip.** Four evidence metrics remain directly under hero: Sources, Articles, Companies, Open Roles.
-- **Signal Ledger.** New top-of-home data-product surface replacing the prior "Market Signals" cards and standalone "Work Being Automated" section. It groups current evidence into Shipping, Automating, Coverage, and Hiring columns using ledger-like rows.
-- **What Changed This Week.** Still renders current-week signals such as new roles, trending articles, or latest insights.
-- **Featured Stories.** Magazine hierarchy is in place: one larger lead story plus supporting stories, now positioned after the weekly signal surface so editorial features do not interrupt the data-product argument.
-- **Automating.** The Signal Ledger includes a subdued-red Automating group for recent articles tagged with automated-work tags. This is the left half of the eventual dual narrative, now connected to the rest of the evidence surface.
-- **Data surfaces.** Companies and jobs have dense static table views with pre-rendered sort URLs; the homepage has a "By the numbers" band for corpus-level evidence.
-- **The Wire.** The former Latest feed is now labeled as a compact secondary evidence wire. Pagination and tag filtering remain unchanged.
+- **Signal Ledger.** Top-of-home data-product surface grouping current evidence into Shipping, Automating, Coverage, and Hiring columns using ledger-like rows.
+- **What Changed This Week.** Renders current-week signals such as new roles, trending articles, or latest insights.
+- **Featured Stories.** Magazine hierarchy: one larger lead story plus supporting stories, positioned after the weekly signal surface.
+- **Data surfaces.** Companies and jobs have dense static table views with pre-rendered sort URLs; the homepage has a "By the numbers" band for corpus-level evidence. Numbered list alt-view of The Wire at `/list` with Cards/List toggle.
+- **The Wire.** The compact secondary evidence wire with pagination and tag filtering.
 - **Mobile.** Phase 0 baseline remains the gate: grids collapse, tag/filter rows wrap or scroll intentionally, tables use overflow/hide rules, and no fixed-width surface should exceed iPhone width.
 
-**Current homepage argument:** Hero → Signal strip → Signal Ledger → What Changed → Featured → By the Numbers → The Wire. The direction is no longer "add more homepage sections"; it is "turn the existing signals into one coherent ledger."
+**Current homepage argument:** Hero → Signal strip → Signal Ledger → What Changed → Featured → By the Numbers → The Wire. Phases 1–7 are complete; the remaining design gap is the secondary navigation surface layer (company detail pages, category pages, market map) which still uses inline styles and plain-text lists rather than the Signal Ledger visual language.
+
+**Phase 4 status:** 4A and 4B are complete. Steps 4A.5, 4C, and 4D are blocked until a human makes the editorial call on what counts as an "emerging role" in accounting. The three options are documented in `src/renderer/dual-narrative.ts`. No stylist work is possible here until that decision is made.
+
+**Correctness note for janitor:** The footer on company detail pages (`/company/*`), the market map (`/map`), and the jobs pages (`/jobs`, `/jobs/*`) is missing the Categories column added in Phase 6A. These pages render an older 3-column footer. The homepage and category pages have the correct 4-column footer.
 
 ---
 
@@ -212,6 +215,20 @@ This phase consolidates the now-many homepage signals into one coherent data-pro
 - **7C — Audit the homepage order after ledger consolidation.** If Signal Ledger carries the top argument, consider moving Featured below What Changed or trimming repeated "Most Covered" company signals that duplicate Coverage.
 - **7D — Rename Latest to The Wire.** Keep the compact feed behavior, but make the label and row rhythm feel like a secondary evidence wire. Do not change pagination or tag-filter behavior.
 - **7E — Palette reconsideration.** Evaluate whether acid lime still fits the Signal Ledger metaphor. Coral (`#ff6f5e` or `#e95d4f`) may work better as an "audit stamp" accent, but it needs its own PR with light/dark contrast checks and no semantic red/green confusion.
+
+### Phase 8 — Company, category, and map page polish
+
+The site's secondary navigation surface layer — company detail, category detail, category index, and market map — has not received the same visual treatment as the homepage, article pages, and data tables. Company detail page headers use inline styles with a 1.4rem h1 (inconsistent with the 2rem article detail page polished in 5C). Category detail pages list companies as bare h3 headings with no visual distinction between active and inactive companies. The market map renders as a plain text link list. This phase applies the Signal Ledger visual language to these pages consistently.
+
+**Why now:** The Signal Ledger (Phase 7 complete) links directly to company and category pages. These pages are now more prominent entry points — they deserve the same level of polish the homepage received.
+
+Steps:
+
+- **8A — Company detail page header.** Replace the inline-style company header block (currently `style="font-size:1.4rem;font-weight:700..."`) with CSS classes (`.company-detail-header`, `.company-stat-band`). Apply the same typographic scale as article detail pages: h1 2rem / 800 weight / -0.02em letter-spacing / serif stack, responsive to 1.6rem at 900px and 1.3rem at 640px. The stat line below the name (category tag, article count, job count, size) should use the existing `.article-meta` spacing rhythm but with a slightly heavier visual weight to anchor the page. CSS and template changes in `src/renderer/pages.ts` and `src/renderer/html.ts`.
+
+- **8B — Category detail page visual treatment.** The company list on category detail pages (`/categories/ai-bookkeeping`, etc.) currently renders as bare h3 headings. Apply a compact ledger-row treatment: each company entry gets a structured row with name, short description, article count, and open roles count. Visually dim companies with 0 recent articles (`.company-row--inactive` with reduced opacity or muted text color) so active companies read as the primary evidence and inactive ones as the long tail. A summary header line ("N companies · N articles in last 30 days") should match the style established in the category index page. CSS-only; no data changes.
+
+- **8C — Market map visual treatment.** The `/map` page renders company names as plain text links in a category-grouped list. Add a compact chip-like visual treatment: each company gets a small `data-articles` indicator (the existing tooltip title value already carries this info). Companies with ≥5 recent articles render with a slightly bolder weight class and accent-colored article count badge. Companies with 0 articles render in muted text. This makes the map feel like an actual market density visualization rather than a directory. CSS-only; no JS; the chip sizing uses `font-weight` and `font-size` scaling rather than `width/height` pixel sizing to avoid fixed-width traps on mobile.
 
 ---
 
