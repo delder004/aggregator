@@ -732,6 +732,49 @@ function generateHomepage(
   body += pagination(1, totalPages);
   body += `</div>\n`;
 
+  // Homepage JSON-LD: @graph with three nodes.
+  // 1. WebSite + potentialAction → enables Google Sitelinks Searchbox on branded queries.
+  // 2. Organization → establishes brand entity for Knowledge Graph.
+  // 3. ItemList of top featured articles → eligible for Google article carousel rich results.
+  const homepageOrg = {
+    '@type': 'Organization',
+    '@id': `${SITE_URL}/#organization`,
+    'name': 'Agentic AI Accounting',
+    'url': SITE_URL,
+    'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
+    'sameAs': [SITE_URL],
+  };
+  const homepageWebSite = {
+    '@type': 'WebSite',
+    '@id': `${SITE_URL}/#website`,
+    'name': 'Agentic AI Accounting',
+    'url': SITE_URL,
+    'description': 'The latest on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.',
+    'publisher': { '@id': `${SITE_URL}/#organization` },
+    'potentialAction': {
+      '@type': 'SearchAction',
+      'target': {
+        '@type': 'EntryPoint',
+        'urlTemplate': `${SITE_URL}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+  const homepageJsonLdNodes: unknown[] = [homepageOrg, homepageWebSite];
+  if (topFeatured.length > 0) {
+    homepageJsonLdNodes.push({
+      '@type': 'ItemList',
+      'name': 'Top Articles — Agentic AI Accounting',
+      'url': SITE_URL,
+      'itemListElement': topFeatured.map((a, idx) => ({
+        '@type': 'ListItem',
+        'position': idx + 1,
+        'url': `${SITE_URL}/article/${a.id}`,
+        'name': a.headline || a.title,
+      })),
+    });
+  }
+
   pages['/'] = layout(body, {
     path: '/',
     activeTag: '',
@@ -739,16 +782,7 @@ function generateHomepage(
     heroHtml,
     jsonLd: {
       '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      'name': 'Agentic AI Accounting',
-      'url': SITE_URL,
-      'description': 'The latest on AI agents in accounting, audit, tax, and bookkeeping — updated hourly.',
-      'publisher': {
-        '@type': 'Organization',
-        'name': 'Agentic AI Accounting',
-        'url': SITE_URL,
-        'logo': { '@type': 'ImageObject', 'url': `${SITE_URL}/og.png` },
-      },
+      '@graph': homepageJsonLdNodes,
     },
     ...layoutOpts,
   });
