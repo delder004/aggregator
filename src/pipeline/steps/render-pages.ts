@@ -113,7 +113,7 @@ export async function renderPagesStep(
     const lastUpdatedDate = latestPublished
       ? new Date(latestPublished)
       : new Date();
-    lastUpdatedDate.setUTCMnutes(0, 0, 0);
+    lastUpdatedDate.setUTCMinutes(0, 0, 0);
     const lastUpdated = `${lastUpdatedDate
       .toISOString()
       .replace('T', ' ')
