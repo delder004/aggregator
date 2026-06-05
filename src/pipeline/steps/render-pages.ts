@@ -40,15 +40,18 @@ import { generateRssFeed } from '../../renderer/rss';
 import { MIN_PUBLISH_SCORE } from '../../scoring/classifier';
 import type { StepOutcome } from '../step-runner';
 
-// v5: bumped 2026-06-01. Bug in v4: Promise.allSettled only catches *rejected*
-// puts, not "silent" failures where KV.put() resolves but the write doesn't
-// persist. Silent failures still record the new hash, permanently locking stale
-// pages. Fix: on recovery runs (empty hash store), read back every written page
-// and compare its SHA-256 hash to the expected hash. Any mismatch is a silent
-// failure — removed from successfulPaths so the old hash is preserved and the
-// next cron retries. The v5 empty store forces a full re-render to recover pages
-// still stuck from v4 failures (/map, /companies, /company/*).
-const PAGE_HASHES_KEY = '__page_hashes_v5__';
+// v6: bumped 2026-06-04. Bug in v5: recovery verification loop only handled
+// `r.status === 'fulfilled' && !r.value.ok` — it ignored `r.status === 'rejected'`
+// entirely. When env.KV.get() throws (subrequest exhaustion, timeout, etc.) inside
+// Promise.allSettled, the result is `rejected`. The old loop treated that as
+// "verified OK", stored the new hash, and permanently skipped the page on all
+// subsequent crons. Pages whose underlying KV.put() was a silent failure (data
+// not persisted) would keep serving stale content forever.
+// Fix: treat rejected verification results the same as hash-mismatch failures —
+// remove from successfulPaths so the hash is NOT stored and the next cron retries.
+// The v6 key forces a full re-render to clear /map and /company/* pages still
+// stuck from v5's incorrect hash records.
+const PAGE_HASHES_KEY = '__page_hashes_v6__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
@@ -262,8 +265,14 @@ export async function renderPagesStep(
             return { path, ok: hash === newHashes[path] };
           })
         );
-        for (const r of verifyResults) {
-          if (r.status === 'fulfilled' && !r.value.ok) {
+        for (let j = 0; j < verifyResults.length; j++) {
+          const r = verifyResults[j];
+          if (r.status === 'rejected') {
+            // KV.get() threw (e.g. subrequest limit, timeout). Treat as
+            // unverified — do NOT record the new hash so the next cron retries.
+            successfulPaths.delete(verifyBatch[j]);
+            silentFails++;
+          } else if (!r.value.ok) {
             successfulPaths.delete(r.value.path);
             silentFails++;
           }
