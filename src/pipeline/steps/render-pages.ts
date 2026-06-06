@@ -51,7 +51,21 @@ import type { StepOutcome } from '../step-runner';
 // remove from successfulPaths so the hash is NOT stored and the next cron retries.
 // The v6 key forces a full re-render to clear /map and /company/* pages still
 // stuck from v5's incorrect hash records.
-const PAGE_HASHES_KEY = '__page_hashes_v6__';
+//
+// v7: bumped 2026-06-06. Bug in v6: verification only ran on recovery runs
+// (empty hash store). On a normal cron after a partial recovery, pages whose
+// verification had failed (hash omitted from store) were retried via KV.put().
+// If KV.put() silently failed on that normal cron (promise fulfilled but data
+// not written), no verification was run, so the new hash was stored as if the
+// write succeeded — permanently skipping the stale-KV page on all future crons.
+// /map and /company/* were caught in this loop.
+// Fix: verify ANY page whose path is absent from oldHashes (i.e., new pages and
+// pages still being retried from a prior failed verification). On normal crons
+// this set is small (only retry candidates), so overhead is bounded. On recovery
+// runs it is the full set, matching previous behaviour. The v7 key clears the
+// incorrectly-stored hashes for /map and /company/* so they are included in the
+// next recovery's changed set and re-verified correctly.
+const PAGE_HASHES_KEY = '__page_hashes_v7__';
 const ONE_HUNDRED_EIGHTY_DAYS_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface RenderPagesResult {
@@ -238,17 +252,18 @@ export async function renderPagesStep(
       }
     }
 
-    // On recovery runs (empty hash store — triggered by a PAGE_HASHES_KEY bump),
-    // verify that all puts actually persisted. KV.put() can "silently fail":
-    // the promise resolves but the write doesn't persist. Without this check,
-    // the hash store records the new hash and permanently skips the stale page.
-    // Verification: read back each written page and compare its SHA-256 to the
-    // expected hash. Mismatches are removed from successfulPaths so the OLD hash
-    // is preserved in the store — the next cron will retry those pages.
-    const isRecoveryRun = Object.keys(oldHashes).length === 0;
-    if (isRecoveryRun && successfulPaths.size > 0) {
+    // Verify pages whose path is absent from oldHashes — either brand-new pages
+    // or pages still being retried after a prior failed verification (the hash
+    // was omitted from the store so they appear in `changed` again this cron).
+    // KV.put() can "silently fail": the promise resolves but the write doesn't
+    // persist. Without this check, the hash store records the new hash and
+    // permanently skips the stale-KV page on all future crons.
+    // On recovery runs oldHashes is empty, so every written page is verified
+    // (same as previous behaviour). On normal crons only the retry candidates
+    // are verified, keeping the overhead bounded.
+    const pathsToVerify = [...successfulPaths].filter(p => !(p in oldHashes));
+    if (pathsToVerify.length > 0) {
       let silentFails = 0;
-      const pathsToVerify = [...successfulPaths];
       for (let i = 0; i < pathsToVerify.length; i += 10) {
         const verifyBatch = pathsToVerify.slice(i, i + 10);
         const verifyResults = await Promise.allSettled(
@@ -281,12 +296,12 @@ export async function renderPagesStep(
       if (silentFails > 0) {
         console.warn(
           `[render-pages] ${silentFails}/${pathsToVerify.length} silent KV write` +
-            ` failures on recovery run; affected pages will retry next cron.`
+            ` failures; affected pages will retry next cron.`
         );
       } else {
         console.log(
-          `[render-pages] Recovery verification: all ${pathsToVerify.length}` +
-            ` pages confirmed written to KV.`
+          `[render-pages] Write verification: all ${pathsToVerify.length}` +
+            ` new/retried pages confirmed in KV.`
         );
       }
     }
