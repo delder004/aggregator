@@ -125,6 +125,30 @@ const TAG_SEO: Record<string, { h1: string; intro: string; title: string; descri
     title: 'AI Accounting Research — Papers & Analysis',
     description: 'Latest research on AI in accounting — academic papers, industry studies, and analysis on AI agents, LLMs, and automation in audit, tax, and financial reporting. Updated hourly.',
   },
+  'compliance': {
+    h1: 'AI Compliance in Accounting — News & Analysis',
+    intro: 'AI-powered compliance automation for accounting and finance: SOX controls, AML detection, regulatory reporting, continuous transaction monitoring, and governance frameworks for financial institutions and accounting firms.',
+    title: 'AI Compliance in Accounting — News & Analysis — Agentic AI Accounting',
+    description: 'Latest news on AI compliance automation for accounting — SOX, AML, regulatory reporting, and governance frameworks. Updated hourly.',
+  },
+  'financial-reporting': {
+    h1: 'AI in Financial Reporting — News & Tools',
+    intro: 'How AI is transforming financial reporting: automated month-end close, intelligent variance analysis, AI-generated board decks, real-time GAAP consolidation, and continuous accounting for finance teams.',
+    title: 'AI Financial Reporting News & Tools — Agentic AI Accounting',
+    description: 'Latest news on AI in financial reporting — automated close, variance analysis, GAAP consolidation, and AI-generated financial statements. Updated hourly.',
+  },
+  'bookkeeping': {
+    h1: 'AI Bookkeeping — News & Software',
+    intro: 'AI agents and software automating bookkeeping: transaction categorization, bank reconciliation, accounts payable, accounts receivable, and month-end close for SMBs, startups, and accounting firms.',
+    title: 'AI Bookkeeping News & Software — Agentic AI Accounting',
+    description: 'Latest news on AI bookkeeping software — transaction categorization, reconciliation, AP/AR automation, and AI-native bookkeeping platforms for SMBs and firms. Updated hourly.',
+  },
+  'payroll': {
+    h1: 'AI in Payroll — News & Tools',
+    intro: 'AI-powered payroll automation: intelligent payroll processing, autonomous HR-finance workflows, agentic payroll agents, and how platforms like Rippling, Paychex, Gusto, and Sage are embedding AI in payroll operations.',
+    title: 'AI Payroll News & Tools — Agentic AI Accounting',
+    description: 'Latest news on AI in payroll — autonomous payroll processing, HR-finance automation, and AI-native payroll platforms. Updated hourly.',
+  },
 };
 
 function isInsightStale(insight: InsightSummary, now: number = Date.now()): boolean {
