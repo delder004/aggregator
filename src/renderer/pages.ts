@@ -2593,11 +2593,11 @@ function generateCompanyDetailPages(
     // Company header
     let body = `<div class="section-label"><a href="/companies" style="color:var(--text-tertiary);">Companies</a> &rsaquo; ${name}</div>\n`;
 
-    body += `<div style="padding:1rem 0;border-bottom:1px solid var(--border);margin-bottom:1rem;">`;
-    body += `<h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;">${name}</h1>`;
+    body += `<div class="company-detail-header">`;
+    body += `<h1>${name}</h1>`;
     const displayDescription = generateCompanyDescription(company);
-    body += `<p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;">${escapeHtml(displayDescription)}</p>`;
-    body += `<div class="article-meta">`;
+    body += `<p class="company-detail-tagline">${escapeHtml(displayDescription)}</p>`;
+    body += `<div class="company-stat-band">`;
     const displayCategory = getPrimaryCategory(company.category);
     if (displayCategory) {
       body += `<span class="company-tag" style="cursor:default;">${escapeHtml(displayCategory)}</span>`;

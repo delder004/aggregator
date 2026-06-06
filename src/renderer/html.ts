@@ -1646,6 +1646,14 @@ a.source-name:hover{text-decoration:underline;}
 .share-btn.email{background:var(--text-secondary);}
 .related-section{margin-top:2.5rem;border-top:1px solid var(--border);padding-top:1.5rem;}
 
+/* Company detail page */
+.company-detail-header{padding:1rem 0;border-bottom:1px solid var(--border);margin-bottom:1rem;}
+.company-detail-header h1{font-family:ui-serif,Georgia,serif;font-size:2rem;font-weight:800;line-height:1.2;margin-bottom:0.3rem;letter-spacing:-0.02em;}
+@media(max-width:900px){.company-detail-header h1{font-size:1.6rem;}}
+@media(max-width:640px){.company-detail-header h1{font-size:1.3rem;letter-spacing:0;}}
+.company-detail-tagline{color:var(--text-secondary);font-size:0.9rem;margin-bottom:0.5rem;overflow-wrap:anywhere;}
+.company-stat-band{font-size:0.82rem;color:var(--text-secondary);display:flex;align-items:center;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem;font-weight:500;}
+
 /* Most discussed */
 .discussed-list{list-style:none;counter-reset:discussed;padding:0;margin:0.5rem 0;}
 .discussed-item{
