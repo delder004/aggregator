@@ -12,6 +12,7 @@ Events:
 - `$pageview` / `$pageleave`: traffic, pages, referrers, engagement.
 - `outbound_link_clicked`: destination host/path, without query or fragment.
 - `site_search`: a search page was viewed; query text is not collected.
+- `newsletter_link_clicked`: the current Buttondown newsletter CTA was clicked, NOT a completed subscription.
 - `newsletter_form_submitted`: a submission attempt, NOT proof of a successful signup. Authoritative confirmed signups remain in D1 and the Cloudflare engagement conversion events.
 
 Cookieless tracking is enabled in both PostHog project settings and SDK. No persistent visitor cookies, session replay, autocapture of form contents, heatmaps, surveys, or person profiles. Global Privacy Control and Do Not Track suppress SDK loading. URLs are stripped of query strings and fragments, page titles are removed, and campaign identifiers are dropped. Therefore this initial setup supports referrer attribution, but not UTM campaign reporting. The public project ingestion token is intentionally in source; it cannot read analytics or administer the account.

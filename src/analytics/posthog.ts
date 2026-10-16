@@ -55,6 +55,7 @@ export const POSTHOG_SCRIPT = String.raw`(function () {
       if (!/^https?:$/.test(target.protocol)) return;
       if (target.hostname !== location.hostname) {
         ph.capture('outbound_link_clicked', { destination_host: target.hostname, destination_path: target.pathname });
+        if (target.hostname === 'buttondown.com' && target.pathname === '/agenticaiccounting') ph.capture('newsletter_link_clicked');
       }
     } catch (_) {}
   });
