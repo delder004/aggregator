@@ -1,3 +1,4 @@
+import { addPostHog, POSTHOG_SCRIPT } from './analytics/posthog';
 import type { Env, RunTriggerType, RunWorkflowParams } from './types';
 import {
   getArticleById,
@@ -125,7 +126,7 @@ async function startPipeline(env: Env, triggerType: RunTriggerType, triggerSourc
   return { pipelineRunId, collectInstance, processInstance };
 }
 
-export default {
+const application = {
   async fetch(
     request: Request,
     env: Env,
@@ -1292,5 +1293,19 @@ export default {
       `Pipeline run ${pipelineRunId} started. ` +
       `Collect workflow: ${collectInstance.id}, Process workflow: ${processInstance.id}`
     );
+  },
+};
+
+// Apply browser analytics after cache lookup, without rebuilding stored pages.
+export default {
+  scheduled: application.scheduled,
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    if (new URL(request.url).pathname === '/site-analytics.js' && request.method === 'GET') {
+      return new Response(POSTHOG_SCRIPT, { headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'public, max-age=300',
+      } });
+    }
+    return addPostHog(request, await application.fetch(request, env, ctx));
   },
 };

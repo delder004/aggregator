@@ -51,7 +51,7 @@ Cron (hourly) → Collectors → AI Scoring → D1 → HTML Generation → KV �
 
 ## Key Design Constraints
 
-- **No client-side JavaScript.** Pages are pure static HTML with inline CSS.
+- **Static HTML with inline CSS.** Exception: the optional PostHog analytics script is injected at response time; site functionality does not depend on JavaScript. See `docs/analytics.md`.
 - **Page weight < 50KB.** No external stylesheets, fonts, or libraries.
 - **Collectors must not throw.** Return empty arrays on failure and log errors — one broken source must not kill the cron job.
 - **180-day rolling window.** Feed shows articles from the last 180 days.
