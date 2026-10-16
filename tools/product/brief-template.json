@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "run_id": "REPLACE_WITH_UTC_TIMESTAMP",
+  "previous_run": null,
+  "decision": "What product should this site become to earn useful traffic?",
+  "status": "discovery",
+  "primary_audience": null,
+  "geographies": [],
+  "budget": {"new_api_spend_cap_usd": 0, "actual_usd": 0, "editorial_hours_per_week": null},
+  "evidence_runs": [],
+  "assumptions": [],
+  "unresolved_questions": [],
+  "artifact_shapes": {
+    "evidence.json": [{"id": "E01", "kind": "observed|estimate|hypothesis", "claim": "", "source": "URL or growth observation ID", "captured_at": "", "source_period": null, "geography": null, "unit": null, "limitations": []}],
+    "opportunities.json": [{"id": "O01", "audience": "", "job": "", "intent_cluster": [], "evidence_ids": [], "uncertainty": "", "acquisition_route": "", "useful_outcome": "", "validation_test": ""}],
+    "competition.json": [{"id": "C01", "name": "", "role": "direct|search|substitute", "sources": [], "inspected_at": "", "audience": "", "promise": "", "core_task": "", "trust": "", "distribution_evidence": "", "return_trigger": "", "gating": "", "maintenance_implications": "", "unverified": []}],
+    "backlog.json": [{"id": "F01", "priority": "now|next|later", "story": "As a ..., I want ..., so that ...", "opportunity_id": "O01", "evidence_ids": [], "assumption": "", "acceptance_criteria": [], "dependencies": [], "data_requirements": [], "growth_mechanism": "", "primary_metric": {"name": "", "numerator": "", "denominator": null, "scope": "", "currently_observable": false}, "test": "", "decision_rules": {"success": "", "revise": "", "stop": ""}, "earliest_evaluation": "", "build_effort": "", "maintenance": "", "proposed_owner": "", "deferral_reason": null}]
+  }
+}

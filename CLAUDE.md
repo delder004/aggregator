@@ -31,6 +31,8 @@ npx wrangler types                   # regenerate Env type bindings
 
 Use the standalone Python CLI documented in [tools/growth/README.md](tools/growth/README.md). Start with `python3 tools/growth/cli.py doctor` and `python3 tools/growth/cli.py schema`. It supports Search Console, PostHog, DataForSEO, public HTML audits, local evidence history, and deployment impact comparisons. Credentials and raw evidence stay outside git; paid research can be previewed with `--dry-run`.
 
+For product strategy or a redesign, follow [tools/product/README.md](tools/product/README.md). It uses growth evidence to compare product directions and produce user stories, a value proposition, and validation gates before implementation. Proposals do not automatically supersede the existing stylist roadmap.
+
 ## Testing
 
 - **Framework:** Vitest with `@cloudflare/vitest-pool-workers` for Worker-compatible test execution.
