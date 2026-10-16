@@ -1,0 +1,12 @@
+{
+  "id": "example-replace-with-unique-deployment-id",
+  "hypothesis": "Replace with the specific audience need and expected behavior change",
+  "urls": ["https://agenticaiccounting.com/company/xero"],
+  "deployed_at": "2026-09-29T12:00:00-07:00",
+  "primary_metric": "gsc_clicks",
+  "commit": "replace-with-actual-commit",
+  "evidence_ids": [],
+  "evaluation": "28 finalized days after a 7-day settling period; compare a weekday-aligned 28-day baseline",
+  "concurrent_changes": [],
+  "distribution": []
+}

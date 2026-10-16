@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit",
     "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "growth": "python3 tools/growth/cli.py",
+    "test:growth": "python3 -m unittest discover -s tools/growth/tests -v"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

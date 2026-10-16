@@ -25,3 +25,6 @@ worker-configuration.d.ts
 # OS
 .DS_Store
 .claude/worktrees/
+
+# Private local research evidence and analytics
+.growth/

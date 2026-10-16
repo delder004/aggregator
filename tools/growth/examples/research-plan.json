@@ -1,0 +1,8 @@
+[
+  ["gsc", "--start", "2026-09-01", "--end", "2026-09-28", "--dimensions", "date"],
+  ["gsc", "--start", "2026-09-01", "--end", "2026-09-28", "--dimensions", "query,page"],
+  ["traffic", "--start", "2026-09-01", "--end", "2026-09-28"],
+  ["research", "volume", "--params", "{\"keywords\":[\"ai-native erp\",\"leading ai tax automation companies\",\"ai bookkeeping\",\"xero ai agent\"]}"],
+  ["research", "serp", "--params", "{\"keyword\":\"ai-native erp\",\"depth\":100}"],
+  ["audit", "--url", "https://agenticaiccounting.com/company/xero"]
+]
