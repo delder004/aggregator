@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-10-16",
+  "scope": "Three-product research sample for US accounting firms; not an exhaustive ranking or hands-on review.",
+  "sources": {
+    "double-ledger": {"url": "https://doublehq.com/integrated-file-review-tools/", "title": "Double: integrated file review tools"},
+    "double-bank": {"url": "https://help.doublehq.com/en/articles/11814308-ai-bank-feeds", "title": "Double help: AI Bank Feeds"},
+    "double-price": {"url": "https://doublehq.com/pricing-plans/", "title": "Double: pricing and plans"},
+    "bot-ledger": {"url": "https://www.botkeeper.com/en/knowledge/using-gl-automation", "title": "Botkeeper help: GL Automation"},
+    "bot-review": {"url": "https://www.botkeeper.com/", "title": "Botkeeper: product overview"},
+    "bot-price": {"url": "https://www.botkeeper.com/pricing", "title": "Botkeeper: pricing"},
+    "digits-ledger": {"url": "https://help.digits.com/firms-getting-started/adding-your-first-client", "title": "Digits help: adding your first client"},
+    "digits-work": {"url": "https://digits.com/accountants/", "title": "Digits for accounting firms"},
+    "digits-price": {"url": "https://digits.com/pricing/", "title": "Digits: pricing"}
+  },
+  "products": [
+    {
+      "id": "double", "name": "Double", "initial": "D", "route": "keep", "type": "Close & review workspace",
+      "fit": "Explore if your team wants a shared place to review and close clients’ existing books.",
+      "ledger": {"text": "Connects to QuickBooks Online and Xero for file review.", "sources": ["double-ledger"]},
+      "workflow": {"text": "Groups bank transactions for review and categorization.", "sources": ["double-bank"]},
+      "review": {"text": "Review suggested coding; investigate uncertain transactions.", "sources": ["double-bank"]},
+      "limit": {"text": "AI Bank Feeds currently supports US QuickBooks Online files only. Xero file review does not imply Xero AI Bank Feeds support.", "sources": ["double-bank", "double-ledger"]},
+      "pricing": {"text": "Per-client plans. Confirm the current amount and feature tier; base plan amounts were not reliably extractable in this review.", "sources": ["double-price"]},
+      "questions": ["Which features work for each client’s ledger and region?", "Will separate bank connections be needed?", "Which plan covers the specific workflow we want?"],
+      "unknowns": ["Current base plan price", "Observed accuracy and time saved on real client books", "Suitability for the firm’s particular client mix"],
+      "vendor": "https://doublehq.com/"
+    },
+    {
+      "id": "botkeeper", "name": "Botkeeper", "initial": "B", "route": "keep", "type": "Bookkeeping automation layer",
+      "fit": "Explore if you want transaction automation while keeping the client’s existing ledger.",
+      "ledger": {"text": "GL Automation works with QuickBooks Online or Xero.", "sources": ["bot-ledger"]},
+      "workflow": {"text": "Uses transactions from the connected ledger’s accounts.", "sources": ["bot-ledger"]},
+      "review": {"text": "Vendor says high-confidence items can post automatically; lower-confidence items go to review.", "sources": ["bot-review"]},
+      "limit": {"text": "The software-only license is administered by your firm. Do not assume a dedicated accountant is included.", "sources": ["bot-price"]},
+      "pricing": {"text": "$149 per client license/month for 1–4 licenses on monthly billing. Volume and annual rates differ; services require separate scoping.", "sources": ["bot-price"]},
+      "questions": ["Which transactions can post without our approval?", "What is included in software versus additional services?", "How do we handle exceptions and correct posted entries?"],
+      "unknowns": ["Observed accuracy and exception volume", "Service package pricing for this firm", "Client-specific eligibility and onboarding effort"],
+      "vendor": "https://www.botkeeper.com/"
+    },
+    {
+      "id": "digits", "name": "Digits", "initial": "d", "route": "replace", "type": "Replacement accounting ledger",
+      "fit": "Explore if your firm is willing to move selected clients onto a different accounting platform.",
+      "ledger": {"text": "Start new books in Digits or migrate from an existing system.", "sources": ["digits-ledger"]},
+      "workflow": {"text": "Vendor describes automated bookkeeping, reconciliation and firm-wide review workflows.", "sources": ["digits-work"]},
+      "review": {"text": "Firm console supports oversight; exact approval controls need a trial.", "sources": ["digits-work"]},
+      "limit": {"text": "QuickBooks migration is an onboarding path, not proof of ongoing two-way ledger synchronization.", "sources": ["digits-ledger"]},
+      "pricing": {"text": "Business plans list Essentials at $65/month and Core at $100/month. Firm partner pricing must be checked separately.", "sources": ["digits-price"]},
+      "questions": ["Which history and client workflows can we migrate?", "What remains manual for our client mix?", "What are the applicable firm plan and migration terms?"],
+      "unknowns": ["Firm-specific total price", "Migration completeness for a real client", "Observed exception handling and approval behavior"],
+      "vendor": "https://digits.com/"
+    }
+  ]
+}

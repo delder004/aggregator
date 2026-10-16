@@ -100,3 +100,7 @@ Before broader implementation, inventory URLs and redirect only genuine replacem
 ## Next decision
 
 Confirm the initial audience and editorial capacity, then validate the bookkeeping comparison task. That determines whether the redesign should center on choosing tools, following the market, or a different job. The pipeline is reusable even if this first product hypothesis is rejected.
+
+## Prototype follow-up
+
+The [three-tool research prototype and usability protocol](2026-10-16-bookkeeping-prototype.md) are ready for review. This is the next discovery stage; no real-user validation or production redesign has occurred.
