@@ -78,7 +78,7 @@ class Store:
             json.dump(item, f, indent=2, ensure_ascii=False, allow_nan=False)
             f.write('\n')
         self.db.execute('INSERT INTO observations VALUES (?,?,?,?,?,?)',
-                        (ident, item['captured_at'], kind, status, digest(request), str(file)))
+                        (ident, item['captured_at'], kind, status, digest(request), str(file.relative_to(self.path))))
         self.db.commit()
         return dict(item, artifact=str(file))
 
@@ -86,7 +86,8 @@ class Store:
         row = self.db.execute('SELECT artifact FROM observations WHERE id=?', (ident,)).fetchone()
         if not row:
             raise GrowthError('Unknown observation ID', 'not_found')
-        return dict(json.loads(Path(row['artifact']).read_text()), artifact=row['artifact'])
+        file = self.path / row['artifact']
+        return dict(json.loads(file.read_text()), artifact=str(file))
 
     def history(self, kind=None, limit=50):
         if kind:

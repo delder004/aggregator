@@ -15,6 +15,17 @@ class GrowthTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.store=Store(self.temp.name);self.addCleanup(self.store.db.close)
         self.client=Client(dict(site_url='https://example.com',gsc_property='sc-domain:example.com',posthog_project_id='1',max_api_requests_per_run=3),dict(DATAFORSEO_LOGIN='user',DATAFORSEO_PASSWORD='secret',GSC_ACCESS_TOKEN='secret',POSTHOG_PERSONAL_API_KEY='secret'),self.store)
+    def test_store_can_move_with_evidence(self):
+        import shutil
+        record=self.store.save('test',{},dict(value=1))
+        self.store.db.close()
+        destination=Path(self.temp.name)/'moved'
+        destination.mkdir()
+        shutil.move(str(Path(self.temp.name)/'evidence'),destination/'evidence')
+        shutil.move(str(Path(self.temp.name)/'growth.sqlite'),destination/'growth.sqlite')
+        moved=Store(destination);self.addCleanup(moved.db.close)
+        self.assertEqual(moved.get(record['id'])['data']['value'],1)
+
     def test_cache_avoids_paid_repeat(self):
         self.client.http=Mock(return_value={'status_code':20000,'tasks':[{'status_code':20000,'result':[]}],'cost':0.01})
         a=research(self.client,'volume',{'keywords':['abc']});b=research(self.client,'volume',{'keywords':['abc']})

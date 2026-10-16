@@ -27,6 +27,10 @@ npx vitest run                       # run tests
 npx wrangler types                   # regenerate Env type bindings
 ```
 
+## Local traffic and SEO research
+
+Use the standalone Python CLI documented in [tools/growth/README.md](tools/growth/README.md). Start with `python3 tools/growth/cli.py doctor` and `python3 tools/growth/cli.py schema`. It supports Search Console, PostHog, DataForSEO, public HTML audits, local evidence history, and deployment impact comparisons. Credentials and raw evidence stay outside git; paid research can be previewed with `--dry-run`.
+
 ## Testing
 
 - **Framework:** Vitest with `@cloudflare/vitest-pool-workers` for Worker-compatible test execution.

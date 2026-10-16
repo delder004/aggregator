@@ -135,13 +135,13 @@ def posthog(client, start, end, refresh=False, dry_run=False):
     end_exclusive = str(dt.date.fromisoformat(end)+dt.timedelta(days=1))
     host = urllib.parse.urlsplit(client.config['site_url']).hostname.replace("'", "''")
     # Aggregate only, intentionally no user identifiers/emails. Avoid interpreting cookieless IDs as durable visitors.
-    sql = """SELECT toDate(timestamp) AS day, event,
-+ properties.$pathname AS path, properties.$referring_domain AS referrer,
-+ count() AS event_count
-+ FROM events WHERE timestamp >= toDateTime('%s') AND timestamp < toDateTime('%s')
-+ AND properties.$host = '%s'
-+ AND event IN ('$pageview','outbound_link_clicked','newsletter_link_clicked','newsletter_form_submitted','newsletter_subscribed')
-+ GROUP BY day, event, path, referrer ORDER BY day, event_count DESC LIMIT 10001""".replace('\n+', '\n') % (start,end_exclusive,host)
+    sql = """SELECT toDate(timestamp, 'UTC') AS day, event,
+ properties.$pathname AS path, properties.$referring_domain AS referrer,
+ count() AS event_count
+ FROM events WHERE timestamp >= toDateTime('%s', 'UTC') AND timestamp < toDateTime('%s', 'UTC')
+ AND properties.$host = '%s'
+ AND event IN ('$pageview','site_search','outbound_link_clicked','newsletter_link_clicked','newsletter_form_submitted','newsletter_subscribed')
+ GROUP BY day, event, path, referrer ORDER BY day, event_count DESC LIMIT 10001""" % (start,end_exclusive,host)
     project = str(client.config['posthog_project_id'])
     if not project.isdigit():
         raise GrowthError('posthog_project_id must be numeric')
