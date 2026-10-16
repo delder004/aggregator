@@ -53,7 +53,7 @@ class GrowthTests(unittest.TestCase):
         self.assertEqual(body['dimensionFilterGroups'][0]['filters'][0]['expression'],'https://example.com/a')
         self.assertFalse(result['data']['source_exhaustive'])
     def test_posthog_is_inclusive_end_and_not_sessions(self):
-        self.client.http=Mock(return_value={'results':[]})
+        self.client.http=Mock(return_value={'results':[], 'query_status':None})
         result=posthog(self.client,'2026-09-01','2026-09-28')
         self.assertIn('2026-09-29',result['request']['body']['query']['query'])
         self.assertIn('not sessions',result['data']['note'])

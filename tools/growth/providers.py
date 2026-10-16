@@ -135,7 +135,7 @@ def posthog(client, start, end, refresh=False, dry_run=False):
     end_exclusive = str(dt.date.fromisoformat(end)+dt.timedelta(days=1))
     host = urllib.parse.urlsplit(client.config['site_url']).hostname.replace("'", "''")
     # Aggregate only, intentionally no user identifiers/emails. Avoid interpreting cookieless IDs as durable visitors.
-    sql = """SELECT toDate(timestamp, 'UTC') AS day, event,
+    sql = """SELECT toDate(timestamp) AS day, event,
  properties.$pathname AS path, properties.$referring_domain AS referrer,
  count() AS event_count
  FROM events WHERE timestamp >= toDateTime('%s', 'UTC') AND timestamp < toDateTime('%s', 'UTC')
@@ -151,7 +151,7 @@ def posthog(client, start, end, refresh=False, dry_run=False):
     body = {'query':{'kind':'HogQLQuery','query':sql}, 'async':False}
     def fetch():
         raw = client.http('https://'+region+'.posthog.com/api/projects/'+project+'/query/', body, {'Authorization':'Bearer '+client.secret('POSTHOG_PERSONAL_API_KEY')})
-        if raw.get('error') or raw.get('query_status',{}).get('error'):
+        if raw.get('error') or (raw.get('query_status') or {}).get('error'):
             raise GrowthError('PostHog query failed', 'provider_error')
         if 'results' not in raw:
             raise GrowthError('PostHog did not return completed results; retry later.', 'incomplete_response')
