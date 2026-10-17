@@ -1,47 +1,33 @@
-# Product proposal: [specific direction]
+# Product decision: [hypothesis and outcome]
 
-Date / pipeline version / run / prior run / status: Proposed.
+Run / v4 / hypothesis ID / previous cycle / date.
+Execution status: [planned/running/completed/blocked].
+Decision: [accept/reject/inconclusive/pending].
 
-## The direction
+## Decision and next action
 
-State what this should become, for whom, its promise and why it deserves to exist. Lead with the product, not research caveats. Explain the strategic belief, why now, why us (including advantages to earn), sacrifices and strongest alternative. Distinguish proposed conviction from established facts.
+What the evidence supports, what it does not, and the next bounded investment or change of direction. Pending means no experimental conclusion yet. Do not confuse user agreement with experimental support.
 
-## The experience we want to create
+## Strategic context and hypothesis
 
-A first visit and a return visit. Concrete illustrative content, page hierarchy, user actions and useful result. Editorial/design principles with observable consequences; why these choices suit the audience. What gives it character? What would you deliberately leave out? Label examples and avoid invented factual claims.
+Audience/situation, product vision, proposed perspective, concrete promise/specimen and taste. Why this bet rather than its strongest alternative? State the falsifiable claim and what failure would change. Keep vision, possible first release and experiment distinct.
 
-## Why this direction
+## Research that informed the bet
 
-User situations and workarounds, market change, growth baseline with periods/scopes, task-level competition, disconfirming evidence. Compare three strategic concepts and minimal change on usefulness, appeal, distinction, growth, compounding advantage, feasibility and evidence. Explain which prior perspective was developed or rejected. Do not bury the decision in a research transcript.
+Decisive demand/behavior/competition evidence, scope and source dates. Strongest same-task substitute and our potential contribution. Focus on what changed the hypothesis; no repeated research inventory required.
 
-## Vision, first release and first experiment
+## Experiment planned and actually performed
 
-Separate the destination from a coherent initial product and the smallest learning step. Explain how the first release delivers the essential promise. State non-goals and expansion logic; do not turn an experiment into the entire vision.
+Method, population, offer/comparison, preregistered criteria, sample/exposure and window. Actual actions and results with evidence references, deviations, costs and quality limitations. Mark retrospective analyses and unperformed steps explicitly. If pending, describe prepared materials and exact access/action needed.
 
-## Features and user stories
+## Accept/reject reasoning
 
-Stable feature IDs, priority, story, observable acceptance criteria, evidence or strategic hypothesis, useful/growth outcome, dependency and upkeep. Connect the features into a journey, not a wish list. Distinguish later ideas from first-release essentials.
+Compare observed results to criteria. Distinguish supported claim from broader claims about demand, acquisition, use and retention. Explain inconclusive results without forcing a winner. An agent's favorable review is not market evidence.
 
-## How it earns an audience
+## Next loop
 
-Discovery channels → useful experience → return/share → accumulating advantage. Specific content/intent opportunities, channel access and dependencies, distribution choices and sacrifices. Separate acquisition, task success and retention measures; no invented forecasts or assumed traffic attribution. Explain how changes and their impact will be recorded using the growth pipeline.
+What to preserve, revise or drop; next decisive uncertainty and proposed hypothesis. Describe only feature/release work justified by this result, with authorization kept separate. Record actual future releases with growth CLI and compare appropriate finalized windows; no fake change record for a research run.
 
-## Operating model and sequence
+## Review and sources
 
-Initial versus recurring effort, ownership/expertise, source freshness and correction process, actual versus hypothetical capacity, costs and maintenance. Show how scope changes under low/moderate capacity without confusing capacity with ambition. Include later migration and measurement prerequisites as relevant.
-
-## What could make this wrong
-
-Strongest objection and a short ranked list of decisive assumptions. Proposed experiments with required access, effort, continue/revise/stop rules and how each changes the strategy. Be honest about evidence without repeating disclaimers throughout the document.
-
-## What this run actually learned
-
-Connect the prior review's delta agenda to new research: investigated question, new evidence, decision consequence and remaining uncertainty. Distinguish a better specimen or strategic argument from stronger demand evidence. Include the decisive same-task substitute comparison and the core source-backed specimen above, not just links to working notes.
-
-## What improved from the previous run
-
-Specific changes in direction, reasoning, experience and scope. Separate research discoveries from new strategic judgments. State remaining weaknesses.
-
-## Sources and evidence limits
-
-Public links with source/retrieval dates; private observation references with comprehensible summaries and dates/scopes. No secrets or raw private data. The reader must be able to assess the argument without stage files.
+Brief product/inference quality check; independent parent review link for subagent runs. Public citations/dates, sanitized provider evidence summaries/IDs and limitations. No sensitive participant data or secrets. Final must be understandable without stage files.
