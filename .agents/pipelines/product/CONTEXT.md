@@ -1,47 +1,45 @@
-# Pipeline: product
+# Pipeline: product — vision-led discovery (v3)
 
-Job: decide what agenticaiccounting.com should become to earn useful traffic, using growth evidence, audience problems and competition. The final product is **one self-contained Markdown product decision**, not a website or prototype.
+Job: propose what agenticaiccounting.com should become to earn useful traffic and lasting audience value. Combine research with explicit strategic judgment and product taste. The final product is **one self-contained Markdown product proposal**, not a website, research inventory or validation plan alone.
 
-Read the [pipeline conventions](../README.md). The growth CLI remains in [tools/growth](../../../tools/growth/README.md). Existing pages, infrastructure and prototypes are optional assets, not product requirements. Prior proposals are hypotheses to challenge.
+Read [pipeline conventions](../README.md). Use the [growth CLI](../../../tools/growth/README.md) for evidence. Existing infrastructure and prototypes are optional assets. Read the existing design roadmap and prior decisions as perspectives to develop, challenge or reject, not assumptions to silently inherit or discard.
 
 ## Stages
 
-| Stage | Job | Output under the run's stage folder |
+| Stage | Job | Output |
 |---|---|---|
-| [01_frame](01_frame/CONTEXT.md) | Frame the open decision. | `output/brief.md` |
-| [02_baseline](02_baseline/CONTEXT.md) | Establish evidence and measurement limits. | `output/baseline.md` |
-| [03_opportunities](03_opportunities/CONTEXT.md) | Explore four audience/job opportunities before selection. | `output/opportunities.md` |
-| [04_competition](04_competition/CONTEXT.md) | Inspect competitors, substitutes and distribution access. | `output/competition.md` |
-| [05_compare](05_compare/CONTEXT.md) | Compare distinct concepts and minimal change. | `output/concepts.md` |
-| [06_decision](06_decision/CONTEXT.md) | Synthesize the product, stories and growth model. | `output/product-decision.md` |
-| [07_review](07_review/CONTEXT.md) | Review, correct and hand off the selected decision. | `output/review.md`; handoff links the final stage-06 document |
+| [01_ambition](01_ambition/CONTEXT.md) | Ambition and perspective | `output/ambition.md` |
+| [02_people_market](02_people_market/CONTEXT.md) | People and market | `output/research.md` |
+| [03_strategy](03_strategy/CONTEXT.md) | Strategic theses | `output/strategy.md` |
+| [04_concepts](04_concepts/CONTEXT.md) | Product concepts and taste | `output/concepts.md` |
+| [05_direction](05_direction/CONTEXT.md) | Choose a direction | `output/direction.md` |
+| [06_product_plan](06_product_plan/CONTEXT.md) | Product and growth plan | `output/product-decision.md` |
+| [07_critique](07_critique/CONTEXT.md) | Critique and experiments | `output/review.md` |
 
 ## Start or resume
 
-Use a stable `.agents/runs/product-<YYYYMMDD>-<short-slug>/` folder in a worktree. Create the same numbered stage folders as this router. Each stage has `output/` and `handoff.md`; do not copy stage contracts into runs. The run's `README.md` states the original request, status, previous run if any, and links the current handoff/final product.
+Use `.agents/runs/product-YYYYMMDD-short-slug/` in a worktree. Mirror these numbered stage folders, each with `output/` and `handoff.md`; do not copy contexts. The README records the request, pipeline version, status, previous run, and selected final. Read contexts in order and consume the outputs selected by handoffs. Resume from those handoffs without repeating completed work.
 
-To run: read this root context, then each stage's `CONTEXT.md` in order. Consume the outputs selected by preceding handoffs. To resume: read the run README and the most recent handoff, then the next stage context. Do not repeat completed research solely because a new agent takes over.
+Older runs retain their original stage names and selected outputs. Do not rename historical evidence to suggest it used this process. Preserve substantive revisions under `output/r2/`, `r3/`, and update handoffs; revisit downstream conclusions when an earlier premise changes.
 
-Complete the authorized research without inventing approval gates at every stage. Unknowns constrain confidence. Only a real user decision changes Proposed to Agreed; approval to research is not agreement to a product or permission to build it.
+## Judgment contract
 
-## Shared constraints
+- Explicitly distinguish user preferences, observed facts, inferred opportunities and proposed beliefs. An agent must contribute a reasoned perspective; missing user preferences are not permission to invent agreement.
+- Research informs strategy; keyword volume does not choose the product. Competition can reveal a viable market as well as a hard problem.
+- Explain why the proposed product deserves to exist, how it should feel and behave, and what it deliberately excludes. Use concrete Markdown examples to expose taste to critique.
+- Separate long-term vision, coherent first release and smallest experiment. Uncertainty changes confidence and investment sequence; it does not excuse avoiding a direction.
+- Assess evidence honesty and strategic/experiential quality independently. A document can pass one and fail the other.
 
-- Produce Markdown working outputs and a short prose handoff. No mandatory JSON manifests, event logs, hashes, timing or telemetry.
-- Cite sources and source dates where product claims appear. Keep raw provider responses, secrets and sensitive analytics in the private `.growth/` store; only sanitized summaries and observation references belong in tracked runs.
-- Default incremental paid API budget is $0: reuse suitable evidence and use public research. Respect any explicitly authorized budget; no purchases or new subscriptions. Missing demand is not zero.
-- Explore before choosing. Compare at least four audience/jobs, at least three distinct concepts plus minimal change, and at least five task-level sources/products/substitutes. Search for disconfirming evidence.
-- Compare low and moderate editorial-capacity scenarios. Do not assume access to practitioners, reviewers, partner audiences or competitor distribution.
-- A conditional recommendation is valid. Do not claim product validation from desk research, fabricate participants or infer traffic from public links.
-- Do not implement features, create websites/prototypes, run proposed tests, send outreach, deploy or change scheduled agents during this pipeline.
+## Research and execution boundaries
 
-## Completion and revisions
+Cite sources and dates near claims. Reuse suitable analytics with original periods; do not fabricate user research, adoption or traffic. Keep credentials and raw provider data in private `.growth/`; publish only sanitized summaries and references. Missing demand is not zero. Default incremental paid API budget is $0; use existing evidence and public research unless another budget is explicitly authorized. No purchases or subscriptions.
 
-Use the [decision template](decision-template.md) and [review rubric](review-rubric.md). The final document stands alone: audience, value proposition, alternatives, features/stories, traffic paths, maintenance, tests and sources. Stage notes and a favorable review do not substitute for it.
+Explore materially different audiences, three strategic concepts, and credible substitutes before recommending. Hypothetical capacity scenarios are sensitivities, not user constraints. Do not assume practitioner expertise, partner access or competitor distribution.
 
-The selected final document stays in the run under `06_decision/output/`; `07_review/handoff.md` links it. Preserve substantive revisions in round folders and update the handoffs. If review changes an earlier premise, revisit the affected stage and identify which later conclusions are superseded. Do not silently overwrite decisions.
+Complete research without routine approval gates. Do not build features/websites/prototypes, execute proposed experiments, send outreach, deploy, or change scheduled agents. Approval to research is not agreement to a product direction.
 
-No automatic publishing to `docs/`, production changes or commits are part of executing a run. Repository changes to the pipeline itself follow the normal worktree/commit workflow. A later request may publish a selected decision or scope implementation; it must not be inferred from completion of research.
+## Completion
 
-## Existing runs
+Use [decision-template.md](decision-template.md) and [review-rubric.md](review-rubric.md). The final selected proposal lives under `06_product_plan/output/`; `07_critique/handoff.md` links it after independent parent review for subagent runs. The final must make sense without stage notes, including the vision, experience, stories, growth model and decisive experiments. Status stays Proposed until the user agrees.
 
-[The completed v2 run](../../runs/product-20261016-site-direction-v2/README.md) demonstrates this layout. It imports existing outputs and reviews; it is not a new research run or user agreement. Earlier `.growth/product-runs/` and `docs/product/` artifacts remain historical records. When resuming an older run, use its selected outputs and create new Markdown handoffs without backfilling invented decisions or activity.
+No automatic commits or publishing to `docs/` are part of a run. Pipeline-definition changes follow normal repository worktree/commit rules. Historical runs remain in [runs](../../runs/README.md).

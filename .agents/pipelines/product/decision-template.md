@@ -1,51 +1,43 @@
-# Product decision: [specific recommendation]
+# Product proposal: [specific direction]
 
-Run name / date / prior run / status. State the evidence scope, budget constraints and important unknowns. Runtime telemetry is not required.
+Date / pipeline version / run / prior run / status: Proposed.
 
-## Decision in brief
+## The direction
 
-Recommendation, confidence, chosen audience/job, promise, strongest alternative, why this decision rather than a broad rebuild now. Identify what would reverse it. Distinguish research completion from product validation.
+State what this should become, for whom, its promise and why it deserves to exist. Lead with the product, not research caveats. Explain the strategic belief, why now, why us (including advantages to earn), sacrifices and strongest alternative. Distinguish proposed conviction from established facts.
 
-## Objective, constraints and evidence
+## The experience we want to create
 
-Original traffic objective; scope; geography; capacity scenarios; current baseline with dates, units and limits. Source IDs adjacent to claims. Important unknowns and their effect on confidence.
+A first visit and a return visit. Concrete illustrative content, page hierarchy, user actions and useful result. Editorial/design principles with observable consequences; why these choices suit the audience. What gives it character? What would you deliberately leave out? Label examples and avoid invented factual claims.
 
-## Opportunity landscape
+## Why this direction
 
-At least four audience/job opportunities, each with trigger, workaround, two intent clusters, available demand evidence, counterevidence, route to users and confidence. Make missing measurements visible.
+User situations and workarounds, market change, growth baseline with periods/scopes, task-level competition, disconfirming evidence. Compare three strategic concepts and minimal change on usefulness, appeal, distinction, growth, compounding advantage, feasibility and evidence. Explain which prior perspective was developed or rejected. Do not bury the decision in a research transcript.
 
-## Competition and substitutes
+## Vision, first release and first experiment
 
-Task-specific findings across the opportunities; at least five distinct sources/products/substitutes; what is already well served, what might remain open, and which competitive advantages we cannot assume.
-
-## Product alternatives and tradeoffs
-
-Three genuinely different concepts plus status quo/minimal change, compared on common dimensions. Explain selection under low and moderate editorial capacity, and why alternatives are deferred. Include the strongest case against the recommendation.
-
-## Product definition
-
-Audience, triggering problem, value proposition, differentiated useful result, primary journey, public content/page model, reason to share/return, explicit non-goals. The model is a proposal, not UI implementation.
+Separate the destination from a coherent initial product and the smallest learning step. Explain how the first release delivers the essential promise. State non-goals and expansion logic; do not turn an experiment into the entire vision.
 
 ## Features and user stories
 
-For each stable feature ID: priority; user story; evidence/hypothesis; acceptance criteria; growth or enabling contribution; metric and denominator/scope where relevant; data/dependencies; maintenance/owner assumption; defer/drop condition. Include enough detail to assess behavior, not a feature-name list.
+Stable feature IDs, priority, story, observable acceptance criteria, evidence or strategic hypothesis, useful/growth outcome, dependency and upkeep. Connect the features into a journey, not a wish list. Distinguish later ideas from first-release essentials.
 
-## Traffic and distribution model
+## How it earns an audience
 
-Concrete acquisition paths, demand evidence and uncertainty, access to channel, relationship dependency, useful action, repeat/share mechanism and observable metric. No invented traffic forecast. Distinguish new acquisition from retention.
+Discovery channels → useful experience → return/share → accumulating advantage. Specific content/intent opportunities, channel access and dependencies, distribution choices and sacrifices. Separate acquisition, task success and retention measures; no invented forecasts or assumed traffic attribution. Explain how changes and their impact will be recorded using the growth pipeline.
 
-## Operating model and feasibility
+## Operating model and sequence
 
-Initial work versus recurring work, 2-hour and 8-hour/week hypothetical scenarios (or supplied capacity), owner assumptions, source freshness, corrections and research costs. Mark estimates and measured durations separately.
+Initial versus recurring effort, ownership/expertise, source freshness and correction process, actual versus hypothetical capacity, costs and maintenance. Show how scope changes under low/moderate capacity without confusing capacity with ambition. Include later migration and measurement prerequisites as relevant.
 
-## Validation plan and conditional roadmap
+## What could make this wrong
 
-Rank assumptions by risk. For each: smallest test, participant/evidence need, predeclared continue/revise/stop criteria, cost/effort, timing and what the result would change. No invented participants; no tests claimed executed. State release/measurement and migration prerequisites for later work.
+Strongest objection and a short ranked list of decisive assumptions. Proposed experiments with required access, effort, continue/revise/stop rules and how each changes the strategy. Be honest about evidence without repeating disclaimers throughout the document.
 
-## Changes from previous output
+## What improved from the previous run
 
-What stayed, changed or was rejected; new evidence responsible; remaining uncertainty. Explain whether the revised process improved the decision, not merely the presentation.
+Specific changes in direction, reasoning, experience and scope. Separate research discoveries from new strategic judgments. State remaining weaknesses.
 
-## Source notes
+## Sources and evidence limits
 
-Public links and dates; provider observation IDs with plain-language summaries, periods and geography. Readers should understand the decision without opening private artifacts or intermediate notes.
+Public links with source/retrieval dates; private observation references with comprehensible summaries and dates/scopes. No secrets or raw private data. The reader must be able to assess the argument without stage files.

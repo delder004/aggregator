@@ -1,20 +1,29 @@
-# Product discovery review rubric — v2
+# Product review rubric — v3
 
-Judge previous and new output side by side. Use pass/partial/fail plus a concrete example and consequence. Pass means the decision is supported at its declared confidence, not that product-market fit is proven. Do not award points for document length or changing the winner.
+Assess two independent dimensions using pass/partial/fail, concrete examples and consequences. Do not collapse them into a score. Good evidence cannot compensate for a weak product, and taste cannot excuse invented evidence. A proposal is not validated demand.
 
-| Criterion | Pass standard |
+## A. Strategic and experiential quality
+
+| Criterion | Passing standard |
 |---|---|
-| Scope fidelity | Self-contained final Markdown product decision; no substitution of a website, prototype or stage files. |
-| Open exploration | Four different audience/job opportunities precede selection; existing category and prototype are not presumed requirements. |
-| Balanced evidence | Each opportunity has new inspected evidence, two intent clusters, uncertainty and counterevidence; missing demand is not zero. |
-| Competitive depth | Task-level analysis across five sources/substitutes; searched for existing solutions to claimed gaps; no invented feature absences. |
-| Genuine alternatives | Three different product concepts plus minimal-change option share comparison dimensions and meaningful reasons for rejection. |
-| Distribution realism | Concrete acquisition/use/return paths with access and relationship dependencies; links and demand estimates are not asserted as visits. |
-| Product specificity | Clear audience/value proposition plus evidence-linked stories, acceptance criteria, priorities and non-goals. |
-| Feasibility | Recurring editorial work and ownership considered under two capacity scenarios; measured time separated from estimates. |
-| Falsifiability | Highest-risk assumptions, decisive tests and reversal/stop rules; user research not fabricated. |
-| Measurement honesty | Fixed scopes/units and known analytics limits; no unsupported uplift, causal claim or forecast. |
-| Synthesis and traceability | Final document contains the reasoning and sources needed without opening stage notes. |
-| Stage discipline | Proposed validation remains proposed; no premature build or claim of readiness based only on desk research. |
+| Vision | A compelling destination and audience promise beyond an experiment or SEO tactic. |
+| Perspective | Explicit belief about change; agent judgment and user input distinguished; prior vision considered. |
+| Choice | Three serious alternatives assessed; preferred direction argued with sacrifices and strongest objection. |
+| Taste | Concrete experience/content examples; reasoned hierarchy, voice, exclusions and quality principles. |
+| Usefulness | Specific human situation and useful outcome; clear reason to prefer this over a substitute. |
+| Coherence | Vision, first release, stories and experiments connect; initial scope preserves the essential promise. |
+| Growth | Plausible discovery, distribution, return/share and compounding mechanisms, with access dependencies. |
+| Ambition and feasibility | Worthwhile destination and credible sequence; invented resource ceilings do not choose the vision. |
 
-Report material improvements, remaining failures, whether the new output is usable for a product decision, and the next evidence needed. Fix contradictions and unsupported claims before final delivery. A research-limited conditional decision can pass; disguising uncertainty cannot.
+## B. Evidence and execution integrity
+
+| Criterion | Passing standard |
+|---|---|
+| Research | Multiple audience/jobs and task-level substitutes inspected; balanced evidence and counterevidence. |
+| Honesty | Facts, inferred opportunities, illustrative examples and proposed beliefs distinguished. |
+| Measurement | Dated/scoped analytics, known limits, missing demand not zero, no unsupported uplift/causality. |
+| Feasibility | Recurring ownership, expertise, access and costs exposed; estimates separated from observations. |
+| Learning | Few decisive assumptions with actionable tests and clear consequences; no fabricated participants. |
+| Deliverable | Self-contained Markdown proposal; stages are supporting work; no implementation substituted. |
+
+The independent reviewer must say whether the proposal is worth pursuing as a direction and why, not only whether it is cautious. A weak vision or generic experience blocks a successful review even with perfect citations. Request a substantive revision when needed and preserve it under r2. Compare the previous final on both dimensions, naming actual improvements and remaining failures. Do not require a different winner or pretend a better document proves traffic growth.
