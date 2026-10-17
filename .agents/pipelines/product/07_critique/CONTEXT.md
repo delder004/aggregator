@@ -14,6 +14,8 @@ Review strategic quality and evidence integrity separately. If a subagent author
 
 Rank the few assumptions most capable of killing or changing the direction. Specify smallest tests, required access, practical continue/revise/stop criteria, effort and what each result would change. Proposed tests remain proposed. Put the resulting experiments in the final product document, not only this review. Compare with the previous run: cite specific changes in judgment and experience, not just added sections or a changed winner. Preserve substantive revisions in output/r2/ and update affected handoffs. Finish with an independent review and link to the selected final in stage 06. Mark unresolved failures explicitly; no claim of user agreement or product validation.
 
+Check the delta agenda against actual work and the final. Independently inspect the strongest source-backed claim of incremental value and the best competing answer. Classify improvements as evidence, judgment, or presentation; do not upgrade empirical confidence for presentation alone. A multi-product example must compare compatible scopes or expose mismatches, and a recurring-use claim must remain hypothetical without user evidence. Report whether the proposed contribution is meaningful, partly derivative or redundant, and what that implies for direction. When the run cannot reduce a central uncertainty, state that limitation explicitly rather than forcing a positive improvement verdict.
+
 ## Outputs
 
 - `output/review.md`: selected stage result.

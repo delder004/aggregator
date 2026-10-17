@@ -14,6 +14,8 @@ Recover the user's ambition and preferences before interpreting analytics. Separ
 
 Describe assets that could become an advantage and constraints actually supplied by the user. Unknown capacity remains unknown; hypothetical capacity scenarios must not silently become the goal. Ask a consequential preference question only if needed; otherwise make your proposed perspective visible and continue. End with questions for research that could strengthen, reshape or defeat the thesis. Do not lock in an audience or product before exploration.
 
+For a repeat run, turn the previous independent review into a short delta agenda: prioritize at most three consequential gaps, state what evidence can be collected now, and what decision each could change. Preserve the user's objective and strategic ambition; a previous winning concept remains a hypothesis. State which evidence/outputs can be reused and why.
+
 ## Outputs
 
 - `output/ambition.md`: selected stage result.

@@ -34,6 +34,10 @@ Initial versus recurring effort, ownership/expertise, source freshness and corre
 
 Strongest objection and a short ranked list of decisive assumptions. Proposed experiments with required access, effort, continue/revise/stop rules and how each changes the strategy. Be honest about evidence without repeating disclaimers throughout the document.
 
+## What this run actually learned
+
+Connect the prior review's delta agenda to new research: investigated question, new evidence, decision consequence and remaining uncertainty. Distinguish a better specimen or strategic argument from stronger demand evidence. Include the decisive same-task substitute comparison and the core source-backed specimen above, not just links to working notes.
+
 ## What improved from the previous run
 
 Specific changes in direction, reasoning, experience and scope. Separate research discoveries from new strategic judgments. State remaining weaknesses.

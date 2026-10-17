@@ -14,6 +14,10 @@ Make each of the three bets tangible in Markdown: a product promise, first-visit
 
 For each concept articulate editorial and design principles that have observable consequences: what leads, what is omitted, voice, density, hierarchy, evidence display and what makes the experience memorable. Explain why a person would prefer this experience to their current alternative. Taste is reasoned selection, not a palette or a list of admired sites. Identify tensions such as depth versus scanability and choose a side with reasons. Show what ordinary generic execution would miss. No websites, images or working prototypes are required; the product is a Markdown proposal.
 
+For the preferred concept, include a worked side-by-side comparison against the strongest inspected substitute for the same task: what each lets the reader conclude, where our example adds a useful connection, and where it is redundant or weaker. Label this an editorial desk assessment, not user validation. A generic summary plus “check with the vendor” is insufficient differentiation.
+
+Make the specimen deliver the central promise at its stated scale. For a cross-vendor workflow reference, show a substantive comparison supported by the inspected product records; shared unknowns are not automatically a useful insight. Avoid invented universal winners or operational accounting advice. Show the small reusable data/content structure behind the example and one meaningful update, with source history. For other concepts, choose equivalent evidence that demonstrates their actual promise.
+
 ## Outputs
 
 - `output/concepts.md`: selected stage result.

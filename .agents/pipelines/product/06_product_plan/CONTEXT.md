@@ -14,6 +14,8 @@ Write the self-contained final Markdown product proposal using the template. Lea
 
 Connect content, distribution, product usefulness, sharing and return behavior in an explicit growth model; identify accessible channels and missing access. Explain what accumulates with use or publishing, and what must be earned. Define measures for acquisition, useful outcomes and repeat use without invented forecasts or invalid identity assumptions. Include operating effort, evidence freshness, source quality and ownership assumptions; estimates are not observed costs. Carry forward decisive uncertainties concisely without burying the recommendation in repeated caveats. The final remains Proposed; no build, deployment or outreach is implied.
 
+Include the decisive worked comparison and source-backed specimen in the final so the reader can judge the product without opening intermediate files. Add a compact “what this run actually learned” account matching the delta agenda: new evidence, changed judgment, unchanged uncertainty. Name one concrete acquisition opportunity and explain its limits. Do not call sources inspected during drafting completed production inventory or a measured operating cadence.
+
 ## Outputs
 
 - `output/product-decision.md`: selected stage result.

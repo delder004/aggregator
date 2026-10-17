@@ -1,4 +1,4 @@
-# Product review rubric — v3
+# Product review rubric — v3.1
 
 Assess two independent dimensions using pass/partial/fail, concrete examples and consequences. Do not collapse them into a score. Good evidence cannot compensate for a weak product, and taste cannot excuse invented evidence. A proposal is not validated demand.
 
@@ -27,3 +27,13 @@ Assess two independent dimensions using pass/partial/fail, concrete examples and
 | Deliverable | Self-contained Markdown proposal; stages are supporting work; no implementation substituted. |
 
 The independent reviewer must say whether the proposal is worth pursuing as a direction and why, not only whether it is cautious. A weak vision or generic experience blocks a successful review even with perfect citations. Request a substantive revision when needed and preserve it under r2. Compare the previous final on both dimensions, naming actual improvements and remaining failures. Do not require a different winner or pretend a better document proves traffic growth.
+
+## Repeat-run checks
+
+- Did the run investigate its explicit delta agenda rather than merely rewrite the prior proposal?
+- Does a source-backed specimen demonstrate the central promise, with compatible scope and adequate coverage?
+- Was it compared with the strongest inspected answer to the same task, and is the incremental contribution meaningful?
+- Are search/venue observations scoped honestly, with no assumed demand volume or distribution access?
+- Which improvements are new evidence, new judgment, or presentation? Which empirical uncertainties remain unchanged?
+
+These checks sharpen the two existing dimensions; they do not substitute a checklist for taste or require a new winner. No user evidence means usefulness and recurrence remain unvalidated even if the desk comparison is persuasive.

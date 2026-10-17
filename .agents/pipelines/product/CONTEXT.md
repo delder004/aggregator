@@ -1,4 +1,4 @@
-# Pipeline: product — vision-led discovery (v3)
+# Pipeline: product — vision-led discovery (v3.1)
 
 Job: propose what agenticaiccounting.com should become to earn useful traffic and lasting audience value. Combine research with explicit strategic judgment and product taste. The final product is **one self-contained Markdown product proposal**, not a website, research inventory or validation plan alone.
 
@@ -29,6 +29,12 @@ Older runs retain their original stage names and selected outputs. Do not rename
 - Explain why the proposed product deserves to exist, how it should feel and behave, and what it deliberately excludes. Use concrete Markdown examples to expose taste to critique.
 - Separate long-term vision, coherent first release and smallest experiment. Uncertainty changes confidence and investment sequence; it does not excuse avoiding a direction.
 - Assess evidence honesty and strategic/experiential quality independently. A document can pass one and fail the other.
+
+## Iterating from a review
+
+Before rerunning, identify the prior review's most consequential unresolved questions and select the ones this run can actually investigate. Record a short delta agenda in stage 01: question, research action, evidence needed and decision it could change. Reuse settled work; do not rephrase a whole run and call that new learning. Complete all stage handoffs, but let research effort follow the agenda.
+
+A rerun must explicitly report which conclusions gained new evidence, which changed through judgment, and which remain unresolved. New user interviews, provider measurements or operating data must never be implied when only desk research occurred. If a question needs unavailable people, permissions or budget, report the boundary and pursue independently useful work. Do not add approval gates for ordinary public research or claim that the same-day run measures growth.
 
 ## Research and execution boundaries
 
