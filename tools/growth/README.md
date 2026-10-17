@@ -100,7 +100,7 @@ GSC anonymizes query rows, so query totals differ from site totals. Average posi
 
 ## Product discovery and redesign
 
-Use the [product discovery pipeline](../product/README.md) to turn this evidence into an audience choice, value proposition, competitor assessment, prioritized user stories and measurable redesign proposal. It is a local agent-run workflow whose final deliverable is one Markdown product decision document. It compares audience problems and distinct concepts before selecting features; it does not build prototypes or require hosted site-agent infrastructure. Historical proposals remain hypotheses, not requirements.
+Use the [product discovery pipeline](../../.agents/pipelines/product/CONTEXT.md) to turn this evidence into an audience choice, value proposition, competitor assessment, prioritized user stories and measurable redesign proposal. It is a local agent-run workflow whose final deliverable is one Markdown product decision document. It compares audience problems and distinct concepts before selecting features; it does not build prototypes or require hosted site-agent infrastructure. Historical proposals remain hypotheses, not requirements.
 
 ## Agent workflow and extension
 

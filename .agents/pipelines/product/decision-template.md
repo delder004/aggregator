@@ -1,6 +1,6 @@
 # Product decision: [specific recommendation]
 
-Run ID / date / pipeline version / prior run / status / incremental spend / measured research duration.
+Run name / date / prior run / status. State the evidence scope, budget constraints and important unknowns. Runtime telemetry is not required.
 
 ## Decision in brief
 
