@@ -1,0 +1,23 @@
+# Common-dimension concept comparison
+
+Gate A passed; sources and limits are in stages 02–04. This is judgment under uncertainty, not a scorecard proving market demand.
+
+| Dimension | C1 Suitability evidence dossiers | C2 Workflow pilot field guides | C3 Applicability change briefings | C4 Practice-based learning | C0 Minimal change |
+|---|---|---|---|---|---|
+| Audience, trigger, useful result | Firm buyer facing decision; resolve one shortlist blocker with sourced known/unknown facts | Firm ops with bottleneck; reviewed pilot plan | Finance lead/analyst sees release; know what matters for their scope | Early-career accountant needs skill; completed exercise with feedback | Owner lacks evidence; preserve site while learning |
+| Problem evidence | Medium supply evidence, no observed buyer failures | Medium supplier/institutional framing, no direct user task observed | Low; real announcements, no observed monitoring burden | Medium official career framing, no learner observation | Strong sparse baseline/unknown access evidence |
+| Demand evidence | Topic volume and some competitor vendor terms; not dossier demand | Unmeasured specific query clusters | Unmeasured change queries | Unmeasured learning queries; jobs volume not proxy | Existing one GSC click/window, no baseline audience proof |
+| Distribution access | Public search pages available; peer reach unknown | Search pages available; reviewer/peer reach unknown | Public archive available; newsletter audience unknown | Public exercises available; colleges/employers unknown | Existing domain available |
+| Differentiation / switch reason | One unresolved eligibility question documented more clearly than demos/comparators; unproven | Practical reviewed plan beyond existing resources; now weaker generic novelty | Dated cross-source applicability delta beyond original release; unproven | Independent realistic task feedback beyond vendor course; unproven |
+| Repeat/share | Episodic decisions; internal purchase memo | Pilot checkpoint/next workflow | Next relevant change; internal digest | Progression/portfolio discussion | Existing feed; limited proven usefulness |
+| Build burden | Low for one document; high only if directory app | Low document; expertise expensive | Low archive; personalization increases build | Low one exercise; assessment platform higher | Lowest |
+| Initial content/data | One buyer question, two-three candidate products, claim ledger | One process, reviewer, testable steps | One cohort, source change history and applicability criteria | One scenario, model solution, reviewer | Diagnose measurement, interview plan |
+| Editorial burden | Medium: exact capability/eligibility churn | High: practitioner review and real examples | High: recurring relevance judgments | High: authoring/feedback and changing tools | Low if scope held; automated ingestion still needs oversight |
+| Strongest failure | Existing source already answers it; no reason to switch | Generic advice or unsafe overconfidence without expertise | Users prefer vendor announcements; constant work for no audience | Free credentials dominate; no authority to assess | Never creates enough distinctive value to grow |
+| Overall confidence | Low product confidence; feasible bounded comparison hypothesis | Low; unconfirmed reviewer prerequisite | Low; unknown channel and repeated need | Low; unknown educator/access | Moderate as temporary allocation, not growth strategy |
+
+At hypothetical 2 hours/week choose C0. At 8 hours/week propose C1 as first document comparison, with C2 strongest challenger only if a reviewer and actual process job exist. This is a sequencing choice to test a small factual artifact, not a claim C1 has greater market size or will win. Prior prototype provides no validation. C1 has narrower factual scope and can be checked against source evidence before making process recommendations; actual production cost remains unmeasured. C2's generic novelty is weakened by current institutional alternatives, though original practitioner evidence could reverse this.
+
+No broad redesign now. Recruit by recent decisions, not enthusiasm for AI; if recent problems are mostly executing rather than choosing, switch priority to C2. If neither yields a task that existing resources fail to solve, stop both and retain C0. C3 requires a demonstrated recurring monitoring decision; C4 requires a teaching advantage and learner access. Unmeasured demand is not a rejection reason.
+
+No product is validated or implementation-ready (Gate B). Next synthesize conditional C1 with explicit stop rules and enough detail to assess, preserving alternatives.

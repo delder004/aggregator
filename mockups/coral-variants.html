@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coral variants — pick one</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+    background: #fafaf5;
+    color: #111110;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif {
+    font-family: ui-serif, "Iowan Old Style", "Apple Garamond", Georgia, "Times New Roman", serif;
+  }
+  .page-head {
+    padding: 40px 32px 24px; max-width: 1400px; margin: 0 auto;
+  }
+  .page-head h1 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+  }
+  .page-head p {
+    margin-top: 10px; color: #4a4a47; font-size: 15px;
+  }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    padding: 24px 32px 64px; max-width: 1400px; margin: 0 auto;
+  }
+  @media (max-width: 1080px) { .grid { grid-template-columns: 1fr; } }
+
+  .variant {
+    border: 2px solid #111110;
+    background: #fffefa;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  .variant__label {
+    padding: 16px 20px;
+    background: #111110; color: #fffefa;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .variant__name {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .variant__hex {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px; color: #c9c5b8;
+    text-transform: uppercase;
+  }
+
+  .swatches {
+    display: flex; height: 60px;
+  }
+  .swatches > div { flex: 1; display: flex; align-items: end; padding: 8px; }
+  .swatches > div span {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px; opacity: 0.85;
+  }
+  .swatch--main { color: #111110; }
+  .swatch--deep { color: #fffefa; }
+
+  /* Mark area */
+  .demo-block {
+    padding: 24px 24px 8px;
+    border-bottom: 1px solid #d8d4c8;
+  }
+  .demo-block:last-child { border-bottom: 0; }
+
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand__name {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 16px; font-weight: 700; letter-spacing: -0.015em;
+  }
+
+  .demo-eyebrow {
+    text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: 10px; color: #4a4a47; margin-bottom: 12px; font-weight: 500;
+  }
+  .demo-eyebrow .dot {
+    display: inline-block; width: 6px; height: 6px;
+    margin-right: 8px; transform: translateY(-1px); border-radius: 50%;
+  }
+
+  .demo-hero {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 30px; line-height: 1.0; letter-spacing: -0.025em;
+    font-weight: 800; max-width: 14ch;
+  }
+  .demo-hero em.hl {
+    font-style: italic; font-weight: 700;
+    padding: 0 4px;
+  }
+
+  .demo-section-head {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
+    display: flex; align-items: center; margin-bottom: 14px;
+  }
+  .demo-section-head::before {
+    content: ""; display: inline-block;
+    width: 10px; height: 10px; margin-right: 10px; transform: translateY(-1px);
+  }
+
+  .demo-feed-item { padding: 10px 0; border-top: 1px solid #d8d4c8; }
+  .demo-feed-item:first-child { border-top: 0; padding-top: 0; }
+  .demo-feed-item h3 {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 16px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em;
+  }
+  .demo-feed-item h3 a {
+    color: #111110; text-decoration: none;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0 100%; background-repeat: no-repeat; background-position: 0 0;
+    transition: background-size 180ms ease;
+    box-decoration-break: clone;
+  }
+  .demo-feed-item h3 a:hover { background-size: 100% 100%; }
+  .demo-feed-item h3 a.hovered { background-size: 100% 100%; }
+  .demo-feed-item .meta {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: #4a4a47; font-weight: 500; margin-top: 6px;
+  }
+  .demo-feed-item .meta .src { color: #111110; font-weight: 600; }
+
+  /* Inverted slab */
+  .demo-slab {
+    background: #111110; color: #fffefa;
+    padding: 24px;
+  }
+  .demo-slab h3 {
+    font-family: ui-serif, Georgia, serif;
+    font-size: 24px; line-height: 1.0; letter-spacing: -0.025em;
+    font-weight: 700; max-width: 14ch;
+  }
+  .demo-slab h3 em {
+    font-style: italic;
+  }
+  .demo-slab form {
+    margin-top: 14px;
+    display: flex;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.04);
+  }
+  .demo-slab input {
+    flex: 1; background: transparent; border: 0; color: #fffefa;
+    padding: 10px 12px; font-size: 13px; font-family: inherit;
+  }
+  .demo-slab input::placeholder { color: #c9c5b8; }
+  .demo-slab button {
+    border: 0; padding: 0 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; font-size: 10px; cursor: pointer;
+    color: #111110; font-family: inherit;
+  }
+
+  .tip {
+    padding: 16px 24px; background: #f5f2e8;
+    font-size: 12px; color: #4a4a47; border-top: 1px solid #d8d4c8;
+  }
+  .tip code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; padding: 1px 4px; background: rgba(0,0,0,0.06);
+  }
+
+  /* per-variant accent bindings */
+  .v1 { --accent: #ff8a73; --accent-deep: #ef6a52; }
+  .v2 { --accent: #ff6f5e; --accent-deep: #e54b3b; }
+  .v3 { --accent: #e95d4f; --accent-deep: #c33d2e; }
+
+  .variant .swatch--main { background: var(--accent); }
+  .variant .swatch--deep { background: var(--accent-deep); }
+  .variant .demo-eyebrow .dot { background: var(--accent); }
+  .variant .demo-hero em.hl {
+    background: linear-gradient(transparent 62%, var(--accent) 62% 96%, transparent 96%);
+  }
+  .variant .demo-section-head::before { background: var(--accent); }
+  .variant .demo-slab h3 em { color: var(--accent); }
+  .variant .demo-slab button { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1 class="serif">Coral variants — pick one</h1>
+  <p>Same layout, three corals. The middle row of headlines shows the link <em>hover</em> state pre-applied so you can see what the fill looks like without mousing over. Compare highlight bands, hover fills, and the inverted slab CTA.</p>
+</header>
+
+<div class="grid">
+
+  <!-- Variant 1: Peachy -->
+  <section class="variant v1">
+    <div class="variant__label">
+      <div class="variant__name serif">Peachy coral</div>
+      <div class="variant__hex">#FF8A73</div>
+    </div>
+    <div class="swatches">
+      <div class="swatch--main"><span>main · #FF8A73</span></div>
+      <div class="swatch--deep"><span>deep · #EF6A52</span></div>
+    </div>
+
+    <div class="demo-block">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 36 36" aria-hidden="true">
+          <rect x="0" y="0" width="36" height="36" fill="#111110"/>
+          <rect x="6" y="9"  width="22" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="15" width="24" height="3.5" fill="#ff8a73"/>
+          <rect x="6" y="22" width="20" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="27" width="14" height="1.5" fill="#fffefa"/>
+        </svg>
+        <span class="brand__name">Agentic AI Accounting</span>
+      </div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-eyebrow"><span class="dot"></span>Issue No. 28</div>
+      <div class="demo-hero serif">The latest on <em class="hl">AI agents</em> rebuilding accounting.</div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-section-head">The feed</div>
+      <article class="demo-feed-item">
+        <h3><a href="#" class="hovered">Pilot raises $200M to push autonomous bookkeeping into mid-market</a></h3>
+        <div class="meta"><span class="src">TechCrunch</span> · 1h ago · 4 min read</div>
+      </article>
+      <article class="demo-feed-item">
+        <h3><a href="#">Deloitte tells partners: "Agents are coworkers, treat them that way"</a></h3>
+        <div class="meta"><span class="src">Going Concern</span> · 5h ago</div>
+      </article>
+    </div>
+
+    <div class="demo-slab">
+      <h3 class="serif">Read it before <em>your CFO does.</em></h3>
+      <form>
+        <input type="email" placeholder="you@firm.com">
+        <button>Subscribe</button>
+      </form>
+    </div>
+
+    <div class="tip">Warmer, more inviting. Reads <code>brunch-cafe</code>; less "tech-startup."</div>
+  </section>
+
+  <!-- Variant 2: Living Coral (current) -->
+  <section class="variant v2">
+    <div class="variant__label">
+      <div class="variant__name serif">Living coral <span style="font-weight:400;color:#c9c5b8;font-size:12px;">(current)</span></div>
+      <div class="variant__hex">#FF6F5E</div>
+    </div>
+    <div class="swatches">
+      <div class="swatch--main"><span>main · #FF6F5E</span></div>
+      <div class="swatch--deep"><span>deep · #E54B3B</span></div>
+    </div>
+
+    <div class="demo-block">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 36 36" aria-hidden="true">
+          <rect x="0" y="0" width="36" height="36" fill="#111110"/>
+          <rect x="6" y="9"  width="22" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="15" width="24" height="3.5" fill="#ff6f5e"/>
+          <rect x="6" y="22" width="20" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="27" width="14" height="1.5" fill="#fffefa"/>
+        </svg>
+        <span class="brand__name">Agentic AI Accounting</span>
+      </div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-eyebrow"><span class="dot"></span>Issue No. 28</div>
+      <div class="demo-hero serif">The latest on <em class="hl">AI agents</em> rebuilding accounting.</div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-section-head">The feed</div>
+      <article class="demo-feed-item">
+        <h3><a href="#" class="hovered">Pilot raises $200M to push autonomous bookkeeping into mid-market</a></h3>
+        <div class="meta"><span class="src">TechCrunch</span> · 1h ago · 4 min read</div>
+      </article>
+      <article class="demo-feed-item">
+        <h3><a href="#">Deloitte tells partners: "Agents are coworkers, treat them that way"</a></h3>
+        <div class="meta"><span class="src">Going Concern</span> · 5h ago</div>
+      </article>
+    </div>
+
+    <div class="demo-slab">
+      <h3 class="serif">Read it before <em>your CFO does.</em></h3>
+      <form>
+        <input type="email" placeholder="you@firm.com">
+        <button>Subscribe</button>
+      </form>
+    </div>
+
+    <div class="tip">Balanced. <code>Pantone 16-1546 Living Coral</code>. Reads premium-magazine.</div>
+  </section>
+
+  <!-- Variant 3: Deep -->
+  <section class="variant v3">
+    <div class="variant__label">
+      <div class="variant__name serif">Deep coral</div>
+      <div class="variant__hex">#E95D4F</div>
+    </div>
+    <div class="swatches">
+      <div class="swatch--main"><span>main · #E95D4F</span></div>
+      <div class="swatch--deep"><span>deep · #C33D2E</span></div>
+    </div>
+
+    <div class="demo-block">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 36 36" aria-hidden="true">
+          <rect x="0" y="0" width="36" height="36" fill="#111110"/>
+          <rect x="6" y="9"  width="22" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="15" width="24" height="3.5" fill="#e95d4f"/>
+          <rect x="6" y="22" width="20" height="1.5" fill="#fffefa"/>
+          <rect x="6" y="27" width="14" height="1.5" fill="#fffefa"/>
+        </svg>
+        <span class="brand__name">Agentic AI Accounting</span>
+      </div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-eyebrow"><span class="dot"></span>Issue No. 28</div>
+      <div class="demo-hero serif">The latest on <em class="hl">AI agents</em> rebuilding accounting.</div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-section-head">The feed</div>
+      <article class="demo-feed-item">
+        <h3><a href="#" class="hovered">Pilot raises $200M to push autonomous bookkeeping into mid-market</a></h3>
+        <div class="meta"><span class="src">TechCrunch</span> · 1h ago · 4 min read</div>
+      </article>
+      <article class="demo-feed-item">
+        <h3><a href="#">Deloitte tells partners: "Agents are coworkers, treat them that way"</a></h3>
+        <div class="meta"><span class="src">Going Concern</span> · 5h ago</div>
+      </article>
+    </div>
+
+    <div class="demo-slab">
+      <h3 class="serif">Read it before <em>your CFO does.</em></h3>
+      <form>
+        <input type="email" placeholder="you@firm.com">
+        <button>Subscribe</button>
+      </form>
+    </div>
+
+    <div class="tip">Closer to brick / red. More <code>FT.com / Economist</code> energy. Most authoritative.</div>
+  </section>
+
+</div>
+
+</body>
+</html>

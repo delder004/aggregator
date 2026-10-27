@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accounting AI Benchmark Longitudinal Sketches</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #15201c;
+        --muted: #64706b;
+        --line: #dfe7e2;
+        --panel: #ffffff;
+        --soft: #f5f7f3;
+        --green: #1f7a5b;
+        --blue: #2d5fa6;
+        --orange: #c46a2b;
+        --red: #a43d4a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #eef2ed;
+        color: var(--ink);
+      }
+
+      main {
+        width: min(1280px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0 48px;
+      }
+
+      header {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.6fr);
+        gap: 20px;
+        align-items: stretch;
+        margin-bottom: 18px;
+      }
+
+      .intro,
+      .note,
+      .chart-card,
+      .mini-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 18px 50px rgba(21, 32, 28, 0.08);
+      }
+
+      .intro {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 820px;
+        margin: 0;
+        font-size: clamp(31px, 4vw, 52px);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .note {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .note strong {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      .note p,
+      .caption,
+      .source-list {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .chart-card {
+        padding: 22px;
+      }
+
+      .chart-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 12px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0;
+      }
+
+      .chart-meta {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .badge {
+        align-self: flex-start;
+        white-space: nowrap;
+        border: 1px solid #b8d8c9;
+        border-radius: 999px;
+        padding: 6px 10px;
+        color: #1e6b50;
+        background: #edf8f3;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .chart-wrap {
+        width: 100%;
+        overflow: hidden;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .axis,
+      .grid {
+        stroke: #d9e2dd;
+        stroke-width: 1;
+      }
+
+      .axis-text {
+        fill: #64706b;
+        font-size: 11px;
+      }
+
+      .series-line {
+        fill: none;
+        stroke-width: 3;
+      }
+
+      .point {
+        stroke: #fff;
+        stroke-width: 2;
+      }
+
+      .label {
+        fill: #27342f;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .label-muted {
+        fill: #64706b;
+        font-size: 11px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #384640;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .takeaways {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .mini-card {
+        padding: 16px;
+      }
+
+      .mini-card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+
+      .mini-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .comparison-section {
+        margin-top: 18px;
+      }
+
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+        gap: 18px;
+        margin-top: 16px;
+      }
+
+      .comparison-panel {
+        min-width: 0;
+      }
+
+      .comparison-panel h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        max-height: 420px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 760px;
+        background: #fff;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #edf1ee;
+        text-align: left;
+        vertical-align: top;
+        font-size: 12px;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f7faf8;
+        color: #405049;
+        font-weight: 800;
+      }
+
+      td {
+        color: #33433d;
+      }
+
+      .family-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .family-group {
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .family-group:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .family-group h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+      }
+
+      .family-group p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr) 132px;
+        gap: 10px;
+        align-items: center;
+        margin: 9px 0;
+      }
+
+      .bar-label,
+      .bar-value {
+        color: #34443e;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .bar-value {
+        text-align: right;
+      }
+
+      .bar-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e8eeea;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: inherit;
+      }
+
+      .sources {
+        margin-top: 18px;
+        padding: 18px 20px;
+        border-radius: 8px;
+        background: #17211d;
+        color: #dfe7e2;
+      }
+
+      .sources strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .source-list {
+        color: #b8c5bf;
+      }
+
+      @media (max-width: 900px) {
+        header,
+        .comparison-grid,
+        .takeaways {
+          grid-template-columns: 1fr;
+        }
+
+        .chart-top {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <section class="intro">
+          <p class="eyebrow">Accounting AI benchmarks</p>
+          <h1>Quick longitudinal plot sketches for the top three sources</h1>
+          <p class="subtitle">
+            These are directional plots only. Each benchmark has different tasks,
+            scoring, model sets, and update cadence, so the useful read is within
+            each chart rather than across charts.
+          </p>
+        </section>
+        <aside class="note">
+          <div>
+            <strong>Data posture</strong>
+            <p>
+              TaxCalcBench is the cleanest plot candidate. FinMaster has a sparse
+              date column. DualEntry currently has two public result snapshots, so
+              its line is more of an update log than a mature time series.
+            </p>
+          </div>
+          <p class="caption">
+            Generated as a local mockup from public benchmark tables and blog
+            posts reviewed on June 1, 2026.
+          </p>
+        </aside>
+      </header>
+
+      <section class="layout">
+        <article class="chart-card">
+          <div class="chart-top">
+            <div>
+              <h2>1. TaxCalcBench TY24</h2>
+              <p class="chart-meta">
+                Model release or preview date versus strict correct-return
+                accuracy, split by model family. Only flagship rows and the
+                strictest return-level metric are shown; the y-axis is scaled
+                from the nearest lower decile to the nearest upper decile.
+              </p>
+            </div>
+            <span class="badge">Flagships only</span>
+          </div>
+          <div class="chart-wrap" id="taxcalc-chart"></div>
+          <div class="legend" id="taxcalc-legend"></div>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-top">
+            <div>
+              <h2>2. DualEntry Accounting AI Benchmark</h2>
+              <p class="chart-meta">
+                Public benchmark update date versus the leading model in that
+                update. This is useful as a living leaderboard series, but it only
+                has two public snapshots so far.
+              </p>
+            </div>
+            <span class="badge">Sparse but useful</span>
+          </div>
+          <div class="chart-wrap" id="dualentry-chart"></div>
+          <div class="legend" id="dualentry-legend"></div>
+        </article>
+
+        <article class="chart-card">
+          <div class="chart-top">
+            <div>
+              <h2>3. FinMaster</h2>
+              <p class="chart-meta">
+                Best flagship score by leaderboard date across three dimensions.
+                Mini, Sonnet, Flash, Haiku, and Nano variants are excluded.
+              </p>
+            </div>
+            <span class="badge">Good leaderboard, sparse dates</span>
+          </div>
+          <div class="chart-wrap" id="finmaster-chart"></div>
+          <div class="legend" id="finmaster-legend"></div>
+        </article>
+      </section>
+
+      <section class="chart-card comparison-section">
+        <div class="chart-top">
+          <div>
+            <h2>Candidate rows and Claude vs GPT/OpenAI</h2>
+            <p class="chart-meta">
+              The source rows do include the candidate model names. The family
+              comparison below uses the best row per family inside each benchmark,
+              which is useful but should not be read as a universal model ranking.
+            </p>
+          </div>
+          <span class="badge">Candidate-level data</span>
+        </div>
+        <div class="comparison-grid">
+          <div class="comparison-panel">
+            <h3>Flagship candidate rows currently in the sketch</h3>
+            <div id="candidate-table" class="table-wrap"></div>
+          </div>
+          <div class="comparison-panel">
+            <h3>Best available family comparison</h3>
+            <div id="family-comparison"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="takeaways">
+        <div class="mini-card">
+          <h3>TaxCalcBench reads well</h3>
+          <p>
+            Strict return correctness stays in the 20s and 30s through much of
+            2025, then jumps into the low 60s with GPT-5.4 dated 2026-03-05.
+          </p>
+        </div>
+        <div class="mini-card">
+          <h3>DualEntry needs history</h3>
+          <p>
+            It is strong product-market evidence, but as a plot it needs more
+            update snapshots before it can tell a real progress story.
+          </p>
+        </div>
+        <div class="mini-card">
+          <h3>FinMaster is uneven</h3>
+          <p>
+            After filtering to flagship rows, the available series is sparse:
+            GPT-4.1 in 2024-07 and DeepSeek-V3 in 2025-03.
+          </p>
+        </div>
+      </section>
+
+      <section class="sources">
+        <strong>Sources used</strong>
+        <p class="source-list">
+          TaxCalcBench GitHub README leaderboard; DualEntry benchmark page plus
+          March 25 and April 17, 2026 benchmark blog posts; FinMaster public
+          leaderboard.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      const colors = {
+        green: "#1f7a5b",
+        blue: "#2d5fa6",
+        orange: "#c46a2b",
+        red: "#a43d4a",
+        slate: "#55646c",
+        violet: "#7157a8",
+      };
+
+      const familyColors = {
+        "GPT/OpenAI": colors.green,
+        Claude: colors.blue,
+        Gemini: colors.orange,
+        DeepSeek: colors.violet,
+      };
+
+      const taxCalcPoints = [
+        {
+          date: "2026-03-05",
+          model: "GPT-5.4 Pro",
+          label: "GPT-5.4 Pro",
+          strict: 62.75,
+          lenient: 72.55,
+          line: 89.99,
+        },
+        {
+          date: "2026-03-05",
+          model: "GPT-5.4",
+          label: "GPT-5.4",
+          strict: 62.75,
+          lenient: 66.67,
+          line: 89.78,
+        },
+        {
+          date: "2026-02-05",
+          model: "Claude Opus 4.6",
+          label: "Claude Opus 4.6",
+          strict: 52.94,
+          lenient: 64.71,
+          line: 87.0,
+        },
+        {
+          date: "2026-02-19",
+          model: "Gemini 3.1 Pro",
+          label: "Gemini 3.1 Pro",
+          strict: 49.02,
+          lenient: 68.63,
+          line: 88.54,
+        },
+        {
+          date: "2025-08-07",
+          model: "GPT-5 w/ Web Search",
+          label: "GPT-5 + Search",
+          strict: 41.67,
+          lenient: 54.41,
+          line: 83.9,
+        },
+        {
+          date: "2025-12-11",
+          model: "GPT-5.2 Pro",
+          label: "GPT-5.2 Pro",
+          strict: 41.18,
+          lenient: 70.59,
+          line: 84.83,
+        },
+        {
+          date: "2026-02-17",
+          model: "Claude Sonnet 4.6",
+          label: "Claude Sonnet 4.6",
+          strict: 37.25,
+          lenient: 56.86,
+          line: 84.21,
+        },
+        {
+          date: "2025-11-18",
+          model: "Gemini 3 Pro",
+          label: "Gemini 3 Pro",
+          strict: 36.27,
+          lenient: 73.53,
+          line: 85.42,
+        },
+        {
+          date: "2025-11-01",
+          model: "Claude Opus 4.5",
+          label: "Claude Opus 4.5",
+          strict: 36.27,
+          lenient: 58.33,
+          line: 82.51,
+        },
+        {
+          date: "2025-12-11",
+          model: "GPT-5.2",
+          label: "GPT-5.2",
+          strict: 33.82,
+          lenient: 63.73,
+          line: 83.2,
+        },
+        {
+          date: "2025-05-06",
+          model: "Gemini 2.5 Pro",
+          label: "Gemini 2.5 Pro",
+          strict: 32.35,
+          lenient: 51.96,
+          line: 81.22,
+        },
+        {
+          date: "2025-08-07",
+          model: "GPT-5",
+          label: "GPT-5",
+          strict: 31.86,
+          lenient: 54.41,
+          line: 81.45,
+        },
+        {
+          date: "2025-09-29",
+          model: "Claude Sonnet 4.5",
+          label: "Claude Sonnet 4.5",
+          strict: 31.37,
+          lenient: 51.47,
+          line: 81.17,
+        },
+        {
+          date: "2025-08-05",
+          model: "Claude Opus 4.1",
+          label: "Claude Opus 4.1",
+          strict: 28.43,
+          lenient: 47.55,
+          line: 79.59,
+        },
+        {
+          date: "2025-05-14",
+          model: "Claude Opus 4",
+          label: "Claude Opus 4",
+          strict: 27.45,
+          lenient: 42.65,
+          line: 78.3,
+        },
+        {
+          date: "2025-05-20",
+          model: "Gemini 2.5 Flash",
+          label: "Gemini 2.5 Flash",
+          strict: 25.98,
+          lenient: 41.18,
+          line: 77.94,
+        },
+        {
+          date: "2025-05-14",
+          model: "Claude Sonnet 4",
+          label: "Claude Sonnet 4",
+          strict: 23.04,
+          lenient: 38.24,
+          line: 77.4,
+        },
+        {
+          date: "2025-10-01",
+          model: "Claude Haiku 4.5 w/ Web Search",
+          label: "Claude Haiku 4.5 + Search",
+          strict: 13.73,
+          lenient: 33.33,
+          line: 72.86,
+        },
+        {
+          date: "2025-10-01",
+          model: "Claude Haiku 4.5",
+          label: "Claude Haiku 4.5",
+          strict: 13.24,
+          lenient: 39.22,
+          line: 73.94,
+        },
+      ];
+
+      const dualEntryPoints = [
+        {
+          date: "2026-03-25",
+          model: "OpenAI GPT-5.4",
+          accuracy: 77.3,
+          note: "19 models, 101 tasks",
+        },
+        {
+          date: "2026-04-17",
+          model: "Claude Opus 4.7",
+          accuracy: 79.2,
+          note: "10-model update",
+        },
+      ];
+
+      const finMasterRows = [
+        {
+          date: "2024-07-01",
+          model: "GPT-4.1",
+          average: 0.62,
+          accounting: 0.33,
+          auditing: 0.41,
+        },
+        {
+          date: "2024-07-01",
+          model: "GPT-4.1-mini",
+          average: 0.58,
+          accounting: 0.2,
+          auditing: 0.29,
+        },
+        {
+          date: "2024-07-01",
+          model: "GPT-4o-mini",
+          average: 0.46,
+          accounting: 0.08,
+          auditing: 0.27,
+        },
+        {
+          date: "2024-07-01",
+          model: "GPT-4.1-nano",
+          average: 0.4,
+          accounting: 0.04,
+          auditing: 0,
+        },
+        {
+          date: "2025-01-01",
+          model: "o3-mini",
+          average: 0.73,
+          accounting: 0.35,
+          auditing: 0.85,
+        },
+        {
+          date: "2025-01-01",
+          model: "Claude-3.7-Sonnet",
+          average: 0.72,
+          accounting: 0.3,
+          auditing: 0.7,
+        },
+        {
+          date: "2025-03-01",
+          model: "DeepSeek-V3-2503",
+          average: 0.7,
+          accounting: 0.21,
+          auditing: 0.69,
+        },
+      ];
+
+      function parseDate(value) {
+        return new Date(`${value}T00:00:00`);
+      }
+
+      function formatMonth(date) {
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "2-digit",
+        });
+      }
+
+      function pct(value) {
+        return `${value.toFixed(value >= 10 ? 1 : 2)}%`;
+      }
+
+      function scorePct(value) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+
+      function familyFor(model) {
+        if (/claude/i.test(model)) return "Claude";
+        if (/gpt|openai|o3/i.test(model)) return "GPT/OpenAI";
+        if (/gemini/i.test(model)) return "Gemini";
+        if (/deepseek/i.test(model)) return "DeepSeek";
+        return "Other";
+      }
+
+      function familyColor(family) {
+        return familyColors[family] || colors.slate;
+      }
+
+      function isFlagshipModel(model) {
+        const lower = model.toLowerCase();
+        return (
+          !lower.includes("sonnet") &&
+          !lower.includes("haiku") &&
+          !lower.includes("flash") &&
+          !lower.includes("nano") &&
+          !/(^|[^a-z])mini([^a-z]|$)/.test(lower)
+        );
+      }
+
+      function createSvg(width, height) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        svg.setAttribute("role", "img");
+        return svg;
+      }
+
+      function add(svg, tag, attrs, text) {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        Object.entries(attrs || {}).forEach(([key, value]) =>
+          node.setAttribute(key, value),
+        );
+        if (text !== undefined) node.textContent = text;
+        svg.appendChild(node);
+        return node;
+      }
+
+      function linePath(points) {
+        return points
+          .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
+          .join(" ");
+      }
+
+      function renderLegend(id, series) {
+        const el = document.getElementById(id);
+        el.innerHTML = "";
+        series.forEach((item) => {
+          const span = document.createElement("span");
+          span.className = "legend-item";
+          span.innerHTML = `<span class="swatch" style="background:${item.color}"></span>${item.label}`;
+          el.appendChild(span);
+        });
+      }
+
+      function decileDomain(values) {
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        return [Math.floor(min / 10) * 10, Math.ceil(max / 10) * 10];
+      }
+
+      function renderCategoryLineChart({
+        id,
+        legendId,
+        data,
+        key,
+        label,
+        color,
+        yMin,
+        yMax,
+      }) {
+        const width = 1140;
+        const height = 520;
+        const margin = { top: 28, right: 44, bottom: 130, left: 58 };
+        const plotW = width - margin.left - margin.right;
+        const plotH = height - margin.top - margin.bottom;
+        const svg = createSvg(width, height);
+        document.getElementById(id).replaceChildren(svg);
+
+        const x = (index) =>
+          margin.left + (index / Math.max(data.length - 1, 1)) * plotW;
+        const y = (value) =>
+          margin.top + plotH - ((value - yMin) / (yMax - yMin)) * plotH;
+        const yTicks = Array.from(
+          { length: (yMax - yMin) / 10 + 1 },
+          (_, index) => yMin + index * 10,
+        );
+
+        yTicks.forEach((tick) => {
+          const yy = y(tick);
+          add(svg, "line", {
+            class: "grid",
+            x1: margin.left,
+            y1: yy,
+            x2: width - margin.right,
+            y2: yy,
+          });
+          add(
+            svg,
+            "text",
+            {
+              class: "axis-text",
+              x: margin.left - 12,
+              y: yy + 4,
+              "text-anchor": "end",
+            },
+            `${tick}%`,
+          );
+        });
+
+        add(svg, "line", {
+          class: "axis",
+          x1: margin.left,
+          y1: margin.top + plotH,
+          x2: width - margin.right,
+          y2: margin.top + plotH,
+        });
+
+        const points = data.map((row, index) => ({
+          x: x(index),
+          y: y(row[key]),
+          value: row[key],
+          label: row.label || row.model,
+        }));
+
+        add(svg, "path", {
+          class: "series-line",
+          d: linePath(points),
+          stroke: color,
+        });
+
+        points.forEach((point, index) => {
+          add(svg, "circle", {
+            class: "point",
+            cx: point.x,
+            cy: point.y,
+            r: 5,
+            fill: color,
+          });
+
+          const labelY = height - 82;
+          add(
+            svg,
+            "text",
+            {
+              class: "axis-text",
+              x: point.x,
+              y: labelY,
+              "text-anchor": "end",
+              transform: `rotate(-42 ${point.x} ${labelY})`,
+            },
+            point.label,
+          );
+
+          if (index === 0 || index === data.length - 1) {
+            add(
+              svg,
+              "text",
+              {
+                class: "label",
+                x: index === 0 ? point.x + 10 : point.x - 10,
+                y: point.y - 12,
+                "text-anchor": index === 0 ? "start" : "end",
+              },
+              pct(point.value),
+            );
+          }
+        });
+
+        renderLegend(legendId, [{ label, color }]);
+      }
+
+      function renderTimeChart({
+        id,
+        legendId,
+        data,
+        series,
+        yMin = 0,
+        yMax,
+        yTicks,
+        xTickDates,
+        percentScale = 1,
+        labelLatest = false,
+      }) {
+        const width = 1140;
+        const height = 420;
+        const margin = { top: 24, right: 42, bottom: 54, left: 56 };
+        const plotW = width - margin.left - margin.right;
+        const plotH = height - margin.top - margin.bottom;
+        const svg = createSvg(width, height);
+        document.getElementById(id).replaceChildren(svg);
+
+        const dated = data.map((d) => ({ ...d, parsedDate: parseDate(d.date) }));
+        const minDate = new Date(Math.min(...dated.map((d) => d.parsedDate)));
+        const maxDate = new Date(Math.max(...dated.map((d) => d.parsedDate)));
+        const xSpan = Math.max(1, maxDate - minDate);
+        const x = (date) =>
+          margin.left + ((parseDate(date) - minDate) / xSpan) * plotW;
+        const y = (value) =>
+          margin.top +
+          plotH -
+          ((value * percentScale - yMin) / (yMax - yMin)) * plotH;
+
+        yTicks.forEach((tick) => {
+          const yy = y(tick / percentScale);
+          add(svg, "line", {
+            class: "grid",
+            x1: margin.left,
+            y1: yy,
+            x2: width - margin.right,
+            y2: yy,
+          });
+          add(
+            svg,
+            "text",
+            {
+              class: "axis-text",
+              x: margin.left - 12,
+              y: yy + 4,
+              "text-anchor": "end",
+            },
+            `${tick}%`,
+          );
+        });
+
+        add(svg, "line", {
+          class: "axis",
+          x1: margin.left,
+          y1: margin.top + plotH,
+          x2: width - margin.right,
+          y2: margin.top + plotH,
+        });
+
+        const ticks = xTickDates
+          ? xTickDates.map((date) => ({ label: formatMonth(parseDate(date)), date }))
+          : Array.from(new Set(dated.map((d) => formatMonth(d.parsedDate)))).map(
+              (label) => ({
+                label,
+                date: dated.find((d) => formatMonth(d.parsedDate) === label).date,
+              }),
+            );
+        ticks.forEach((tick) => {
+          add(
+            svg,
+            "text",
+            {
+              class: "axis-text",
+              x: x(tick.date),
+              y: height - 22,
+              "text-anchor": "middle",
+            },
+            tick.label,
+          );
+        });
+
+        series.forEach((line) => {
+          const points = dated
+            .map((d) => ({
+              x: x(d.date),
+              y: y(d[line.key]),
+              value: d[line.key],
+              model: d.model,
+              note: d.note,
+            }))
+            .filter((point) => Number.isFinite(point.value))
+            .sort((a, b) => a.x - b.x || a.y - b.y);
+          if (points.length === 0) return;
+          add(svg, "path", {
+            class: "series-line",
+            d: linePath(points),
+            stroke: line.color,
+          });
+          points.forEach((point) => {
+            add(svg, "circle", {
+              class: "point",
+              cx: point.x,
+              cy: point.y,
+              r: 5,
+              fill: line.color,
+            });
+          });
+          if (labelLatest && points.length > 0) {
+            const latest = points[points.length - 1];
+            add(
+              svg,
+              "text",
+              {
+                class: "label",
+                x: Math.min(latest.x + 10, width - margin.right - 120),
+                y: latest.y - 8,
+                fill: line.color,
+              },
+              `${line.label}: ${pct(latest.value * percentScale)}`,
+            );
+          }
+        });
+
+        data.forEach((d) => {
+          if (!d.callout) return;
+          const cx = x(d.date);
+          const cy = y(d.calloutValue);
+          add(
+            svg,
+            "text",
+            {
+              class: "label",
+              x: Math.min(cx + 12, width - margin.right - 220),
+              y: cy - 28,
+            },
+            d.callout,
+          );
+          add(
+            svg,
+            "text",
+            {
+              class: "label-muted",
+              x: Math.min(cx + 12, width - margin.right - 220),
+              y: cy - 12,
+            },
+            d.calloutSub,
+          );
+        });
+
+        renderLegend(legendId, series);
+      }
+
+      function renderCandidateTable() {
+        const rows = [
+          ...flagshipTaxCalcPoints.map((row) => ({
+            benchmark: "TaxCalcBench",
+            date: row.date,
+            model: row.model,
+            family: familyFor(row.model),
+            metric: `Strict ${pct(row.strict)}, lenient ${pct(row.lenient)}, line ${pct(row.line)}`,
+          })),
+          ...dualEntryPoints.map((row) => ({
+            benchmark: "DualEntry",
+            date: row.date,
+            model: row.model,
+            family: familyFor(row.model),
+            metric: `Overall accuracy ${pct(row.accuracy)}`,
+          })),
+          ...flagshipFinMasterRows.map((row) => ({
+            benchmark: "FinMaster",
+            date: row.date,
+            model: row.model,
+            family: familyFor(row.model),
+            metric: `Average ${scorePct(row.average)}, accounting ${scorePct(row.accounting)}, auditing ${scorePct(row.auditing)}`,
+          })),
+        ];
+
+        const table = document.createElement("table");
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Benchmark</th>
+              <th>Date</th>
+              <th>Candidate model</th>
+              <th>Family</th>
+              <th>Score fields</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(
+                (row) => `
+                  <tr>
+                    <td>${row.benchmark}</td>
+                    <td>${row.date}</td>
+                    <td><strong>${row.model}</strong></td>
+                    <td>
+                      <span class="family-chip" style="background:${familyColor(
+                        row.family,
+                      )}">${row.family}</span>
+                    </td>
+                    <td>${row.metric}</td>
+                  </tr>
+                `,
+              )
+              .join("")}
+          </tbody>
+        `;
+        document.getElementById("candidate-table").replaceChildren(table);
+      }
+
+      function bestByFamily(rows, metricKey, multiplier = 1) {
+        return Array.from(
+          rows
+            .reduce((acc, row) => {
+              const family = familyFor(row.model);
+              const value = row[metricKey] * multiplier;
+              const current = acc.get(family);
+              if (!current || value > current.value) {
+                acc.set(family, {
+                  family,
+                  model: row.model,
+                  value,
+                  date: row.date,
+                });
+              }
+              return acc;
+            }, new Map())
+            .values(),
+        ).sort((a, b) => b.value - a.value);
+      }
+
+      function renderFamilyGroup({ title, note, rows }) {
+        const max = Math.max(...rows.map((row) => row.value), 1);
+        return `
+          <section class="family-group">
+            <h4>${title}</h4>
+            <p>${note}</p>
+            ${rows
+              .map(
+                (row) => `
+                  <div class="bar-row">
+                    <span class="bar-label">${row.family}</span>
+                    <span class="bar-track">
+                      <span class="bar-fill" style="width:${Math.max(
+                        4,
+                        (row.value / max) * 100,
+                      )}%;background:${familyColor(row.family)}"></span>
+                    </span>
+                    <span class="bar-value">${pct(row.value)}</span>
+                  </div>
+                  <p>${row.model}, ${row.date}</p>
+                `,
+              )
+              .join("")}
+          </section>
+        `;
+      }
+
+      function renderFamilyComparison() {
+        const html = [
+          renderFamilyGroup({
+            title: "TaxCalcBench: best strict correct-return score",
+            note: "Cleanest candidate-level comparison, but GPT rows are later than most Claude rows.",
+            rows: bestByFamily(flagshipTaxCalcPoints, "strict"),
+          }),
+          renderFamilyGroup({
+            title: "DualEntry: public top-model snapshots",
+            note: "Only two public snapshots here, so this is a snapshot log rather than a full family leaderboard.",
+            rows: bestByFamily(dualEntryPoints, "accuracy"),
+          }),
+          renderFamilyGroup({
+            title: "FinMaster: best average score",
+            note: "Filtered to flagship rows, so mini and Sonnet variants are excluded.",
+            rows: bestByFamily(flagshipFinMasterRows, "average", 100),
+          }),
+        ].join("");
+        document.getElementById("family-comparison").innerHTML = html;
+      }
+
+      const flagshipTaxCalcPoints = taxCalcPoints.filter((point) =>
+        isFlagshipModel(point.model),
+      );
+      const flagshipFinMasterRows = finMasterRows.filter((row) =>
+        isFlagshipModel(row.model),
+      );
+
+      const finMasterBestByDate = Array.from(
+        flagshipFinMasterRows
+          .reduce((acc, row) => {
+            const current = acc.get(row.date) || {
+              date: row.date,
+              average: 0,
+              accounting: 0,
+              auditing: 0,
+              model: "",
+            };
+            current.average = Math.max(current.average, row.average);
+            current.accounting = Math.max(current.accounting, row.accounting);
+            current.auditing = Math.max(current.auditing, row.auditing);
+            if (row.average >= (current.average || 0)) current.model = row.model;
+            acc.set(row.date, current);
+            return acc;
+          }, new Map())
+          .values(),
+      );
+
+      const [taxStrictYMin, taxStrictYMax] = decileDomain(
+        flagshipTaxCalcPoints.map((point) => point.strict),
+      );
+      const taxCalcChronologicalPoints = [...flagshipTaxCalcPoints].sort(
+        (a, b) =>
+          parseDate(a.date) - parseDate(b.date) || a.strict - b.strict,
+      );
+      const taxCalcFamilySeries = ["GPT/OpenAI", "Claude", "Gemini"].map(
+        (family) => ({
+          key: family,
+          label: family,
+          color: familyColor(family),
+        }),
+      );
+
+      renderTimeChart({
+        id: "taxcalc-chart",
+        legendId: "taxcalc-legend",
+        data: taxCalcChronologicalPoints.map((d) =>
+          Object.assign(
+            {
+              ...d,
+              [familyFor(d.model)]: d.strict,
+            },
+            d.model === "GPT-5.4 Pro"
+              ? {
+                  callout: "GPT-5.4 family",
+                  calloutSub: "Strict return correctness reaches 62.75%",
+                  calloutValue: d.strict,
+                }
+              : {},
+          ),
+        ),
+        series: taxCalcFamilySeries,
+        yMin: taxStrictYMin,
+        yMax: taxStrictYMax,
+        yTicks: Array.from(
+          { length: (taxStrictYMax - taxStrictYMin) / 10 + 1 },
+          (_, index) => taxStrictYMin + index * 10,
+        ),
+        xTickDates: [
+          "2025-05-06",
+          "2025-08-07",
+          "2025-11-01",
+          "2026-02-05",
+          "2026-03-05",
+        ],
+      });
+
+      renderTimeChart({
+        id: "dualentry-chart",
+        legendId: "dualentry-legend",
+        data: dualEntryPoints.map((d) => ({
+          ...d,
+          callout: d.model,
+          calloutSub: `${d.accuracy}% overall accuracy, ${d.note}`,
+          calloutValue: d.accuracy,
+        })),
+        series: [
+          {
+            key: "accuracy",
+            label: "Top model accuracy",
+            color: colors.red,
+          },
+        ],
+        yMax: 100,
+        yTicks: [0, 20, 40, 60, 80, 100],
+        xTickDates: ["2026-03-25", "2026-04-17"],
+      });
+
+      renderTimeChart({
+        id: "finmaster-chart",
+        legendId: "finmaster-legend",
+        data: finMasterBestByDate.map((d) => ({
+          ...d,
+          callout:
+            d.date === "2025-01-01"
+              ? "Auditing spike"
+              : d.date === "2025-03-01"
+                ? "Accounting slips"
+                : "",
+          calloutSub:
+            d.date === "2025-01-01"
+              ? "Best auditing score reaches 0.85"
+              : d.date === "2025-03-01"
+                ? "Accounting best is 0.21 on this date"
+                : "",
+          calloutValue:
+            d.date === "2025-01-01"
+              ? d.auditing
+              : d.date === "2025-03-01"
+                ? d.accounting
+                : d.average,
+        })),
+        series: [
+          { key: "average", label: "Best average", color: colors.green },
+          { key: "accounting", label: "Best accounting", color: colors.blue },
+          { key: "auditing", label: "Best auditing", color: colors.orange },
+        ],
+        yMax: 100,
+        yTicks: [0, 20, 40, 60, 80, 100],
+        xTickDates: ["2024-07-01", "2025-01-01", "2025-03-01"],
+        percentScale: 100,
+      });
+
+      renderCandidateTable();
+      renderFamilyComparison();
+    </script>
+  </body>
+</html>

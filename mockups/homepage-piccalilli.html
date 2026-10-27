@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agentic AI Accounting — design mock (Piccalilli-inspired)</title>
+<style>
+  :root {
+    --bg: #f7f4ec;
+    --paper: #fffdf7;
+    --ink: #111110;
+    --ink-soft: #44413a;
+    --ink-faint: #817b6d;
+    --rule: #111110;
+    --rule-soft: #cec7b8;
+    --accent: #ff6f5e;
+    --accent-deep: #d94a3a;
+    --accent-ink: #111110;
+    --invert-bg: #111110;
+    --invert-ink: #fffefa;
+    --invert-soft: #c9c5b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: inherit; }
+
+  .serif {
+    font-family: ui-serif, "Iowan Old Style", "Apple Garamond", Georgia, "Times New Roman", serif;
+    font-feature-settings: "ss01", "ss02";
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- Header ---------- */
+  .site-head {
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(220px, 0.62fr) minmax(190px, 0.44fr);
+    align-items: stretch;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    min-height: 150px;
+    padding: 28px 30px 28px 0;
+    text-decoration: none;
+    color: inherit;
+  }
+  .brand__name {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: clamp(54px, 9.2vw, 112px);
+    font-weight: 900;
+    letter-spacing: -0.055em;
+    line-height: 0.82;
+  }
+  .brand__name em {
+    font-style: normal;
+    font-weight: 900;
+    background: linear-gradient(transparent 61%, var(--accent) 61% 92%, transparent 92%);
+    padding: 0 2px;
+  }
+  .masthead__cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    min-height: 150px;
+    border-left: 1px solid var(--rule);
+    padding: 28px;
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+  .masthead__cell strong {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .masthead__cell em {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  nav.primary {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid var(--rule);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  nav.primary::-webkit-scrollbar { display: none; }
+  nav.primary a {
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 15px 22px;
+    border-right: 1px solid var(--rule);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  nav.primary a:first-child { border-left: 1px solid var(--rule); }
+  nav.primary a:hover { background: var(--paper); }
+  nav.primary a.cta {
+    background: var(--ink); color: var(--paper);
+    margin-left: auto;
+    border-right: 1px solid var(--rule);
+  }
+  nav.primary a.cta:hover { background: var(--accent-deep); color: var(--ink); }
+
+  /* ---------- Hero ---------- */
+  .hero { border-bottom: 2px solid var(--rule); position: relative; overflow: hidden; }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 72px;
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+  .hero__eyebrow {
+    text-transform: uppercase; letter-spacing: 0.18em;
+    font-size: 12px; color: var(--ink-soft); margin-bottom: 24px; font-weight: 700;
+  }
+  .hero__eyebrow span.dot {
+    display: inline-block; width: 8px; height: 8px; background: var(--accent);
+    margin-right: 10px; transform: translateY(-1px);
+  }
+  .hero__title {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: clamp(46px, 6.6vw, 88px);
+    line-height: 0.95; letter-spacing: -0.035em;
+    font-weight: 800; max-width: 16ch;
+  }
+  .hero__title em {
+    font-style: normal; font-weight: 900;
+    background: linear-gradient(transparent 62%, var(--accent) 62% 96%, transparent 96%);
+    padding: 0 4px;
+  }
+  .hero__sub {
+    margin-top: 30px; font-size: 20px; color: var(--ink-soft);
+    max-width: 59ch; line-height: 1.5;
+  }
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+  }
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 11px 16px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .button:hover { background: var(--accent); }
+  .button--dark {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .button--dark:hover {
+    background: var(--accent-deep);
+    color: var(--ink);
+  }
+  .brief-card {
+    align-self: stretch;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .brief-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .brief-card__head span:last-child { color: var(--accent-deep); }
+  .brief-card__metric {
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    gap: 18px;
+    padding: 22px 20px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .brief-card__metric:last-child { border-bottom: 0; }
+  .brief-card__num {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 42px;
+    line-height: 0.9;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+  .brief-card__label {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  .brief-card__label strong {
+    display: block;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-bottom: 2px solid var(--rule);
+  }
+  .stat { padding: 26px 24px; border-left: 1px solid var(--rule-soft); }
+  .stat:first-child { border-left: 0; padding-left: 0; }
+  .stat__num {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+    font-variant-numeric: lining-nums;
+  }
+  .stat__label {
+    margin-top: 10px; text-transform: uppercase; letter-spacing: 0.15em;
+    font-size: 11px; color: var(--ink-soft); font-weight: 500;
+  }
+
+  /* ---------- Section heads ---------- */
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-top: 64px; margin-bottom: 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-head h2 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 34px; letter-spacing: -0.025em; font-weight: 800;
+    display: flex; align-items: center;
+    padding-bottom: 14px;
+  }
+  .section-head h2::before {
+    content: ""; display: inline-block;
+    width: 14px; height: 14px; background: var(--accent);
+    margin-right: 14px; transform: translateY(-2px);
+  }
+  .section-head__more {
+    text-decoration: none; font-size: 13px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800;
+  }
+  .section-head__more:hover { color: var(--ink); border-bottom: 2px solid var(--accent); }
+
+  /* ---------- Featured ---------- */
+  .featured {
+    display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr); gap: 48px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 880px) { .featured { grid-template-columns: 1fr; gap: 40px; } }
+
+  .lede {  }
+  .lede__title {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: 1.05; letter-spacing: -0.02em;
+    font-weight: 700; margin: 14px 0 18px;
+  }
+  .lede__title a {
+    color: var(--ink); text-decoration: none;
+    background-image: linear-gradient(var(--ink), var(--ink));
+    background-size: 0 2px; background-repeat: no-repeat; background-position: 0 100%;
+    transition: background-size 220ms ease;
+  }
+  .lede__title a:hover { background-size: 100% 2px; }
+  .lede__summary {
+    color: var(--ink-soft); font-size: 18px; line-height: 1.58; max-width: 58ch;
+  }
+
+  .feat-list { display: flex; flex-direction: column; }
+  .feat-item {
+    padding: 20px 0; border-top: 1px solid var(--rule-soft);
+  }
+  .feat-item:first-child { border-top: 0; padding-top: 0; }
+  .feat-item h3 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 21px; line-height: 1.25; letter-spacing: -0.01em;
+    font-weight: 600; margin: 8px 0 0;
+  }
+  .feat-item h3 a { color: var(--ink); text-decoration: none; }
+  .feat-item h3 a:hover {
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  /* ---------- Meta ---------- */
+  .meta {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--ink-soft); font-weight: 500;
+  }
+  .meta__source { color: var(--ink); font-weight: 600; }
+  .meta__dot {
+    width: 3px; height: 3px; background: var(--ink-faint); border-radius: 50%;
+  }
+  .meta__source--featured::before {
+    content: ""; display: inline-block; width: 6px; height: 6px;
+    background: var(--accent); margin-right: 8px; transform: translateY(-1px);
+  }
+
+  /* ---------- Asterism divider ---------- */
+  .asterism {
+    text-align: center; color: var(--ink-faint);
+    letter-spacing: 1.2em; padding: 56px 0 16px;
+    font-size: 16px; user-select: none;
+  }
+
+  /* ---------- Tag rail ---------- */
+  .tag-rail {
+    display: flex; flex-wrap: wrap;
+    border-top: 2px solid var(--rule); border-bottom: 1px solid var(--rule-soft);
+    margin-bottom: 16px;
+  }
+  .tag-rail a {
+    padding: 16px 22px; color: var(--ink-soft); text-decoration: none;
+    font-size: 12px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    border-right: 1px solid var(--rule-soft);
+  }
+  .tag-rail a:last-child { border-right: 0; }
+  .tag-rail a:hover { color: var(--ink); background: var(--paper); }
+  .tag-rail a.active {
+    color: var(--ink); background: var(--accent); font-weight: 600;
+  }
+
+  /* ---------- Feed ---------- */
+  .feed { display: flex; flex-direction: column; }
+  .feed__day {
+    display: grid; grid-template-columns: 210px 1fr; gap: 44px;
+    padding: 34px 0; border-bottom: 1px solid var(--rule);
+  }
+  @media (max-width: 720px) {
+    .feed__day { grid-template-columns: 1fr; gap: 16px; }
+  }
+  .feed__day-label {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 13px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.18em;
+    padding-top: 6px; font-weight: 500;
+    position: sticky; top: 24px; align-self: start;
+  }
+  .feed__day-label .accent { color: var(--accent-deep); }
+  .feed__items { display: flex; flex-direction: column; gap: 26px; }
+  .feed__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 128px;
+    column-gap: 28px;
+  }
+  .feed__main { min-width: 0; }
+  .feed__item h3 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: 22px; font-weight: 600;
+    line-height: 1.25; letter-spacing: -0.01em; margin: 6px 0;
+  }
+  .feed__item h3 a {
+    color: var(--ink); text-decoration: none;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 0 100%; background-repeat: no-repeat; background-position: 0 0;
+    transition: background-size 180ms ease;
+    box-decoration-break: clone;
+  }
+  .feed__item h3 a:hover { background-size: 100% 100%; }
+  .feed__item p {
+    color: var(--ink-soft); margin-top: 4px; font-size: 15px;
+    max-width: 70ch; line-height: 1.55;
+  }
+  .feed__score {
+    border-left: 1px solid var(--rule-soft);
+    padding-left: 18px;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+  }
+  .feed__score strong {
+    display: block;
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    color: var(--ink);
+    font-size: 42px;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    margin-bottom: 9px;
+  }
+  .feed__item .meta { margin-top: 10px; }
+
+  /* ---------- Pagination ---------- */
+  .pager {
+    display: flex; gap: 0; padding: 48px 0; justify-content: center;
+    border-bottom: 2px solid var(--rule);
+  }
+  .pager a {
+    padding: 12px 18px; color: var(--ink-soft); text-decoration: none;
+    font-size: 14px; font-weight: 500;
+    border: 1px solid var(--rule-soft); margin-left: -1px;
+  }
+  .pager a:hover { color: var(--ink); background: var(--paper); }
+  .pager a.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* ---------- Newsletter (inverted slab) ---------- */
+  .news {
+    background: var(--invert-bg); color: var(--invert-ink);
+    padding: 88px 0; margin-top: 0; position: relative; overflow: hidden;
+  }
+  .news__inner { display: grid; grid-template-columns: 1.2fr 1fr; gap: 56px; align-items: center; }
+  @media (max-width: 880px) { .news__inner { grid-template-columns: 1fr; } }
+
+  .news h2 {
+    font-family: ui-serif, "Iowan Old Style", Georgia, serif;
+    font-size: clamp(40px, 5.5vw, 64px);
+    line-height: 1.0; letter-spacing: -0.025em;
+    font-weight: 700; max-width: 14ch;
+  }
+  .news h2 em {
+    font-style: italic; color: var(--accent);
+    background: none; padding: 0;
+  }
+  .news p {
+    margin-top: 24px; font-size: 18px; color: var(--invert-soft); max-width: 50ch;
+  }
+  .news form {
+    display: flex; gap: 0; align-items: stretch;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .news input {
+    flex: 1; background: transparent; border: 0; color: var(--invert-ink);
+    padding: 18px 20px; font-size: 17px; font-family: inherit;
+  }
+  .news input::placeholder { color: var(--invert-soft); }
+  .news input:focus { outline: 0; background: rgba(255,255,255,0.06); }
+  .news button {
+    background: var(--accent); color: var(--accent-ink); border: 0;
+    padding: 0 28px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; font-size: 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .news button:hover { background: var(--accent-deep); }
+  .news__meta {
+    margin-top: 22px; font-size: 12px; color: var(--invert-soft);
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    padding: 48px 0; color: var(--ink-soft); font-size: 13px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px;
+    border-top: 2px solid var(--rule);
+  }
+  footer .foot-brand { display: flex; align-items: center; gap: 12px; }
+  footer a { color: var(--ink); text-decoration: none; margin-left: 18px; }
+  footer a:hover { border-bottom: 2px solid var(--accent); }
+
+  @media (max-width: 980px) {
+    .masthead { grid-template-columns: 1fr; }
+    .brand { min-height: auto; padding: 24px 0 18px; }
+    .masthead__cell {
+      min-height: auto;
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+      padding: 16px 0;
+    }
+    nav.primary { overflow-x: auto; }
+    nav.primary a { white-space: nowrap; }
+    nav.primary a:first-child { border-left: 0; }
+    nav.primary a.cta { margin-left: 0; }
+    .hero__grid {
+      grid-template-columns: 1fr;
+      gap: 34px;
+      padding-top: 44px;
+      padding-bottom: 44px;
+    }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(3) { border-left: 0; }
+    .feed__item { grid-template-columns: 1fr; }
+    .feed__score {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      border-left: 0;
+      padding-left: 0;
+      margin-top: 12px;
+    }
+    .feed__score strong { font-size: 24px; margin-bottom: 0; }
+  }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 0 18px; }
+    .brand__name {
+      font-size: clamp(40px, 15.5vw, 62px);
+      letter-spacing: -0.045em;
+    }
+    nav.primary a {
+      padding: 13px 18px;
+      font-size: 12px;
+    }
+    .hero__title { font-size: clamp(40px, 15vw, 58px); }
+    .hero__sub { font-size: 17px; }
+    .stats { grid-template-columns: 1fr; }
+    .stat,
+    .stat:first-child {
+      border-left: 0;
+      border-bottom: 1px solid var(--rule-soft);
+      padding: 22px 0;
+    }
+    .stat:last-child { border-bottom: 0; }
+    .section-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .feed__day { grid-template-columns: 1fr; gap: 16px; }
+    .news form { flex-direction: column; }
+    .news button { min-height: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap masthead">
+    <a class="brand" href="/">
+      <span class="brand__name">Agentic AI <em>Accounting</em></span>
+    </a>
+    <div class="masthead__cell">
+      <strong>Independent signal</strong>
+      <span>AI agents in accounting, audit, tax, bookkeeping, and firm operations.</span>
+      <em>Curated hourly from source material, not vendor noise.</em>
+    </div>
+    <div class="masthead__cell">
+      <strong>Issue No. 28</strong>
+      <span>Tuesday, 28 April 2026</span>
+      <em>Pacific/Honolulu edition</em>
+    </div>
+  </div>
+  <nav class="wrap primary">
+    <a href="/">News</a>
+    <a href="/companies">Companies</a>
+    <a href="/jobs">Jobs</a>
+    <a href="/resources">Resources</a>
+    <a href="/insights">Insights</a>
+    <a href="/newsletter" class="cta">Subscribe</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="wrap hero__grid">
+    <div>
+      <div class="hero__eyebrow"><span class="dot"></span>Daily intelligence for accounting operators</div>
+      <h1 class="hero__title serif">Accounting is becoming an <em>agentic workflow.</em></h1>
+      <p class="hero__sub">A focused publication tracking the products, firms, research, jobs, and regulatory signals that matter as AI agents move from demos into close, audit, tax, and advisory work.</p>
+      <div class="hero__actions">
+        <a class="button button--dark" href="#feed">Read today's feed</a>
+        <a class="button" href="/companies">Track companies</a>
+      </div>
+    </div>
+    <aside class="brief-card" aria-label="Daily market brief">
+      <div class="brief-card__head">
+        <span>Market brief</span>
+        <span>08:00 HST</span>
+      </div>
+      <div class="brief-card__metric">
+        <div class="brief-card__num">14</div>
+        <div class="brief-card__label"><strong>High-signal items today</strong>More product launches than funding news, with audit evidence and AP automation leading the feed.</div>
+      </div>
+      <div class="brief-card__metric">
+        <div class="brief-card__num">5</div>
+        <div class="brief-card__label"><strong>Companies hiring</strong>New roles skew toward implementation, evals, and practice-management integrations.</div>
+      </div>
+      <div class="brief-card__metric">
+        <div class="brief-card__num">2</div>
+        <div class="brief-card__label"><strong>Research papers</strong>Both focus on agent reliability around reconciliation and journal-entry generation.</div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="stats">
+    <div class="stat">
+      <div class="stat__num">52</div>
+      <div class="stat__label">Sources monitored</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num">298</div>
+      <div class="stat__label">Published briefings</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num">134</div>
+      <div class="stat__label">Companies tracked</div>
+    </div>
+    <div class="stat">
+      <div class="stat__num">1,120</div>
+      <div class="stat__label">Open roles</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2 class="serif">Featured signal</h2>
+    <a class="section-head__more" href="/featured">All featured →</a>
+  </div>
+
+  <div class="featured">
+    <article class="lede">
+      <div class="meta">
+        <span class="meta__source meta__source--featured">Wall Street Journal</span>
+        <span class="meta__dot"></span><span>5h ago</span>
+        <span class="meta__dot"></span><span>9 min read</span>
+        <span class="meta__dot"></span><span>Score 94</span>
+      </div>
+      <h2 class="lede__title">
+        <a href="#">PwC's audit-bot pilot found 70% of routine reconciliations could run without a human in the loop</a>
+      </h2>
+      <p class="lede__summary">
+        A six-month internal study at PwC's UK practice paired senior auditors with a Claude-powered review agent across 240 engagements. The useful signal is not replacement theater: agents handled repetitive testing, while humans retained judgment-heavy work like impairment, going-concern, and management-estimate disclosures.
+      </p>
+    </article>
+
+    <div class="feat-list">
+      <article class="feat-item">
+        <div class="meta"><span class="meta__source">Sequoia Capital</span><span class="meta__dot"></span><span>1d ago</span><span class="meta__dot"></span><span>Score 88</span></div>
+        <h3><a href="#">The agentic SaaS thesis, applied to bookkeeping</a></h3>
+      </article>
+      <article class="feat-item">
+        <div class="meta"><span class="meta__source">Hacker News</span><span class="meta__dot"></span><span>2d ago</span><span class="meta__dot"></span><span>Score 82</span></div>
+        <h3><a href="#">Show HN: I built an audit-trail-aware coding agent for tax preparation</a></h3>
+      </article>
+      <article class="feat-item">
+        <div class="meta"><span class="meta__source">arXiv</span><span class="meta__dot"></span><span>3d ago</span><span class="meta__dot"></span><span>Score 79</span></div>
+        <h3><a href="#">Self-correcting LLM agents for double-entry reconciliation at scale</a></h3>
+      </article>
+      <article class="feat-item">
+        <div class="meta"><span class="meta__source">Accounting Today</span><span class="meta__dot"></span><span>4d ago</span><span class="meta__dot"></span><span>Score 76</span></div>
+        <h3><a href="#">Big 4 race for an "agentic firm" trademark heats up</a></h3>
+      </article>
+      <article class="feat-item">
+        <div class="meta"><span class="meta__source">Going Concern</span><span class="meta__dot"></span><span>5d ago</span><span class="meta__dot"></span><span>Score 73</span></div>
+        <h3><a href="#">Why your firm's first agentic deployment will probably be in AP, not audit</a></h3>
+      </article>
+    </div>
+  </div>
+
+  <div class="asterism">∗ ∗ ∗</div>
+
+  <div class="section-head" id="feed">
+    <h2 class="serif">The feed</h2>
+    <a class="section-head__more" href="/rss.xml">RSS feed →</a>
+  </div>
+
+  <nav class="tag-rail">
+    <a href="#" class="active">All</a>
+    <a href="#">Audit</a>
+    <a href="#">Tax</a>
+    <a href="#">Automation</a>
+    <a href="#">Agentic AI</a>
+    <a href="#">Startups</a>
+    <a href="#">Big 4</a>
+    <a href="#">Research</a>
+  </nav>
+
+  <div class="feed">
+    <div class="feed__day">
+      <div class="feed__day-label"><span class="accent">Today</span><br>28 April 2026</div>
+      <div class="feed__items">
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">Pilot raises $200M Series E to push autonomous bookkeeping into mid-market</a></h3>
+            <p>The bookkeeping startup says its newest tier removes the human reviewer entirely for transactions under $5k, leveraging a Claude-Sonnet-driven reconciliation agent.</p>
+            <div class="meta">
+              <span class="meta__source">TechCrunch</span>
+              <span class="meta__dot"></span><span>1h ago</span>
+              <span class="meta__dot"></span><span>4 min read</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>86</strong> Relevance</div>
+        </article>
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">"My firm just deployed Copilot for tax research and I'm worried"</a></h3>
+            <p>A senior tax associate worries about juniors losing the muscle memory of researching from primary sources when the agent gives them a one-shot answer.</p>
+            <div class="meta">
+              <span class="meta__source">Reddit · r/Accounting</span>
+              <span class="meta__dot"></span><span>3h ago</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>71</strong> Relevance</div>
+        </article>
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">Deloitte tells partners: "Agents are coworkers, treat them that way"</a></h3>
+            <p>Internal memo leaked to GC instructs partners to assign agents to engagements alongside humans, with timecodes and review responsibilities.</p>
+            <div class="meta">
+              <span class="meta__source">Going Concern</span>
+              <span class="meta__dot"></span><span>5h ago</span>
+              <span class="meta__dot"></span><span>2 min read</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>78</strong> Relevance</div>
+        </article>
+      </div>
+    </div>
+
+    <div class="feed__day">
+      <div class="feed__day-label">Yesterday<br>27 April 2026</div>
+      <div class="feed__items">
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">I let Claude do my month-end close for 90 days. Here's what broke.</a></h3>
+            <p>Jason walks through the three categories of failure he saw: bank feed mismatches, SaaS revenue cliffs, and any transaction that involved a human description.</p>
+            <div class="meta">
+              <span class="meta__source">YouTube · Jason Staats</span>
+              <span class="meta__dot"></span><span>1d ago</span>
+              <span class="meta__dot"></span><span>22 min watch</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>91</strong> Relevance</div>
+        </article>
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">A benchmark for tool-using agents on GAAP-compliant journal entry generation</a></h3>
+            <p>20,000 human-validated entries across 14 industries; the current best agent (Claude Sonnet 4.6) lands at 87.4% accuracy — the bar for replacing a junior, the authors argue.</p>
+            <div class="meta">
+              <span class="meta__source">arXiv</span>
+              <span class="meta__dot"></span><span>1d ago</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>84</strong> Relevance</div>
+        </article>
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">Why prompt-engineering your firm's audit methodology is a bad idea</a></h3>
+            <p>The methodology should live in code-reviewable artifacts, not in a system prompt that any partner can edit ad hoc.</p>
+            <div class="meta">
+              <span class="meta__source">Substack · Practical AI for CPAs</span>
+              <span class="meta__dot"></span><span>1d ago</span>
+              <span class="meta__dot"></span><span>7 min read</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>75</strong> Relevance</div>
+        </article>
+      </div>
+    </div>
+
+    <div class="feed__day">
+      <div class="feed__day-label">Earlier<br>This week</div>
+      <div class="feed__items">
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">KPMG Lighthouse to open-source its audit-evidence retrieval evals</a></h3>
+            <p>The internal team behind KPMG's evidence-retrieval agent will release its evaluation harness under Apache 2.0 in Q3.</p>
+            <div class="meta">
+              <span class="meta__source">Reuters</span>
+              <span class="meta__dot"></span><span>3d ago</span>
+              <span class="meta__dot"></span><span>3 min read</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>81</strong> Relevance</div>
+        </article>
+        <article class="feed__item">
+          <div class="feed__main">
+            <h3><a href="#">Karbon's new "agent inbox" wants to make every email a journal entry</a></h3>
+            <p>The practice-management vendor folds an LLM agent into the firm-side email inbox; clients ask, agent drafts the JE, partner reviews.</p>
+            <div class="meta">
+              <span class="meta__source">RSS · Karbon Blog</span>
+              <span class="meta__dot"></span><span>4d ago</span>
+            </div>
+          </div>
+          <div class="feed__score"><strong>67</strong> Relevance</div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <nav class="pager">
+    <a href="#" class="active">1</a>
+    <a href="#">2</a>
+    <a href="#">3</a>
+    <a href="#">4</a>
+    <a href="#">5</a>
+    <a href="#">…</a>
+    <a href="#">15</a>
+    <a href="#">Next →</a>
+  </nav>
+</section>
+
+<section class="news">
+  <div class="wrap news__inner">
+    <div>
+      <h2 class="serif">Read it before <em>your CFO does.</em></h2>
+      <p>One short email Sunday morning. The week's five most important stories on agents in accounting. No fluff, no recycled press releases.</p>
+    </div>
+    <div>
+      <form>
+        <input type="email" placeholder="you@firm.com" aria-label="Email">
+        <button type="submit">Subscribe</button>
+      </form>
+      <div class="news__meta">2,800+ accountants &amp; founders. Free, weekly.</div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="foot-brand">
+    <svg width="20" height="20" viewBox="0 0 36 36" aria-hidden="true">
+      <rect x="0" y="0" width="36" height="36" fill="#111110"/>
+      <rect x="6" y="15" width="24" height="3.5" fill="#ff6f5e"/>
+    </svg>
+    <span>© 2026 Agentic AI Accounting. Curated by Claude, refreshed hourly.</span>
+  </div>
+  <div>
+    <a href="/rss.xml">RSS</a>
+    <a href="/about">About</a>
+    <a href="/sitemap">Sitemap</a>
+  </div>
+</footer>
+
+</body>
+</html>

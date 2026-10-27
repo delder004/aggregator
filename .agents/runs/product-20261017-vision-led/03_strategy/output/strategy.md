@@ -1,0 +1,13 @@
+# Three strategic bets
+
+All are proposed beliefs. None has validated demand. Minimal change preserves options but creates no new reason to visit.
+
+| Bet | Audience, promise and belief | Why now / why we could win | Sacrifice and accumulating advantage | Strongest objection |
+|---|---|---|---|---|
+| A. Workflow change desk | Firm operations lead: know which AI changes matter to work already being done. Believe useful interpretation attaches to a workflow and decision, not a launch. | Dated Xero updates demonstrate changing capability descriptions. Existing collection helps locate sources; disciplined editorial comparison and practitioner review must be earned. | Sacrifice broad news and all-vendor coverage. Accumulate dated workflow claims, supersession links and reasons to reconsider. | Existing newsletters and vendor documentation may answer this without a new habit. |
+| B. Suitability desk | Firm buyer: narrow a shortlist around actual constraints. Believe incompatibility matters more than overall rankings. | Broad bookkeeping interest and vendor-term discovery exist. Earn precise fit records and comparisons through real questions. | Sacrifice daily habit for decision depth. Accumulate constraint taxonomy and resolved buyer questions. | Atoz plus vendor demos may be better; episodic use makes audience growth expensive. |
+| C. Accountant practice lab | Working accountant: learn judgment by checking AI-produced work. Believe careers need demonstrated review skill, not another prompt collection. | Official AI learning supply exists. Earn practitioner-authored cases and high-quality feedback; infrastructure is not the advantage. | Sacrifice news timeliness and directories. Accumulate original cases, rubric versions and anonymized error patterns only with consent. | Real assessment is expensive; official training and credentials have authority we lack. |
+
+A earns search on specific workflow/feature questions, return on changed evidence, and sharing through a concise team brief. B earns search on compatibility/comparison, shares a decision memo, returns at renewal. C earns exercise search, referrals among learners and progression to the next case. No available partner audience is assumed.
+
+Develop all three concretely. A currently has the strongest connection between useful visits and a durable publishing asset; B the most legible near-term search intent; C the most interactive user value. A is not selected because the parent proposed it: it must produce a better cross-time answer than simply reading the newest vendor article. If it cannot, B is the stronger fallback. Do not add all three to the homepage to evade choice.
